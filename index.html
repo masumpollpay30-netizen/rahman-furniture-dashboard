@@ -1613,6 +1613,22 @@ table.dash-table tbody tr:nth-child(n+6){ animation-delay: 0.30s; }
         <div class="form-group"><label>Address:</label><input type="text" id="edit-address" placeholder="Madaninagar Gol Chattar, Siddhirganj"></div>
         <div class="form-group"><label>Phone Number:</label><input type="text" id="edit-phone" placeholder="+8801794526688"></div>
         <div class="form-group"><label>Company Logo:</label><input type="file" id="edit-logo" accept="image/*"></div>
+        <hr style="margin:16px 0; border-color:#eee;">
+        <div style="background:#e8f4f4; border-radius:8px; padding:14px; margin-bottom:14px;">
+            <div style="font-weight:700; color:#006666; margin-bottom:6px;">☁️ Google Sheets Cloud Sync</div>
+            <div style="font-size:12px; color:#555; margin-bottom:10px;">Invoice ও Counter সব ডিভাইস থেকে sync রাখতে Google Apps Script URL দিন।</div>
+            <div class="form-group" style="margin-bottom:8px;">
+                <label style="font-size:12px;">Apps Script Web App URL:</label>
+                <input type="text" id="edit-script-url" placeholder="https://script.google.com/macros/s/.../exec" style="font-size:12px;">
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button onclick="saveScriptUrl()" class="btn btn-primary" style="font-size:12px; padding:7px 14px;">💾 Save URL</button>
+                <button onclick="testScriptConnection()" class="btn btn-success" style="font-size:12px; padding:7px 14px;">🔗 Test Connection</button>
+                <button onclick="forceSyncToCloud()" class="btn btn-warning" style="font-size:12px; padding:7px 14px; color:#333;">⬆️ Force Sync Now</button>
+                <button onclick="forceLoadFromCloud()" class="btn" style="font-size:12px; padding:7px 14px; background:#17a2b8; color:white;">⬇️ Load from Cloud</button>
+            </div>
+            <div id="cloud-status-msg" style="margin-top:8px; font-size:11px; color:#555;"></div>
+        </div>
         <button onclick="saveCompanySettings()" class="btn btn-success">Save Changes</button>
         <button onclick="closeModal('companySettingsModal')" class="btn" style="background:#6c757d; color:white; margin-left:10px;">Cancel</button>
     </div>
@@ -1680,6 +1696,162 @@ table.dash-table tbody tr:nth-child(n+6){ animation-delay: 0.30s; }
 
 <!-- ===================== SCRIPTS ===================== -->
 <script>
+// ========================================================
+// ☁️ GOOGLE SHEETS CLOUD SYNC SYSTEM
+// ========================================================
+function getScriptUrl() {
+    return localStorage.getItem('rfGoogleScriptUrl') || '';
+}
+
+function saveScriptUrl() {
+    const url = document.getElementById('edit-script-url').value.trim();
+    if (!url) { setCloudStatus('❌ URL দিন', 'red'); return; }
+    localStorage.setItem('rfGoogleScriptUrl', url);
+    setCloudStatus('✅ URL সংরক্ষিত হয়েছে!', 'green');
+}
+
+async function testScriptConnection() {
+    const url = getScriptUrl();
+    if (!url) { setCloudStatus('❌ প্রথমে URL দিন ও Save করুন', 'red'); return; }
+    setCloudStatus('🔄 পরীক্ষা করা হচ্ছে...', 'blue');
+    try {
+        await fetch(url + '?action=ping', { mode: 'no-cors' });
+        setCloudStatus('✅ Connection সফল! এখন Force Sync করুন।', 'green');
+    } catch(e) {
+        setCloudStatus('❌ Connection ব্যর্থ। URL চেক করুন।', 'red');
+    }
+}
+
+function setCloudStatus(msg, color) {
+    const el = document.getElementById('cloud-status-msg');
+    if (el) { el.textContent = msg; el.style.color = color; }
+}
+
+// Cloud sync: সব invoice data Google Sheets-এ save করা
+async function saveCloudData() {
+    const url = getScriptUrl();
+    if (!url) return; // URL না থাকলে শুধু localStorage-এ save হবে
+
+    const history = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
+    const invNum  = localStorage.getItem('invNum') || '2572';
+    const commissions = JSON.parse(localStorage.getItem('salesCommissions') || '[]');
+
+    const payload = {
+        action: 'saveData',
+        data: {
+            invoiceCounter: invNum,
+            allInvoices: JSON.stringify(history),
+            salesCommissions: JSON.stringify(commissions),
+            companyName:  localStorage.getItem('companyName') || '',
+            compAddress:  localStorage.getItem('compAddress') || '',
+            compPhone:    localStorage.getItem('compPhone') || ''
+        }
+    };
+
+    try {
+        fetch(url, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        showCloudIndicator('☁️ Syncing...');
+    } catch(e) { console.log('Cloud sync failed, local only.'); }
+}
+
+// Cloud থেকে data load করা
+async function loadCloudData() {
+    const url = getScriptUrl();
+    if (!url) return false;
+
+    showCloudIndicator('⬇️ Cloud থেকে লোড হচ্ছে...');
+    try {
+        const response = await fetch(url + '?action=loadData', { method: 'GET' });
+        const result = await response.json();
+
+        if (result.status === 'success' && result.data) {
+            const d = result.data;
+
+            // Invoice counter — cloud থেকে নেওয়া হবে
+            if (d.invoiceCounter) {
+                const cloudNum = parseInt(d.invoiceCounter);
+                const localNum = parseInt(localStorage.getItem('invNum') || '2572');
+                // সবচেয়ে বড় নম্বরটা রাখব
+                const latest = Math.max(cloudNum, localNum);
+                localStorage.setItem('invNum', latest.toString());
+                document.getElementById('inv-no').innerText = latest;
+            }
+
+            // Invoice history merge
+            if (d.allInvoices) {
+                try {
+                    const cloudHistory = JSON.parse(d.allInvoices);
+                    const localHistory = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
+                    // Merge: cloud + local, duplicate invoice numbers নিয়ে cloud টা রাখব
+                    const merged = [...cloudHistory];
+                    localHistory.forEach(li => {
+                        if (!merged.find(ci => ci.invoiceNo === li.invoiceNo)) {
+                            merged.push(li);
+                        }
+                    });
+                    localStorage.setItem('invoiceHistory', JSON.stringify(merged));
+                } catch(e) {}
+            }
+
+            // Commissions
+            if (d.salesCommissions) {
+                try {
+                    const cloudComm = JSON.parse(d.salesCommissions);
+                    localStorage.setItem('salesCommissions', JSON.stringify(cloudComm));
+                } catch(e) {}
+            }
+
+            hideCloudIndicator();
+            renderDashboard();
+            return true;
+        }
+    } catch(e) {
+        console.log('Could not load cloud data, using local storage.');
+    }
+    hideCloudIndicator();
+    return false;
+}
+
+function forceSyncToCloud() {
+    saveCloudData();
+    setCloudStatus('⬆️ Cloud-এ পাঠানো হচ্ছে... (৫-১০ সেকেন্ড পর check করুন)', 'blue');
+    setTimeout(() => setCloudStatus('✅ Sync request পাঠানো হয়েছে', 'green'), 2000);
+}
+
+async function forceLoadFromCloud() {
+    setCloudStatus('⬇️ Cloud থেকে লোড করা হচ্ছে...', 'blue');
+    const success = await loadCloudData();
+    if (success) {
+        setCloudStatus('✅ Cloud থেকে সফলভাবে লোড হয়েছে!', 'green');
+        loadInvoicePage();
+    } else {
+        setCloudStatus('❌ Cloud থেকে লোড করা যায়নি। URL ঠিক আছে কি?', 'red');
+    }
+}
+
+function showCloudIndicator(msg) {
+    let el = document.getElementById('rf-cloud-ind');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'rf-cloud-ind';
+        el.style.cssText = 'position:fixed;top:14px;right:80px;background:#006666;color:#fff;padding:6px 14px;border-radius:20px;z-index:9999;font-size:12px;font-weight:600;box-shadow:0 3px 10px rgba(0,0,0,0.2);transition:opacity 0.3s;';
+        document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.style.opacity = '1';
+    el.style.display = 'block';
+}
+
+function hideCloudIndicator() {
+    const el = document.getElementById('rf-cloud-ind');
+    if (el) { el.style.opacity = '0'; setTimeout(() => { el.style.display = 'none'; }, 400); }
+}
+
 // ========================================================
 // PAGE NAVIGATION
 // ========================================================
@@ -2021,6 +2193,8 @@ function invSaveAndPrint() {
     const invoiceData = collectInvoiceData();
     saveInvoiceToHistory(invoiceData);
     saveCommission(invoiceData);
+    // ☁️ Cloud sync
+    saveCloudData();
     const authName = document.getElementById('inv-admin-name').value || 'Invoice';
     const invoiceNo = document.getElementById('inv-no').innerText;
     document.title = `${authName.replace(/\s+/g,'')}_Invoice_${invoiceNo}`;
@@ -2033,8 +2207,10 @@ function invPrepareNext() {
         saveInvoiceToHistory(invoiceData);
         saveCommission(invoiceData);
         let currentInv = parseInt(document.getElementById('inv-no').innerText);
-        let nextInv = (isNaN(currentInv) ? 2490 : currentInv) + 1;
+        let nextInv = (isNaN(currentInv) ? 2572 : currentInv) + 1;
         try { localStorage.setItem('invNum', nextInv); } catch(e){}
+        // ☁️ Cloud sync
+        saveCloudData();
         loadInvoicePage();
     }
 }
@@ -2251,6 +2427,7 @@ function showModal(modalId) {
         document.getElementById('edit-company-name').value = localStorage.getItem('companyName') || 'RAHMAN FURNITURE';
         document.getElementById('edit-address').value = localStorage.getItem('compAddress') || 'Madaninagar Gol Chattar, Siddhirganj, Narayanganj';
         document.getElementById('edit-phone').value = localStorage.getItem('compPhone') || '+8801794526688';
+        document.getElementById('edit-script-url').value = getScriptUrl();
     }
 }
 function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
@@ -2329,7 +2506,7 @@ function delResetPage() {
 // ========================================================
 // WINDOW INIT
 // ========================================================
-window.onload = function() {
+window.onload = async function() {
     // Generate QR Code for Facebook page
     new QRCode(document.getElementById("inv-qr-code"), {
         text: "https://www.facebook.com/rahman.furniture123/",
@@ -2356,9 +2533,17 @@ window.onload = function() {
     const savedAdmin = localStorage.getItem('adminName');
     if(savedAdmin) document.getElementById('inv-admin-name').value = savedAdmin;
 
-    // Load invoice number — start from 2490
-    let inv = localStorage.getItem('invNum') || "2490";
+    // Load invoice number — current counter থেকে
+    let inv = localStorage.getItem('invNum') || "2572";
     document.getElementById('inv-no').innerText = inv;
+
+    // ☁️ Try loading from cloud first (if URL configured)
+    const cloudLoaded = await loadCloudData();
+    if (!cloudLoaded) {
+        // Cloud না পেলে local data দিয়ে চলবে
+        let localInv = localStorage.getItem('invNum') || "2572";
+        document.getElementById('inv-no').innerText = localInv;
+    }
 
     // Render dashboard
     renderDashboard();
@@ -2501,6 +2686,9 @@ function computeAttendance(inStr, lOutStr, lInStr, outStr, empIdx, nextDayOut) {
   // ──────────────────────────────────────────────────────────────────
 
   const arrivalLate    = inMins  !== null ? Math.max(0, inMins  - dutyStartMins) : 0;
+  // Early arrival: came before duty start — এই সময় OT-তে যোগ হবে
+  const earlyArrival   = (inMins !== null && inMins < dutyStartMins)
+                         ? Math.max(0, dutyStartMins - inMins) : 0;
   const rawOT          = outMins !== null ? Math.max(0, outMins - dutyEndMins)   : 0;
   // Early departure: left before duty end (only counted when Out time is actually entered)
   const earlyDeparture = (outMins !== null && outMins < dutyEndMins)
@@ -2517,9 +2705,9 @@ function computeAttendance(inStr, lOutStr, lInStr, outStr, empIdx, nextDayOut) {
   const lunchBonus   = Math.max(0, -lunchDiff);  // adds to OT
 
   // totalLate includes: arrival late + early departure + lunch overrun
-  // totalOT  includes: time past duty end + lunch bonus (early return)
+  // totalOT  includes: time past duty end + early arrival bonus + lunch bonus (early return)
   const totalLate = arrivalLate + earlyDeparture + lunchOverrun;
-  const totalOT   = rawOT + lunchBonus;
+  const totalOT   = rawOT + lunchBonus + earlyArrival;
 
   // OT offsets Late: if someone stayed extra, it compensates for coming late
   let finalLate, finalOT;
@@ -2531,7 +2719,7 @@ function computeAttendance(inStr, lOutStr, lInStr, outStr, empIdx, nextDayOut) {
     finalLate = totalLate - totalOT;
   }
 
-  return { late: finalLate, ot: finalOT, lunchDiff, arrivalLate, rawOT, earlyDeparture };
+  return { late: finalLate, ot: finalOT, lunchDiff, arrivalLate, rawOT, earlyDeparture, earlyArrival };
 }
 
 /* Thin wrappers kept for TP info-card usage */
@@ -2565,8 +2753,8 @@ function updateTPInfoCard(){
     if(diff<=0){
       const early=Math.abs(diff);
       icon='✅'; cardCls='info-ontime'; mainCls='col-ontime';
-      mainTxt=early>0?`${fmtMins(early)} আগে আসছেন`:'ঠিক সময়ে!';
-      subTxt=`Duty শুরু ${fmtH24(getEmpDutyStartH(ei))} — Late নেই`;
+      mainTxt=early>0?`${fmtMins(early)} আগে আসছেন — OT পাবেন!`:'ঠিক সময়ে!';
+      subTxt=`Duty শুরু ${fmtH24(getEmpDutyStartH(ei))} — ${early>0?`${fmtMins(early)} OT যোগ হবে`:'Late নেই'}`;
     } else {
       icon='⏰'; cardCls='info-late'; mainCls='col-late';
       mainTxt=`${fmtMins(diff)} Late!`;
