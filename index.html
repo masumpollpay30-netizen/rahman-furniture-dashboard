@@ -220,6 +220,7 @@
             @page { size: A4; margin: 0; }
             body { background: none; }
             .sidebar, .topbar, .invoice-topbar, .delivery-topbar, .no-print { display: none !important; }
+            #rf-cloud-ind, #cloud-spinner, #cloud-status-msg { display: none !important; }
             .main-content { margin-left: 0; }
 
             /* Invoice print */
@@ -1840,6 +1841,8 @@ function showCloudIndicator(msg) {
         el = document.createElement('div');
         el.id = 'rf-cloud-ind';
         el.style.cssText = 'position:fixed;top:14px;right:80px;background:#006666;color:#fff;padding:6px 14px;border-radius:20px;z-index:9999;font-size:12px;font-weight:600;box-shadow:0 3px 10px rgba(0,0,0,0.2);transition:opacity 0.3s;';
+        // Print এ hide করার জন্য class দেওয়া হলো
+        el.classList.add('no-print');
         document.body.appendChild(el);
     }
     el.textContent = msg;
