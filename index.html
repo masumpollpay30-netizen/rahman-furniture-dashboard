@@ -1633,9 +1633,10 @@ table.dash-table tbody tr:nth-child(n+6){ animation-delay: 0.30s; }
             <label style="font-size:12px;font-weight:600;color:#333;">Apps Script URL:</label>
             <input type="text" id="edit-script-url" placeholder="https://script.google.com/macros/s/.../exec" style="margin-top:4px;font-size:11px;border:1px solid #b2dfdb;border-radius:6px;padding:7px 10px;width:100%;box-sizing:border-box;color:#555;">
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
-                <button onclick="testScriptConnection()" class="btn btn-success" style="font-size:12px;padding:7px 14px;">🔗 Test</button>
+                <button onclick="testScriptConnection()" class="btn btn-success" style="font-size:12px;padding:7px 14px;">🔗 Test Script</button>
                 <button onclick="forceSyncToCloud()" class="btn btn-warning" style="font-size:12px;padding:7px 14px;color:#333;">⬆️ Force Sync</button>
                 <button onclick="forceLoadFromCloud()" class="btn" style="font-size:12px;padding:7px 14px;background:#17a2b8;color:white;">⬇️ Load Cloud</button>
+                <button onclick="testDataInCloud()" class="btn" style="font-size:12px;padding:7px 14px;background:#6f42c1;color:white;">✅ Check Data</button>
             </div>
             <div id="cloud-status-msg" style="margin-top:8px;font-size:11px;"></div>
         </div>
@@ -1793,7 +1794,7 @@ function setCloudStatus(msg, color) {
     if (el) { el.textContent = msg; el.style.color = color; }
 }
 
-// Silent cloud sync (print-এ কিছু দেখাবে না)
+// Silent cloud sync — Content-Type header নেই, তাই browser block করবে না
 async function saveCloudData() {
     const url = getScriptUrl();
     if (!url) return;
@@ -1813,9 +1814,15 @@ async function saveCloudData() {
             compPhone:    localStorage.getItem('compPhone') || ''
         }
     };
+
     try {
-        fetch(url, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-    } catch(e) { console.log('Cloud sync failed.'); }
+        // ✅ no Content-Type header = simple request = no CORS preflight = works!
+        await fetch(url, {
+            method: 'POST',
+            mode:   'no-cors',
+            body:   JSON.stringify(payload)
+        });
+    } catch(e) { console.log('Cloud sync failed:', e); }
 }
 
 async function loadCloudData() {
@@ -1853,9 +1860,33 @@ async function loadCloudData() {
 }
 
 function forceSyncToCloud() {
+    const history = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
+    if (history.length === 0) {
+        setCloudStatus('⚠️ কোনো invoice নেই। একটি invoice তৈরি করুন আগে।', '#e67e22');
+        return;
+    }
+    setCloudStatus('⬆️ ' + history.length + 'টি invoice পাঠানো হচ্ছে...', '#555');
     saveCloudData();
-    setCloudStatus('⬆️ পাঠানো হচ্ছে...', '#555');
-    setTimeout(() => setCloudStatus('✅ Sync সম্পন্ন হয়েছে', 'green'), 2500);
+    setTimeout(() => {
+        setCloudStatus('✅ পাঠানো হয়েছে। এখন নিচের Test বাটনে ক্লিক করে confirm করুন।', 'green');
+    }, 3000);
+}
+
+async function testDataInCloud() {
+    setCloudStatus('🔍 Google Sheets চেক করা হচ্ছে...', '#555');
+    try {
+        const url = getScriptUrl();
+        const res = await fetch(url + '?action=loadData');
+        const data = await res.json();
+        if (data.status === 'success' && data.data && data.data.allInvoices) {
+            const invoices = JSON.parse(data.data.allInvoices);
+            setCloudStatus('✅ Google Sheets-এ ' + invoices.length + 'টি invoice আছে! Tracking কাজ করবে।', 'green');
+        } else {
+            setCloudStatus('❌ Google Sheets-এ data নেই। Force Sync করুন।', 'red');
+        }
+    } catch(e) {
+        setCloudStatus('❌ Script URL ঠিক নেই বা Deploy করা হয়নি।', 'red');
+    }
 }
 
 async function forceLoadFromCloud() {
