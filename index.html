@@ -1822,13 +1822,9 @@ async function loadCloudData() {
     const url = getScriptUrl();
     if (!url) return false;
     try {
-        // POST দিয়ে loadData করা হচ্ছে (Google Apps Script CORS issue avoid করতে)
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'loadData' })
-        });
-        const result = await response.json();
+        // GET request — Google Apps Script CORS-friendly
+        const response = await fetch(url + '?action=loadData', { method: 'GET' });
+        const result   = await response.json();
         if (result.status === 'success' && result.data) {
             const d = result.data;
             if (d.invoiceCounter) {
@@ -2028,20 +2024,16 @@ async function maybeShowTrackingPage() {
         </div>
     </div>`;
 
-    // Google Sheets থেকে data আনা (POST method)
+    // Google Sheets থেকে GET দিয়ে data আনা (CORS-safe)
     let inv = null;
     try {
-        const res  = await fetch(DEFAULT_SCRIPT_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'loadData' })
-        });
+        const res  = await fetch(DEFAULT_SCRIPT_URL + '?action=loadData', { method: 'GET' });
         const data = await res.json();
         if (data.status === 'success' && data.data && data.data.allInvoices) {
             const all = JSON.parse(data.data.allInvoices);
             inv = all.find(i => String(i.invoiceNo) === String(trackNo));
         }
-    } catch(e) {}
+    } catch(e) { console.log('Tracking load error:', e); }
 
     const body = document.getElementById('track-body');
 
