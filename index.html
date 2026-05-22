@@ -1163,13 +1163,13 @@ table.dash-table tbody tr:nth-child(n+6){ animation-delay: 0.30s; }
     <!-- ===================== INVOICE PAGE ===================== -->
     <div id="invoice-view">
         <div class="invoice-topbar no-print">
-            <button onclick="invSaveAndPrint()" style="background:#28a745; color:white;">🖨️ Print / Save PDF</button>
-            <button onclick="invPrepareNext()" style="background:#007bff; color:white;">➡️ Next Invoice</button>
-            <button onclick="invClearData()" style="background:#dc3545; color:white;">🔄 Reset</button>
-            <button onclick="showModal('companySettingsModal')" style="background:#6c757d; color:white;">🏢 Company Settings</button>
-            <button onclick="showInvoiceHistory()" style="background:#17a2b8; color:white;">📜 Invoice History</button>
-            <button onclick="showCommissionSystem()" style="background:#fd7e14; color:white;">💰 Commission</button>
-            <button onclick="showWhatsAppOptions(document.getElementById('inv-no').innerText)" style="background:#25D366; color:white; font-weight:700;">📱 WhatsApp</button>
+            <button onclick="invSaveAndPrint()" style="background:#28a745;color:white;">🖨️ Print / Save PDF</button>
+            <button onclick="invPrepareNext()" style="background:#007bff;color:white;">➡️ Next Invoice</button>
+            <button onclick="invClearData()" style="background:#dc3545;color:white;">🔄 Reset</button>
+            <button onclick="showModal('companySettingsModal')" style="background:#6c757d;color:white;">🏢 Settings</button>
+            <button onclick="showInvoiceHistory()" style="background:#17a2b8;color:white;">📜 History</button>
+            <button onclick="showCommissionSystem()" style="background:#fd7e14;color:white;">💰 Commission</button>
+            <button onclick="openWhatsAppModal()" style="background:#25D366;color:white;font-weight:700;font-size:13px;">📱 WhatsApp</button>
         </div>
 
         <div class="inv-a4-page">
@@ -1615,78 +1615,65 @@ table.dash-table tbody tr:nth-child(n+6){ animation-delay: 0.30s; }
         <div class="form-group"><label>Address:</label><input type="text" id="edit-address" placeholder="Madaninagar Gol Chattar, Siddhirganj"></div>
         <div class="form-group"><label>Phone Number:</label><input type="text" id="edit-phone" placeholder="+8801794526688"></div>
         <div class="form-group"><label>Company Logo:</label><input type="file" id="edit-logo" accept="image/*"></div>
-        <hr style="margin:16px 0; border-color:#eee;">
+        <hr style="margin:14px 0;border-color:#eee;">
 
-        <!-- WhatsApp + Tracking Config -->
-        <div style="background:#e8f5e9; border-radius:10px; padding:14px; margin-bottom:12px; border:1px solid #c8e6c9;">
-            <div style="font-weight:700; color:#2e7d32; margin-bottom:6px; font-size:14px;">📱 WhatsApp Tracking Setup</div>
-            <div style="font-size:12px; color:#555; margin-bottom:10px;">আপনার Netlify/GitHub Pages website URL দিন। Customer WhatsApp-এ এই link পাবে।</div>
-            <div class="form-group" style="margin-bottom:6px;">
-                <label style="font-size:12px; font-weight:600;">🌐 আপনার Website URL:</label>
-                <input type="text" id="edit-site-url" placeholder="https://rahman-furniture.netlify.app" style="font-size:12px;">
-            </div>
-            <div id="site-url-preview" style="font-size:11px; color:#777; margin-top:4px; word-break:break-all;"></div>
+        <!-- WhatsApp Tracking URL -->
+        <div style="background:#e8f5e9;border-radius:10px;padding:14px;margin-bottom:12px;border:1px solid #c8e6c9;">
+            <div style="font-weight:700;color:#2e7d32;font-size:14px;margin-bottom:6px;">📱 WhatsApp Tracking URL</div>
+            <div style="font-size:12px;color:#555;margin-bottom:10px;">আপনার Netlify website-এর address দিন। Customer-এর WhatsApp-এ এই link যাবে।</div>
+            <label style="font-size:12px;font-weight:600;color:#333;">🌐 আপনার Website URL:</label>
+            <input type="text" id="edit-site-url" placeholder="https://rahman-furniture-admin.netlify.app" style="margin-top:4px;font-size:13px;border:1.5px solid #a5d6a7;border-radius:6px;padding:8px 10px;width:100%;box-sizing:border-box;" oninput="previewTrackUrl(this.value)">
+            <div id="wa-url-preview" style="font-size:11px;color:#2e7d32;margin-top:6px;word-break:break-all;min-height:16px;"></div>
         </div>
 
-        <!-- Google Sheets Sync -->
-        <div style="background:#e8f4f4; border-radius:10px; padding:14px; margin-bottom:14px; border:1px solid #b2dfdb;">
-            <div style="font-weight:700; color:#006666; margin-bottom:6px; font-size:14px;">☁️ Google Sheets Cloud Sync</div>
-            <div style="font-size:11px; color:#777; margin-bottom:4px;">✅ আপনার URL আগে থেকেই set আছে। পরিবর্তন করতে চাইলে নিচে দিন:</div>
-            <div class="form-group" style="margin-bottom:8px;">
-                <label style="font-size:12px;">Apps Script Web App URL:</label>
-                <input type="text" id="edit-script-url" placeholder="https://script.google.com/macros/s/.../exec" style="font-size:11px;">
+        <!-- Google Sheets -->
+        <div style="background:#e8f4f4;border-radius:10px;padding:14px;margin-bottom:14px;border:1px solid #b2dfdb;">
+            <div style="font-weight:700;color:#006666;font-size:14px;margin-bottom:4px;">☁️ Google Sheets Cloud Sync</div>
+            <div style="font-size:11px;color:#27ae60;margin-bottom:8px;">✅ আপনার Script URL আগে থেকেই সেট আছে। পরিবর্তন করতে চাইলে নিচে দিন:</div>
+            <label style="font-size:12px;font-weight:600;color:#333;">Apps Script URL:</label>
+            <input type="text" id="edit-script-url" placeholder="https://script.google.com/macros/s/.../exec" style="margin-top:4px;font-size:11px;border:1px solid #b2dfdb;border-radius:6px;padding:7px 10px;width:100%;box-sizing:border-box;color:#555;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+                <button onclick="testScriptConnection()" class="btn btn-success" style="font-size:12px;padding:7px 14px;">🔗 Test</button>
+                <button onclick="forceSyncToCloud()" class="btn btn-warning" style="font-size:12px;padding:7px 14px;color:#333;">⬆️ Force Sync</button>
+                <button onclick="forceLoadFromCloud()" class="btn" style="font-size:12px;padding:7px 14px;background:#17a2b8;color:white;">⬇️ Load Cloud</button>
             </div>
-            <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                <button onclick="saveScriptUrl()" class="btn btn-primary" style="font-size:12px; padding:7px 14px;">💾 Save URLs</button>
-                <button onclick="testScriptConnection()" class="btn btn-success" style="font-size:12px; padding:7px 14px;">🔗 Test Connection</button>
-                <button onclick="forceSyncToCloud()" class="btn btn-warning" style="font-size:12px; padding:7px 14px; color:#333;">⬆️ Force Sync</button>
-                <button onclick="forceLoadFromCloud()" class="btn" style="font-size:12px; padding:7px 14px; background:#17a2b8; color:white;">⬇️ Load Cloud</button>
-            </div>
-            <div id="cloud-status-msg" style="margin-top:8px; font-size:11px; color:#555;"></div>
+            <div id="cloud-status-msg" style="margin-top:8px;font-size:11px;"></div>
         </div>
-        <button onclick="saveCompanySettings()" class="btn btn-success">Save Changes</button>
-        <button onclick="closeModal('companySettingsModal')" class="btn" style="background:#6c757d; color:white; margin-left:10px;">Cancel</button>
+
+        <div style="display:flex;gap:10px;">
+            <button onclick="saveAllSettings()" class="btn btn-success" style="flex:1;">💾 Save All Settings</button>
+            <button onclick="closeModal('companySettingsModal')" class="btn" style="background:#6c757d;color:white;padding:10px 18px;">Cancel</button>
+        </div>
     </div>
 </div>
 
-<!-- WhatsApp Notification Modal -->
+<!-- WhatsApp Modal -->
 <div id="wa-modal" class="modal no-print" style="z-index:10001;">
-    <div class="modal-content" style="max-width:460px;">
-        <div class="modal-header" style="background:#075E54; color:white; border-radius:12px 12px 0 0; padding:16px 20px;">
-            <h3 style="margin:0; display:flex; align-items:center; gap:10px;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.855L0 24l6.318-1.508A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.93 0-3.742-.516-5.303-1.418l-.38-.226-3.752.895.927-3.645-.247-.396A9.955 9.955 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
-                WhatsApp Notification
-            </h3>
-            <span class="modal-close" onclick="closeModal('wa-modal')" style="color:white; font-size:22px; cursor:pointer;">&times;</span>
+    <div class="modal-content" style="max-width:440px;padding:0;overflow:hidden;border-radius:16px;">
+        <div style="background:linear-gradient(135deg,#075E54,#128C7E);color:#fff;padding:18px 20px;display:flex;justify-content:space-between;align-items:center;">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.855L0 24l6.318-1.508A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.93 0-3.742-.516-5.303-1.418l-.38-.226-3.752.895.927-3.645-.247-.396A9.955 9.955 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+                <span style="font-size:16px;font-weight:700;">WhatsApp Notification</span>
+            </div>
+            <span onclick="closeModal('wa-modal')" style="cursor:pointer;font-size:22px;opacity:.8;">✕</span>
         </div>
         <div style="padding:20px;">
-            <!-- Info -->
-            <div style="background:#f0fdf4; border-radius:10px; padding:14px; margin-bottom:16px; border:1px solid #bbf7d0;">
-                <div style="display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap;">
-                    <div><div style="font-size:12px; color:#666;">Invoice</div><div style="font-weight:700; color:#001f3f; font-size:15px;">#<span id="wa-inv-no"></span></div></div>
-                    <div style="flex:1; min-width:120px;"><div style="font-size:12px; color:#666;">Customer</div><div style="font-weight:600; font-size:14px;" id="wa-cust-name"></div></div>
-                    <div><div style="font-size:12px; color:#666;">Phone</div><div style="font-weight:600; font-size:14px;" id="wa-cust-phone"></div></div>
+            <div style="background:#f0fdf4;border-radius:10px;padding:14px;margin-bottom:16px;border:1px solid #bbf7d0;">
+                <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;">
+                    <div><div style="font-size:11px;color:#666;">Invoice</div><div style="font-weight:800;color:#001f3f;font-size:17px;">#<span id="wa-inv-no"></span></div></div>
+                    <div style="flex:1;min-width:100px;"><div style="font-size:11px;color:#666;">Customer</div><div style="font-weight:700;font-size:14px;" id="wa-cust-name"></div></div>
+                    <div><div style="font-size:11px;color:#666;">Phone</div><div style="font-weight:600;font-size:14px;" id="wa-cust-phone"></div></div>
                 </div>
-                <div style="margin-top:10px; font-size:11px; color:#666;">🔗 Tracking Link: <a id="wa-track-link" target="_blank" style="color:#075E54; word-break:break-all; font-weight:600;"></a></div>
+                <div style="font-size:11px;color:#555;">🔗 Tracking Link: <a id="wa-track-link" target="_blank" style="font-weight:600;word-break:break-all;font-size:11px;"></a></div>
             </div>
-
-            <!-- Send Buttons -->
-            <div style="font-size:12px; font-weight:700; color:#555; margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px;">Message পাঠান:</div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                <button id="wa-btn-confirm" style="background:#25D366; color:white; border:none; padding:12px; border-radius:10px; cursor:pointer; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px;">
-                    ✅ Order Confirm
-                </button>
-                <button id="wa-btn-delivery" style="background:#2980b9; color:white; border:none; padding:12px; border-radius:10px; cursor:pointer; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px;">
-                    🚛 On Delivery
-                </button>
-                <button id="wa-btn-delivered" style="background:#27ae60; color:white; border:none; padding:12px; border-radius:10px; cursor:pointer; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px;">
-                    🎉 Delivered
-                </button>
-                <button id="wa-btn-cancelled" style="background:#e74c3c; color:white; border:none; padding:12px; border-radius:10px; cursor:pointer; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px;">
-                    ❌ Cancelled
-                </button>
+            <div style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">Message টাইপ বেছে নিন:</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <button id="wa-btn-confirm" style="background:#25D366;color:#fff;border:none;padding:13px 10px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:700;">✅ Order Confirm</button>
+                <button id="wa-btn-delivery" style="background:#1565c0;color:#fff;border:none;padding:13px 10px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:700;">🚛 On Delivery</button>
+                <button id="wa-btn-delivered" style="background:#2e7d32;color:#fff;border:none;padding:13px 10px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:700;">🎉 Delivered</button>
+                <button id="wa-btn-cancelled" style="background:#c62828;color:#fff;border:none;padding:13px 10px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:700;">❌ Cancelled</button>
             </div>
-            <div style="margin-top:12px; font-size:11px; color:#aaa; text-align:center;">WhatsApp খুলবে → Send বাটন চাপুন</div>
+            <div style="margin-top:12px;font-size:11px;color:#aaa;text-align:center;">WhatsApp app খুলবে → Send বাটন চাপুন</div>
         </div>
     </div>
 </div>
@@ -1754,9 +1741,10 @@ table.dash-table tbody tr:nth-child(n+6){ animation-delay: 0.30s; }
 <!-- ===================== SCRIPTS ===================== -->
 <script>
 // ========================================================
-// ☁️ GOOGLE SHEETS CLOUD SYNC SYSTEM
+// ☁️ GOOGLE SHEETS CLOUD SYNC + 📱 WHATSAPP TRACKING
 // ========================================================
-// ✅ আপনার Google Apps Script URL এখানে hardcode করা হয়েছে
+
+// ✅ আপনার Google Apps Script URL (hardcoded)
 const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzizhePK9_ZwJdVe1ZynzjdgHdoAU3TevOPhZJepcv_7jyGOCv4E6gYFHdbhwvRCEI9TQ/exec';
 
 function getScriptUrl() {
@@ -1764,28 +1752,37 @@ function getScriptUrl() {
 }
 
 function getSiteUrl() {
-    return (localStorage.getItem('rfSiteUrl') || '').replace(/\/$/, '');
+    return (localStorage.getItem('rfSiteUrl') || '').replace(/\/+$/, '');
 }
 
-function saveScriptUrl() {
-    const url = document.getElementById('edit-script-url').value.trim();
-    if (!url) { setCloudStatus('❌ URL দিন', 'red'); return; }
-    localStorage.setItem('rfGoogleScriptUrl', url);
-    // Site URL also save if provided
-    const siteEl = document.getElementById('edit-site-url');
-    if(siteEl && siteEl.value.trim()) {
-        localStorage.setItem('rfSiteUrl', siteEl.value.trim());
+// Settings-এ URL গুলো save করার ফাংশন
+function saveAllUrls() {
+    const scriptEl = document.getElementById('edit-script-url');
+    const siteEl   = document.getElementById('edit-site-url');
+
+    if (scriptEl && scriptEl.value.trim()) {
+        localStorage.setItem('rfGoogleScriptUrl', scriptEl.value.trim());
     }
-    setCloudStatus('✅ URL সংরক্ষিত হয়েছে!', 'green');
+    if (siteEl && siteEl.value.trim()) {
+        let siteUrl = siteEl.value.trim().replace(/\/+$/, '');
+        if (!siteUrl.startsWith('http')) siteUrl = 'https://' + siteUrl;
+        localStorage.setItem('rfSiteUrl', siteUrl);
+        // Preview update
+        const prev = document.getElementById('wa-url-preview');
+        if (prev) prev.textContent = '✅ Tracking link: ' + siteUrl + '?track=2572 (example)';
+    }
+    setCloudStatus('✅ সব URL সংরক্ষিত হয়েছে!', 'green');
 }
+
+// Legacy alias
+function saveScriptUrl() { saveAllUrls(); }
 
 async function testScriptConnection() {
     const url = getScriptUrl();
-    if (!url) { setCloudStatus('❌ প্রথমে URL দিন ও Save করুন', 'red'); return; }
-    setCloudStatus('🔄 পরীক্ষা করা হচ্ছে...', 'blue');
+    setCloudStatus('🔄 পরীক্ষা করা হচ্ছে...', '#555');
     try {
         await fetch(url + '?action=ping', { mode: 'no-cors' });
-        setCloudStatus('✅ Connection সফল! এখন Force Sync করুন।', 'green');
+        setCloudStatus('✅ Connection সফল! Force Sync করুন।', 'green');
     } catch(e) {
         setCloudStatus('❌ Connection ব্যর্থ। URL চেক করুন।', 'red');
     }
@@ -1796,215 +1793,240 @@ function setCloudStatus(msg, color) {
     if (el) { el.textContent = msg; el.style.color = color; }
 }
 
-// Cloud sync: সব invoice data Google Sheets-এ save করা (silent - print-এ কিছু দেখাবে না)
+// Silent cloud sync (print-এ কিছু দেখাবে না)
 async function saveCloudData() {
     const url = getScriptUrl();
     if (!url) return;
 
-    const history = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
-    const invNum  = localStorage.getItem('invNum') || '2572';
+    const history     = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
+    const invNum      = localStorage.getItem('invNum') || '2572';
     const commissions = JSON.parse(localStorage.getItem('salesCommissions') || '[]');
 
     const payload = {
         action: 'saveData',
         data: {
             invoiceCounter: invNum,
-            allInvoices: JSON.stringify(history),
+            allInvoices:    JSON.stringify(history),
             salesCommissions: JSON.stringify(commissions),
             companyName:  localStorage.getItem('companyName') || '',
             compAddress:  localStorage.getItem('compAddress') || '',
             compPhone:    localStorage.getItem('compPhone') || ''
         }
     };
-
     try {
-        fetch(url, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        // Silent: কোনো visual indicator দেখাবে না
-    } catch(e) { console.log('Cloud sync failed, local only.'); }
+        fetch(url, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    } catch(e) { console.log('Cloud sync failed.'); }
 }
 
-// Cloud থেকে data load করা
 async function loadCloudData() {
     const url = getScriptUrl();
     if (!url) return false;
-
-    showCloudIndicator('⬇️ Cloud থেকে লোড হচ্ছে...');
     try {
-        const response = await fetch(url + '?action=loadData', { method: 'GET' });
-        const result = await response.json();
-
+        const response = await fetch(url + '?action=loadData');
+        const result   = await response.json();
         if (result.status === 'success' && result.data) {
             const d = result.data;
-
-            // Invoice counter — cloud থেকে নেওয়া হবে
             if (d.invoiceCounter) {
-                const cloudNum = parseInt(d.invoiceCounter);
-                const localNum = parseInt(localStorage.getItem('invNum') || '2572');
-                // সবচেয়ে বড় নম্বরটা রাখব
-                const latest = Math.max(cloudNum, localNum);
+                const latest = Math.max(parseInt(d.invoiceCounter), parseInt(localStorage.getItem('invNum') || '2572'));
                 localStorage.setItem('invNum', latest.toString());
-                document.getElementById('inv-no').innerText = latest;
+                const el = document.getElementById('inv-no');
+                if (el) el.innerText = latest;
             }
-
-            // Invoice history merge
             if (d.allInvoices) {
                 try {
-                    const cloudHistory = JSON.parse(d.allInvoices);
-                    const localHistory = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
-                    // Merge: cloud + local, duplicate invoice numbers নিয়ে cloud টা রাখব
-                    const merged = [...cloudHistory];
-                    localHistory.forEach(li => {
-                        if (!merged.find(ci => ci.invoiceNo === li.invoiceNo)) {
-                            merged.push(li);
-                        }
-                    });
+                    const cloudH = JSON.parse(d.allInvoices);
+                    const localH = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
+                    const merged = [...cloudH];
+                    localH.forEach(li => { if (!merged.find(ci => ci.invoiceNo === li.invoiceNo)) merged.push(li); });
                     localStorage.setItem('invoiceHistory', JSON.stringify(merged));
                 } catch(e) {}
             }
-
-            // Commissions
             if (d.salesCommissions) {
-                try {
-                    const cloudComm = JSON.parse(d.salesCommissions);
-                    localStorage.setItem('salesCommissions', JSON.stringify(cloudComm));
-                } catch(e) {}
+                try { localStorage.setItem('salesCommissions', d.salesCommissions); } catch(e) {}
             }
-
-            hideCloudIndicator();
             renderDashboard();
             return true;
         }
-    } catch(e) {
-        console.log('Could not load cloud data, using local storage.');
-    }
-    hideCloudIndicator();
+    } catch(e) { console.log('Cloud load failed, using local.'); }
     return false;
 }
 
 function forceSyncToCloud() {
     saveCloudData();
-    setCloudStatus('⬆️ Cloud-এ পাঠানো হচ্ছে... (৫-১০ সেকেন্ড পর check করুন)', 'blue');
-    setTimeout(() => setCloudStatus('✅ Sync request পাঠানো হয়েছে', 'green'), 2000);
+    setCloudStatus('⬆️ পাঠানো হচ্ছে...', '#555');
+    setTimeout(() => setCloudStatus('✅ Sync সম্পন্ন হয়েছে', 'green'), 2500);
 }
 
 async function forceLoadFromCloud() {
-    setCloudStatus('⬇️ Cloud থেকে লোড করা হচ্ছে...', 'blue');
-    const success = await loadCloudData();
-    if (success) {
-        setCloudStatus('✅ Cloud থেকে সফলভাবে লোড হয়েছে!', 'green');
-        loadInvoicePage();
-    } else {
-        setCloudStatus('❌ Cloud থেকে লোড করা যায়নি। URL ঠিক আছে কি?', 'red');
-    }
+    setCloudStatus('⬇️ লোড হচ্ছে...', '#555');
+    const ok = await loadCloudData();
+    if (ok) { setCloudStatus('✅ Cloud থেকে লোড হয়েছে!', 'green'); loadInvoicePage(); }
+    else     { setCloudStatus('❌ লোড হয়নি। URL চেক করুন।', 'red'); }
 }
 
-function showCloudIndicator(msg) { /* Silent - print এ দেখাবে না */ }
-function hideCloudIndicator() { const el = document.getElementById('rf-cloud-ind'); if(el) el.remove(); }
+// Print-এ দেখাবে না (silent)
+function showCloudIndicator(msg) {}
+function hideCloudIndicator() {}
 
-// ========================================================
-// 📱 WHATSAPP NOTIFICATION + CUSTOMER TRACKING SYSTEM
-// ========================================================
+// ============================================================
+// 📱 WHATSAPP NOTIFICATION SYSTEM
+// ============================================================
 
-// Tracking link তৈরি করা
 function buildTrackingLink(invoiceNo) {
     const siteUrl = getSiteUrl();
     if (!siteUrl) return null;
-    return `${siteUrl}?track=${invoiceNo}`;
+    return siteUrl + '?track=' + invoiceNo;
 }
 
-// WhatsApp message পাঠানো
-function sendWhatsAppMessage(invoiceData, type = 'confirm') {
-    const siteUrl = getSiteUrl();
-    if (!siteUrl) {
-        alert('⚠️ প্রথমে Settings-এ আপনার Website URL দিন!\nযেমন: https://rahman-furniture.netlify.app');
-        showModal('companySettingsModal');
-        return;
+// WhatsApp popup খোলা
+function openWhatsAppModal() {
+    const invoiceNo = document.getElementById('inv-no').innerText;
+    // আগে invoice save করি
+    const invoiceData = collectInvoiceData();
+    saveInvoiceToHistory(invoiceData);
+    saveCommission(invoiceData);
+    saveCloudData();
+
+    const siteUrl    = getSiteUrl();
+    const trackLink  = siteUrl ? buildTrackingLink(invoiceNo) : null;
+
+    document.getElementById('wa-inv-no').textContent    = invoiceNo;
+    document.getElementById('wa-cust-name').textContent = invoiceData.customerName || '—';
+    document.getElementById('wa-cust-phone').textContent= invoiceData.customerPhone || '—';
+
+    const linkEl = document.getElementById('wa-track-link');
+    if (trackLink) {
+        linkEl.textContent = trackLink;
+        linkEl.href        = trackLink;
+        linkEl.style.color = '#075E54';
+    } else {
+        linkEl.textContent = '⚠️ Settings-এ Website URL দিন';
+        linkEl.href        = '#';
+        linkEl.style.color = '#e67e22';
     }
 
-    const phone = (invoiceData.customerPhone || '').replace(/\D/g, '');
-    const waPhone = phone.startsWith('0') ? '88' + phone : phone.startsWith('880') ? phone : '88' + phone;
+    // button click এ invoice data পাঠাই
+    ['confirm','delivery','delivered','cancelled'].forEach(type => {
+        document.getElementById('wa-btn-' + type).onclick = () => sendWAMessage(invoiceData, type, trackLink);
+    });
 
-    const trackLink = buildTrackingLink(invoiceData.invoiceNo);
-    const compName  = localStorage.getItem('companyName') || 'RAHMAN FURNITURE';
-    const custName  = invoiceData.customerName || 'Customer';
-    const invNo     = invoiceData.invoiceNo;
-    const total     = parseFloat(invoiceData.grandTotal || 0).toLocaleString();
-    const due       = parseFloat(invoiceData.due || 0).toLocaleString();
+    document.getElementById('wa-modal').style.display = 'block';
+}
 
-    let msg = '';
-    if (type === 'confirm') {
-        msg = `🛋️ *${compName}*\n\nআস্সালামু আলাইকুম, প্রিয় *${custName}*!\n\nআপনার অর্ডারটি সফলভাবে নিশ্চিত হয়েছে। ধন্যবাদ আমাদের বেছে নেওয়ার জন্য! 🎉\n\n📦 *Invoice No:* ${invNo}\n💰 *মোট পরিমাণ:* ${total} ৳\n🔴 *বাকি:* ${due} ৳\n\n🔗 আপনার ডেলিভারি ট্র্যাক করুন:\n${trackLink}\n\n_${compName} — আপনার বিশ্বস্ত ফার্নিচার পার্টনার_`;
-    } else if (type === 'delivery') {
-        msg = `🚚 *${compName}*\n\nপ্রিয় *${custName}*,\n\nআপনার পণ্যটি *এখন ডেলিভারিতে আছে!* 🚛\n\n📦 *Invoice No:* ${invNo}\n\n🔗 ডেলিভারি স্ট্যাটাস দেখুন:\n${trackLink}\n\nযেকোনো সমস্যায় যোগাযোগ করুন।`;
-    } else if (type === 'delivered') {
-        msg = `✅ *${compName}*\n\nপ্রিয় *${custName}*,\n\nআপনার পণ্যটি সফলভাবে *ডেলিভারি সম্পন্ন* হয়েছে! 🎊\n\n📦 *Invoice No:* ${invNo}\n\n🔗 ডেলিভারি কনফার্মেশন:\n${trackLink}\n\nআমাদের সাথে থাকুন। ধন্যবাদ! 🙏`;
-    } else if (type === 'cancelled') {
-        msg = `❌ *${compName}*\n\nপ্রিয় *${custName}*,\n\nদুঃখিত, আপনার অর্ডার (#${invNo}) *বাতিল করা হয়েছে।*\n\n🔗 বিস্তারিত দেখুন:\n${trackLink}\n\nআরও জানতে আমাদের সাথে যোগাযোগ করুন।`;
+function sendWAMessage(inv, type, trackLink) {
+    const phone   = (inv.customerPhone || '').replace(/\D/g, '');
+    let waPhone   = phone;
+    if (phone.startsWith('0'))   waPhone = '88' + phone;
+    else if (!phone.startsWith('880')) waPhone = '880' + phone;
+
+    if (!waPhone || waPhone.length < 10) {
+        alert('⚠️ Customer-এর Phone Number নেই Invoice-এ!'); return;
     }
 
-    const waUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(msg)}`;
+    const comp    = localStorage.getItem('companyName') || 'RAHMAN FURNITURE';
+    const compPh  = localStorage.getItem('compPhone')   || '+8801794526688';
+    const name    = inv.customerName  || 'Customer';
+    const invNo   = inv.invoiceNo;
+    const total   = parseFloat(inv.grandTotal || 0).toLocaleString('en-BD');
+    const due     = parseFloat(inv.due       || 0).toLocaleString('en-BD');
+    const link    = trackLink || '(URL set করুন Settings-এ)';
+
+    const msgs = {
+        confirm:
+`🛋️ *${comp}*
+
+আস্সালামু আলাইকুম, *${name}* ভাই/আপু!
+
+আপনার অর্ডার সফলভাবে নিশ্চিত হয়েছে ✅
+
+📦 *Invoice No:* RF-${invNo}
+💰 *মোট মূল্য:* ৳${total}
+🔴 *বাকি:* ৳${due}
+
+🔗 *আপনার Invoice ও Delivery Status দেখুন:*
+${link}
+
+যোগাযোগ: ${compPh}
+ধন্যবাদ 🙏`,
+
+        delivery:
+`🚛 *${comp}*
+
+প্রিয় *${name}*,
+
+আপনার পণ্য এখন *ডেলিভারিতে রওনা দিয়েছে!* 🎉
+
+📦 Invoice No: RF-${invNo}
+
+🔗 *Live Delivery Status:*
+${link}
+
+যোগাযোগ: ${compPh}`,
+
+        delivered:
+`✅ *${comp}*
+
+প্রিয় *${name}*,
+
+আপনার পণ্য সফলভাবে *পৌঁছে গেছে!* 🎊
+
+📦 Invoice No: RF-${invNo}
+
+🔗 Delivery Confirmation:
+${link}
+
+আমাদের সাথে থাকার জন্য ধন্যবাদ! 🙏`,
+
+        cancelled:
+`❌ *${comp}*
+
+প্রিয় *${name}*,
+
+দুঃখিত, আপনার অর্ডার (#RF-${invNo}) *বাতিল করা হয়েছে।*
+
+🔗 বিস্তারিত:
+${link}
+
+যোগাযোগ: ${compPh}`
+    };
+
+    const text   = msgs[type] || msgs.confirm;
+    const waUrl  = 'https://wa.me/' + waPhone + '?text=' + encodeURIComponent(text);
     window.open(waUrl, '_blank');
 }
 
-// Invoice topbar-এ WhatsApp button দেখানো
-function showWhatsAppOptions(invoiceNo) {
-    const history = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
-    const inv = history.find(i => i.invoiceNo == invoiceNo);
-    if (!inv) { alert('Invoice save করুন আগে।'); return; }
+// ============================================================
+// 📦 CUSTOMER TRACKING PAGE (?track=INVOICE_NO)
+// ============================================================
 
-    const modal = document.getElementById('wa-modal');
-    document.getElementById('wa-inv-no').textContent = inv.invoiceNo;
-    document.getElementById('wa-cust-name').textContent = inv.customerName || '—';
-    document.getElementById('wa-cust-phone').textContent = inv.customerPhone || '—';
-    const siteUrl = getSiteUrl();
-    const trackLink = siteUrl ? buildTrackingLink(inv.invoiceNo) : '⚠️ Settings-এ Website URL দিন';
-    document.getElementById('wa-track-link').textContent = trackLink;
-    document.getElementById('wa-track-link').href = trackLink || '#';
-
-    // Button events
-    document.getElementById('wa-btn-confirm').onclick   = () => sendWhatsAppMessage(inv, 'confirm');
-    document.getElementById('wa-btn-delivery').onclick  = () => sendWhatsAppMessage(inv, 'delivery');
-    document.getElementById('wa-btn-delivered').onclick = () => sendWhatsAppMessage(inv, 'delivered');
-    document.getElementById('wa-btn-cancelled').onclick = () => sendWhatsAppMessage(inv, 'cancelled');
-    modal.style.display = 'block';
-}
-
-// ======================================================
-// 📦 CUSTOMER TRACKING PAGE (URL: ?track=INVOICE_NO)
-// ======================================================
 async function maybeShowTrackingPage() {
-    const params = new URLSearchParams(window.location.search);
+    const params  = new URLSearchParams(window.location.search);
     const trackNo = params.get('track');
     if (!trackNo) return false;
 
-    // Hide main UI, show tracking page
+    // সব কিছু লুকাই, tracking UI দেখাই
     document.body.innerHTML = '';
-    document.body.style.background = 'linear-gradient(135deg, #001f3f 0%, #003366 50%, #006666 100%)';
-    document.body.style.minHeight = '100vh';
-    document.body.style.display = 'flex';
-    document.body.style.alignItems = 'center';
-    document.body.style.justifyContent = 'center';
-    document.body.style.fontFamily = "'Segoe UI', Arial, sans-serif";
-    document.body.style.padding = '20px';
+    document.body.style.cssText = 'margin:0;padding:0;font-family:"Segoe UI",Arial,sans-serif;background:linear-gradient(160deg,#001f3f 0%,#003366 60%,#005555 100%);min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:20px 16px;box-sizing:border-box;';
 
-    // Loading state
     document.body.innerHTML = `
-    <div id="track-wrap" style="background:#fff; border-radius:20px; max-width:480px; width:100%; padding:32px; box-shadow:0 20px 60px rgba(0,0,0,0.4); text-align:center;">
-        <div style="font-size:40px; margin-bottom:12px;">🚚</div>
-        <div style="font-size:16px; color:#555;">ডেলিভারি স্ট্যাটাস লোড হচ্ছে...</div>
-        <div style="margin-top:16px; color:#aaa; font-size:13px;">Invoice #${trackNo}</div>
+    <div id="track-root" style="background:#fff;border-radius:20px;width:100%;max-width:500px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,0.45);">
+        <div style="background:linear-gradient(135deg,#001f3f,#005555);padding:22px 24px;color:#fff;">
+            <div style="font-size:13px;opacity:.7;letter-spacing:1px;text-transform:uppercase;">Order Tracking</div>
+            <div style="font-size:20px;font-weight:800;margin-top:4px;letter-spacing:.3px;">🛋️ Rahman Furniture</div>
+            <div style="font-size:12px;opacity:.65;margin-top:2px;">Invoice #${trackNo}</div>
+        </div>
+        <div style="padding:24px;" id="track-body">
+            <div style="text-align:center;padding:40px 0;color:#aaa;">
+                <div style="font-size:32px;margin-bottom:12px;">⏳</div>
+                <div>তথ্য লোড হচ্ছে...</div>
+            </div>
+        </div>
     </div>`;
 
-    // Fetch data from Google Sheets
-    const url = DEFAULT_SCRIPT_URL;
+    // Google Sheets থেকে data আনা
     let inv = null;
     try {
-        const res  = await fetch(url + '?action=loadData');
+        const res  = await fetch(DEFAULT_SCRIPT_URL + '?action=loadData');
         const data = await res.json();
         if (data.status === 'success' && data.data && data.data.allInvoices) {
             const all = JSON.parse(data.data.allInvoices);
@@ -2012,119 +2034,146 @@ async function maybeShowTrackingPage() {
         }
     } catch(e) {}
 
-    const compName = (inv ? inv.companyName : null) || localStorage.getItem('companyName') || 'RAHMAN FURNITURE';
+    const body = document.getElementById('track-body');
 
     if (!inv) {
-        document.getElementById('track-wrap').innerHTML = `
-        <div style="font-size:48px; margin-bottom:16px;">🔍</div>
-        <h2 style="color:#001f3f; margin-bottom:8px;">Invoice পাওয়া যায়নি</h2>
-        <p style="color:#777; font-size:14px;">Invoice #${trackNo} এর কোনো তথ্য পাওয়া যায়নি।<br>সরাসরি আমাদের সাথে যোগাযোগ করুন।</p>`;
+        body.innerHTML = `
+        <div style="text-align:center;padding:40px 20px;">
+            <div style="font-size:48px;margin-bottom:16px;">🔍</div>
+            <div style="font-size:18px;font-weight:700;color:#001f3f;margin-bottom:8px;">Invoice পাওয়া যায়নি</div>
+            <div style="color:#888;font-size:13px;line-height:1.6;">Invoice #${trackNo} এর কোনো তথ্য এখনো পাওয়া যায়নি।<br>সরাসরি আমাদের সাথে যোগাযোগ করুন।</div>
+        </div>`;
         return true;
     }
 
-    const statusOrder  = ['Processing', 'On Delivery', 'Delivered'];
-    const isCancelled  = inv.deliveryStatus === 'Cancelled';
-    const currentIdx   = statusOrder.indexOf(inv.deliveryStatus);
-
-    const statusConfig = {
-        'Processing':   { icon: '⏳', label: 'প্রক্রিয়াধীন',  color: '#f39c12', bg: '#fff8e1' },
-        'On Delivery':  { icon: '🚛', label: 'ডেলিভারিতে আছে', color: '#2980b9', bg: '#e3f2fd' },
-        'Delivered':    { icon: '✅', label: 'ডেলিভারি সম্পন্ন', color: '#27ae60', bg: '#e8f5e9' },
-        'Cancelled':    { icon: '❌', label: 'বাতিল',           color: '#e74c3c', bg: '#ffeaea' }
+    const STATUS_CONFIG = {
+        'Processing':  { icon:'⏳', label:'অর্ডার প্রক্রিয়াধীন', color:'#f39c12', bg:'#fff8e1', border:'#ffd54f' },
+        'On Delivery': { icon:'🚛', label:'ডেলিভারিতে রওনা দিয়েছে', color:'#1565c0', bg:'#e3f2fd', border:'#90caf9' },
+        'Delivered':   { icon:'✅', label:'ডেলিভারি সম্পন্ন!', color:'#2e7d32', bg:'#e8f5e9', border:'#a5d6a7' },
+        'Cancelled':   { icon:'❌', label:'অর্ডার বাতিল', color:'#c62828', bg:'#ffebee', border:'#ef9a9a' }
     };
-    const curSt = statusConfig[inv.deliveryStatus] || statusConfig['Processing'];
+    const STATUS_STEPS = ['Processing','On Delivery','Delivered'];
 
-    const stepsHtml = isCancelled ? `
-    <div style="padding:12px 16px; background:#ffeaea; border-radius:10px; border:1px solid #f5c6c6; text-align:center; color:#c0392b; font-weight:600; font-size:15px;">
+    const curStatus = inv.deliveryStatus || 'Processing';
+    const cs        = STATUS_CONFIG[curStatus] || STATUS_CONFIG['Processing'];
+    const isCancelled = curStatus === 'Cancelled';
+    const curIdx    = STATUS_STEPS.indexOf(curStatus);
+
+    // Items table
+    const items = (inv.items || []).filter(it => it.desc || it.description);
+    const itemsHtml = items.length ? `
+    <div style="margin-top:20px;">
+        <div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px;">🛋️ পণ্য তালিকা</div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            <thead>
+                <tr style="background:#f5f7fa;">
+                    <th style="padding:8px 10px;text-align:left;color:#555;font-weight:600;border-radius:6px 0 0 6px;">পণ্যের নাম</th>
+                    <th style="padding:8px;text-align:center;color:#555;font-weight:600;">পরিমাণ</th>
+                    <th style="padding:8px 10px;text-align:right;color:#555;font-weight:600;border-radius:0 6px 6px 0;">মূল্য</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${items.map((it,i) => `<tr style="border-bottom:1px solid #f0f0f0;">
+                    <td style="padding:10px 10px;">${it.desc || it.description || '—'}</td>
+                    <td style="padding:10px;text-align:center;">${it.qty || 1}</td>
+                    <td style="padding:10px 10px;text-align:right;font-weight:600;">৳${parseFloat(it.total||it.amount||0).toLocaleString()}</td>
+                </tr>`).join('')}
+            </tbody>
+        </table>
+    </div>` : '';
+
+    // Status timeline
+    const timelineHtml = isCancelled ?
+    `<div style="padding:14px 18px;background:#ffebee;border-radius:10px;border:1.5px solid #ef9a9a;color:#c62828;font-weight:700;font-size:14px;text-align:center;">
         ❌ এই অর্ডারটি বাতিল করা হয়েছে
-    </div>` : statusOrder.map((s, i) => {
-        const done    = i <= currentIdx;
-        const active  = i === currentIdx;
-        const sc      = statusConfig[s];
+    </div>` :
+    STATUS_STEPS.map((s, i) => {
+        const sc      = STATUS_CONFIG[s];
+        const done    = i <= curIdx;
+        const active  = i === curIdx;
         return `
-        <div style="display:flex; align-items:center; gap:14px; padding:10px 0;">
-            <div style="width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;
-                background:${done ? sc.bg : '#f5f5f5'}; border: 2px solid ${done ? sc.color : '#ddd'}; ${active ? 'box-shadow:0 0 0 4px '+sc.color+'33;' : ''}">
+        <div style="display:flex;align-items:center;gap:14px;padding:8px 0;">
+            <div style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;
+                background:${done ? sc.bg : '#f5f5f5'};border:2px solid ${done ? sc.color : '#e0e0e0'};
+                ${active ? 'box-shadow:0 0 0 5px '+sc.color+'22;' : ''}">
                 ${done ? sc.icon : '○'}
             </div>
             <div style="flex:1;">
-                <div style="font-weight:${active?'700':'500'}; color:${done?sc.color:'#aaa'}; font-size:14px;">${sc.label}</div>
-                ${active ? `<div style="font-size:11px; color:#999; margin-top:2px;">বর্তমান অবস্থা</div>` : ''}
+                <div style="font-size:14px;font-weight:${active?'700':'500'};color:${done?sc.color:'#bbb'};">${sc.label}</div>
+                ${active ? '<div style="font-size:11px;color:#aaa;margin-top:2px;">বর্তমান অবস্থা</div>' : ''}
             </div>
-            ${done && !active ? `<span style="color:${sc.color}; font-size:18px;">✓</span>` : ''}
+            ${done && !active ? `<span style="font-size:18px;color:${sc.color};">✓</span>` : ''}
         </div>
-        ${i < statusOrder.length - 1 ? `<div style="margin-left:19px; height:18px; border-left: 2px ${i < currentIdx ? 'solid #ccc' : 'dashed #eee'};"></div>` : ''}`;
+        ${i < STATUS_STEPS.length - 1 ? `<div style="margin-left:19px;height:14px;border-left:2px ${i<curIdx?'solid #ccc':'dashed #eee'};"></div>` : ''}`;
     }).join('');
 
-    const items = (inv.items || []).map(it =>
-        `<tr><td style="padding:8px 4px; border-bottom:1px solid #f5f5f5;">${it.description || it.name || '—'}</td>
-         <td style="padding:8px 4px; border-bottom:1px solid #f5f5f5; text-align:center;">${it.qty}</td>
-         <td style="padding:8px 4px; border-bottom:1px solid #f5f5f5; text-align:right;">${parseFloat(it.amount||0).toLocaleString()} ৳</td></tr>`
-    ).join('');
-
-    document.getElementById('track-wrap').innerHTML = `
-    <!-- Header -->
-    <div style="background:linear-gradient(135deg,#001f3f,#006666); color:#fff; border-radius:14px; padding:20px; margin-bottom:20px;">
-        <div style="font-size:28px; margin-bottom:4px;">🛋️</div>
-        <div style="font-size:18px; font-weight:700; letter-spacing:0.5px;">${compName}</div>
-        <div style="font-size:12px; opacity:0.75; margin-top:4px;">Order Tracking System</div>
-    </div>
-
+    body.innerHTML = `
     <!-- Status Badge -->
-    <div style="background:${curSt.bg}; border:1.5px solid ${curSt.color}; border-radius:30px; display:inline-flex; align-items:center; gap:8px; padding:8px 20px; margin-bottom:20px;">
-        <span style="font-size:20px;">${curSt.icon}</span>
-        <span style="font-weight:700; color:${curSt.color}; font-size:15px;">${curSt.label}</span>
+    <div style="background:${cs.bg};border:1.5px solid ${cs.border};border-radius:40px;display:inline-flex;align-items:center;gap:10px;padding:10px 22px;margin-bottom:20px;">
+        <span style="font-size:22px;">${cs.icon}</span>
+        <span style="font-weight:700;color:${cs.color};font-size:15px;">${cs.label}</span>
     </div>
 
-    <!-- Customer Info -->
-    <div style="background:#f8f9fa; border-radius:12px; padding:14px 16px; text-align:left; margin-bottom:16px;">
-        <div style="font-size:11px; color:#999; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">🧑 অর্ডার তথ্য</div>
-        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
-            <span style="color:#555; font-size:13px;">Invoice No</span>
-            <span style="font-weight:700; color:#001f3f; font-size:13px;">#${inv.invoiceNo}</span>
+    <!-- Customer & Invoice Info -->
+    <div style="background:#f8f9fa;border-radius:12px;padding:16px;margin-bottom:16px;">
+        <div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:12px;">📋 অর্ডার তথ্য</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div><div style="font-size:11px;color:#aaa;">Invoice No</div><div style="font-weight:700;color:#001f3f;font-size:15px;">RF-${inv.invoiceNo}</div></div>
+            <div><div style="font-size:11px;color:#aaa;">তারিখ</div><div style="font-weight:600;font-size:14px;">${inv.date || '—'}</div></div>
+            <div><div style="font-size:11px;color:#aaa;">নাম</div><div style="font-weight:600;font-size:14px;">${inv.customerName || '—'}</div></div>
+            <div><div style="font-size:11px;color:#aaa;">ফোন</div><div style="font-weight:600;font-size:14px;">${inv.customerPhone || '—'}</div></div>
+            ${inv.customerAddress ? `<div style="grid-column:1/-1"><div style="font-size:11px;color:#aaa;">ঠিকানা</div><div style="font-weight:500;font-size:13px;">${inv.customerAddress}${inv.customerPS?', '+inv.customerPS:''}${inv.customerDistrict?', '+inv.customerDistrict:''}</div></div>` : ''}
+            ${inv.deliveryTime ? `<div style="grid-column:1/-1"><div style="font-size:11px;color:#aaa;">Delivery Time</div><div style="font-weight:600;color:#005555;font-size:14px;">📅 ${inv.deliveryTime}</div></div>` : ''}
         </div>
-        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
-            <span style="color:#555; font-size:13px;">নাম</span>
-            <span style="font-weight:600; font-size:13px;">${inv.customerName || '—'}</span>
-        </div>
-        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
-            <span style="color:#555; font-size:13px;">তারিখ</span>
-            <span style="font-size:13px;">${inv.date || '—'}</span>
-        </div>
-        <div style="display:flex; justify-content:space-between;">
-            <span style="color:#555; font-size:13px;">মোট পরিমাণ</span>
-            <span style="font-weight:700; color:#001f3f; font-size:14px;">${parseFloat(inv.grandTotal||0).toLocaleString()} ৳</span>
-        </div>
-        ${parseFloat(inv.due||0) > 0 ? `<div style="display:flex; justify-content:space-between; margin-top:6px;">
-            <span style="color:#e74c3c; font-size:13px;">বাকি</span>
-            <span style="font-weight:700; color:#e74c3c; font-size:14px;">${parseFloat(inv.due).toLocaleString()} ৳</span>
-        </div>` : ''}
     </div>
 
-    <!-- Status Timeline -->
-    <div style="background:#f8f9fa; border-radius:12px; padding:16px; text-align:left; margin-bottom:16px;">
-        <div style="font-size:11px; color:#999; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">📦 ডেলিভারি অগ্রগতি</div>
-        ${stepsHtml}
+    <!-- Items -->
+    ${itemsHtml}
+
+    <!-- Payment Summary -->
+    <div style="background:#f8f9fa;border-radius:12px;padding:16px;margin-top:16px;">
+        <div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:12px;">💰 পেমেন্ট তথ্য</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;justify-content:space-between;font-size:14px;">
+                <span style="color:#666;">Sub Total</span>
+                <span style="font-weight:600;">৳${parseFloat(inv.subtotal||0).toLocaleString()}</span>
+            </div>
+            ${parseFloat(inv.discount||0)>0 ? `<div style="display:flex;justify-content:space-between;font-size:14px;">
+                <span style="color:#27ae60;">Discount</span>
+                <span style="color:#27ae60;font-weight:600;">-৳${parseFloat(inv.discount).toLocaleString()}</span>
+            </div>` : ''}
+            <div style="display:flex;justify-content:space-between;font-size:15px;border-top:1.5px solid #e0e0e0;padding-top:8px;">
+                <span style="font-weight:700;color:#001f3f;">মোট পরিমাণ</span>
+                <span style="font-weight:800;color:#001f3f;font-size:17px;">৳${parseFloat(inv.grandTotal||0).toLocaleString()}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:14px;">
+                <span style="color:#27ae60;">পরিশোধিত</span>
+                <span style="color:#27ae60;font-weight:700;">৳${parseFloat(inv.paid||0).toLocaleString()}</span>
+            </div>
+            ${parseFloat(inv.due||0)>0 ? `<div style="display:flex;justify-content:space-between;font-size:15px;background:#fff0f0;padding:10px 12px;border-radius:8px;border:1px solid #ffcdd2;">
+                <span style="color:#c62828;font-weight:700;">বাকি পরিমাণ</span>
+                <span style="color:#c62828;font-weight:800;font-size:17px;">৳${parseFloat(inv.due).toLocaleString()}</span>
+            </div>` : `<div style="text-align:center;background:#e8f5e9;padding:10px;border-radius:8px;color:#2e7d32;font-weight:700;font-size:13px;">✅ সম্পূর্ণ পরিশোধিত</div>`}
+        </div>
     </div>
 
-    ${items ? `<!-- Items -->
-    <div style="background:#f8f9fa; border-radius:12px; padding:14px 16px; text-align:left; margin-bottom:16px;">
-        <div style="font-size:11px; color:#999; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">🛋️ পণ্য তালিকা</div>
-        <table style="width:100%; border-collapse:collapse; font-size:13px;">
-            <thead><tr style="color:#aaa; font-size:11px;">
-                <th style="text-align:left; padding:4px 4px 8px;">পণ্য</th>
-                <th style="text-align:center; padding:4px;">পরিমাণ</th>
-                <th style="text-align:right; padding:4px;">মূল্য</th>
-            </tr></thead>
-            <tbody>${items}</tbody>
-        </table>
+    <!-- Delivery Timeline -->
+    <div style="background:#f8f9fa;border-radius:12px;padding:16px;margin-top:16px;">
+        <div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:12px;">🚚 ডেলিভারি অগ্রগতি</div>
+        ${timelineHtml}
+    </div>
+
+    ${inv.note ? `<div style="background:#fffde7;border-radius:10px;padding:14px;margin-top:16px;border-left:3px solid #ffc107;">
+        <div style="font-size:11px;color:#999;font-weight:700;margin-bottom:4px;">📝 বিশেষ নোট</div>
+        <div style="font-size:13px;color:#555;">${inv.note}</div>
     </div>` : ''}
 
     <!-- Footer -->
-    <div style="font-size:11px; color:#aaa; margin-top:8px;">
-        যোগাযোগ: ${localStorage.getItem('compPhone') || '+8801794526688'}<br>
-        পেজটি রিফ্রেশ করলে সর্বশেষ স্ট্যাটাস দেখাবে 🔄
+    <div style="text-align:center;margin-top:24px;padding-top:16px;border-top:1px solid #f0f0f0;">
+        <div style="font-size:12px;color:#aaa;">📞 ${localStorage.getItem('compPhone')||'+8801794526688'}</div>
+        <div style="font-size:11px;color:#ccc;margin-top:6px;">পেজ Refresh করলে সর্বশেষ status দেখাবে 🔄</div>
     </div>`;
+
     return true;
 }
 
@@ -2232,11 +2281,9 @@ function updateDeliveryStatus(invoiceNo, selectEl) {
     if (inv) {
         inv.deliveryStatus = newStatus;
         try { localStorage.setItem('invoiceHistory', JSON.stringify(history)); } catch(e){}
-        // ☁️ Cloud sync when status changes
-        saveCloudData();
+        saveCloudData(); // ☁️ sync status change
     }
-    // Update select class
-    const statusMap = { 'Processing': 'processing', 'On Delivery': 'ondelivery', 'Delivered': 'delivered', 'Cancelled': 'cancelled' };
+    const statusMap = { 'Processing':'processing','On Delivery':'ondelivery','Delivered':'delivered','Cancelled':'cancelled' };
     selectEl.className = 'status-select ' + (statusMap[newStatus] || 'processing');
     renderDashboard();
 }
@@ -2705,37 +2752,72 @@ function showModal(modalId) {
         document.getElementById('edit-company-name').value = localStorage.getItem('companyName') || 'RAHMAN FURNITURE';
         document.getElementById('edit-address').value = localStorage.getItem('compAddress') || 'Madaninagar Gol Chattar, Siddhirganj, Narayanganj';
         document.getElementById('edit-phone').value = localStorage.getItem('compPhone') || '+8801794526688';
-        // Pre-fill URLs
-        const scriptEl = document.getElementById('edit-script-url');
-        if(scriptEl) scriptEl.value = getScriptUrl();
+        document.getElementById('edit-script-url').value = getScriptUrl();
         const siteEl = document.getElementById('edit-site-url');
-        if(siteEl) siteEl.value = getSiteUrl();
+        if (siteEl) siteEl.value = getSiteUrl();
+        previewTrackUrl(getSiteUrl());
     }
 }
 function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
 
-function saveCompanySettings() {
+// URL preview
+function previewTrackUrl(val) {
+    const el = document.getElementById('wa-url-preview');
+    if (!el) return;
+    if (val && val.trim()) {
+        let u = val.trim().replace(/\/+$/,'');
+        if (!u.startsWith('http')) u = 'https://' + u;
+        el.textContent = '✅ Link: ' + u + '?track=2572';
+        el.style.color = '#2e7d32';
+    } else {
+        el.textContent = '';
+    }
+}
+
+// Single save function for all settings
+function saveAllSettings() {
     const companyName = document.getElementById('edit-company-name').value;
-    const address = document.getElementById('edit-address').value;
-    const phone = document.getElementById('edit-phone').value;
+    const address     = document.getElementById('edit-address').value;
+    const phone       = document.getElementById('edit-phone').value;
+
     document.getElementById('inv-company-name-display').innerText = companyName;
-    document.getElementById('inv-disp-addr').innerText = '📍 ' + address;
+    document.getElementById('inv-disp-addr').innerText  = '📍 ' + address;
     document.getElementById('inv-disp-phone').innerText = '📞 Phone: ' + phone;
     localStorage.setItem('companyName', companyName);
     localStorage.setItem('compAddress', address);
-    localStorage.setItem('compPhone', phone);
+    localStorage.setItem('compPhone',   phone);
+
+    // Site URL
+    const siteEl = document.getElementById('edit-site-url');
+    if (siteEl && siteEl.value.trim()) {
+        let u = siteEl.value.trim().replace(/\/+$/,'');
+        if (!u.startsWith('http')) u = 'https://' + u;
+        localStorage.setItem('rfSiteUrl', u);
+    }
+
+    // Script URL
+    const scriptEl = document.getElementById('edit-script-url');
+    if (scriptEl && scriptEl.value.trim()) {
+        localStorage.setItem('rfGoogleScriptUrl', scriptEl.value.trim());
+    }
+
+    // Logo
     const logoFile = document.getElementById('edit-logo').files[0];
     if(logoFile) {
         const reader = new FileReader();
         reader.onload = function(e) {
             try { localStorage.setItem('invoiceLogo', e.target.result); invApplyLogo(e.target.result); }
-            catch(err) { alert("Storage full! Logo not saved."); }
+            catch(err) { alert('Storage full! Logo not saved.'); }
         };
         reader.readAsDataURL(logoFile);
     }
+
     closeModal('companySettingsModal');
-    alert('Company settings saved successfully!');
+    alert('✅ Settings সংরক্ষিত হয়েছে!');
 }
+
+// Legacy alias
+function saveCompanySettings() { saveAllSettings(); }
 
 // ========================================================
 // DELIVERY SETTLEMENT FUNCTIONS (100% same as original)
@@ -2789,9 +2871,9 @@ function delResetPage() {
 // WINDOW INIT
 // ========================================================
 window.onload = async function() {
-    // 📦 Tracking page check — customer link হলে tracking UI দেখাও
+    // 📦 Customer tracking page check
     const isTracking = await maybeShowTrackingPage();
-    if (isTracking) return; // Stop here for customer tracking view
+    if (isTracking) return;
 
     // Generate QR Code for Facebook page
     new QRCode(document.getElementById("inv-qr-code"), {
