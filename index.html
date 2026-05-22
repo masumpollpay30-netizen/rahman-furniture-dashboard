@@ -1822,8 +1822,13 @@ async function loadCloudData() {
     const url = getScriptUrl();
     if (!url) return false;
     try {
-        const response = await fetch(url + '?action=loadData');
-        const result   = await response.json();
+        // POST দিয়ে loadData করা হচ্ছে (Google Apps Script CORS issue avoid করতে)
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'loadData' })
+        });
+        const result = await response.json();
         if (result.status === 'success' && result.data) {
             const d = result.data;
             if (d.invoiceCounter) {
@@ -2023,10 +2028,14 @@ async function maybeShowTrackingPage() {
         </div>
     </div>`;
 
-    // Google Sheets থেকে data আনা
+    // Google Sheets থেকে data আনা (POST method)
     let inv = null;
     try {
-        const res  = await fetch(DEFAULT_SCRIPT_URL + '?action=loadData');
+        const res  = await fetch(DEFAULT_SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'loadData' })
+        });
         const data = await res.json();
         if (data.status === 'success' && data.data && data.data.allInvoices) {
             const all = JSON.parse(data.data.allInvoices);
@@ -2908,9 +2917,14 @@ window.onload = async function() {
     // ☁️ Try loading from cloud first (if URL configured)
     const cloudLoaded = await loadCloudData();
     if (!cloudLoaded) {
-        // Cloud না পেলে local data দিয়ে চলবে
         let localInv = localStorage.getItem('invNum') || "2572";
         document.getElementById('inv-no').innerText = localInv;
+    }
+
+    // Auto-sync: local-এ data থাকলে cloud-এ পাঠিয়ে দাও
+    const localHistory = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
+    if (localHistory.length > 0) {
+        saveCloudData();
     }
 
     // Render dashboard
