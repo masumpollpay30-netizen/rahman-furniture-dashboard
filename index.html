@@ -1873,10 +1873,17 @@ function hideCloudIndicator() {}
 // 📱 WHATSAPP NOTIFICATION SYSTEM
 // ============================================================
 
-function buildTrackingLink(invoiceNo) {
+// Random token তৈরি করা (invoice number expose হবে না)
+function generateTrackToken() {
+    return 'rf' + Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+}
+
+function buildTrackingLink(inv) {
     const siteUrl = getSiteUrl();
     if (!siteUrl) return null;
-    return siteUrl + '?track=' + invoiceNo;
+    // token না থাকলে নতুন তৈরি করো
+    const token = inv.trackToken || generateTrackToken();
+    return siteUrl + '?track=' + token;
 }
 
 // WhatsApp popup খোলা
@@ -1889,7 +1896,7 @@ function openWhatsAppModal() {
     saveCloudData();
 
     const siteUrl    = getSiteUrl();
-    const trackLink  = siteUrl ? buildTrackingLink(invoiceNo) : null;
+    const trackLink  = siteUrl ? buildTrackingLink(invoiceData) : null;
 
     document.getElementById('wa-inv-no').textContent    = invoiceNo;
     document.getElementById('wa-cust-name').textContent = invoiceData.customerName || '—';
@@ -2014,7 +2021,7 @@ async function maybeShowTrackingPage() {
         <div style="background:linear-gradient(135deg,#001f3f,#005555);padding:22px 24px;color:#fff;">
             <div style="font-size:13px;opacity:.7;letter-spacing:1px;text-transform:uppercase;">Order Tracking</div>
             <div style="font-size:20px;font-weight:800;margin-top:4px;letter-spacing:.3px;">🛋️ Rahman Furniture</div>
-            <div style="font-size:12px;opacity:.65;margin-top:2px;">Invoice #${trackNo}</div>
+            <div style="font-size:12px;opacity:.65;margin-top:2px;">Order Status</div>
         </div>
         <div style="padding:24px;" id="track-body">
             <div style="text-align:center;padding:40px 0;color:#aaa;">
@@ -2031,7 +2038,9 @@ async function maybeShowTrackingPage() {
         const data = await res.json();
         if (data.status === 'success' && data.data && data.data.allInvoices) {
             const all = JSON.parse(data.data.allInvoices);
-            inv = all.find(i => String(i.invoiceNo) === String(trackNo));
+            // Token দিয়ে খোঁজো (secure) — না পেলে invoice number দিয়েও চেষ্টা করো
+            inv = all.find(i => i.trackToken === trackNo)
+               || all.find(i => String(i.invoiceNo) === String(trackNo));
         }
     } catch(e) { console.log('Tracking load error:', e); }
 
@@ -2042,7 +2051,7 @@ async function maybeShowTrackingPage() {
         <div style="text-align:center;padding:40px 20px;">
             <div style="font-size:48px;margin-bottom:16px;">🔍</div>
             <div style="font-size:18px;font-weight:700;color:#001f3f;margin-bottom:8px;">Invoice পাওয়া যায়নি</div>
-            <div style="color:#888;font-size:13px;line-height:1.6;">Invoice #${trackNo} এর কোনো তথ্য এখনো পাওয়া যায়নি।<br>সরাসরি আমাদের সাথে যোগাযোগ করুন।</div>
+            <div style="color:#888;font-size:13px;line-height:1.6;">এই লিংকের কোনো তথ্য এখনো পাওয়া যায়নি।<br>সরাসরি আমাদের সাথে যোগাযোগ করুন।</div>
         </div>`;
         return true;
     }
@@ -2477,6 +2486,7 @@ function collectInvoiceData() {
         salesman: document.getElementById('inv-admin-name').value,
         deliveryStatus: 'Processing',
         commissionStatus: 'Active',
+        trackToken: generateTrackToken(),
         savedDate: new Date().toISOString()
     };
 }
@@ -2488,6 +2498,8 @@ function saveInvoiceToHistory(invoiceData) {
         invoiceData.deliveryStatus = history[existingIndex].deliveryStatus;
         invoiceData.commissionStatus = history[existingIndex].commissionStatus;
         invoiceData.savedDate = history[existingIndex].savedDate;
+        // পুরনো token রাখো — নতুন token দিলে পুরনো WhatsApp link কাজ করবে না
+        invoiceData.trackToken = history[existingIndex].trackToken || invoiceData.trackToken;
         history[existingIndex] = invoiceData;
     } else { history.push(invoiceData); }
     try { localStorage.setItem('invoiceHistory', JSON.stringify(history)); }
