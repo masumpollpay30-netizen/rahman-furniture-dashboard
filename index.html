@@ -24,7 +24,195 @@
             --sidebar-w: 230px;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust: exact; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; transition: background 0.3s, color 0.3s; }
+
+        /* ===================== THEME TRANSITION ===================== */
+        *, *::before, *::after { transition: background-color 0.3s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease !important; }
+        @media print { *, *::before, *::after { transition: none !important; } }
+
+        /* ═══════════════════════════════════════
+           DARK MODE (partial — UI only, docs white)
+        ═══════════════════════════════════════ */
+        body.dark-mode { background: #0f1117; color: #e0e0e0; }
+        body.dark-mode .sidebar { background: #1a1d27; border-color: #2a2d3a; box-shadow: 2px 0 10px rgba(0,0,0,0.4); }
+        body.dark-mode .sidebar-brand { background: #0d1520; }
+        body.dark-mode .sidebar-section { color: #555; }
+        body.dark-mode .sidebar-menu li a { color: #9aa; }
+        body.dark-mode .sidebar-menu li a:hover { background: #23273a; color: #4ecdc4; }
+        body.dark-mode .sidebar-menu li a.active { background: #1a2e2e; color: #4ecdc4; }
+        body.dark-mode .sidebar-footer { color: #555; border-color: #2a2d3a; }
+        body.dark-mode .topbar { background: #1a1d27; border-color: #2a2d3a; box-shadow: 0 1px 6px rgba(0,0,0,0.3); }
+        body.dark-mode .topbar h2 { color: #e2e2e2; }
+        body.dark-mode .page-view { background: #0f1117; }
+        body.dark-mode .stat-card { background: #1e2130; box-shadow: 0 4px 18px rgba(0,0,0,0.35); }
+        body.dark-mode .stat-card h3 { color: #e5e5e5; }
+        body.dark-mode .stat-card p { color: #778; }
+        body.dark-mode .table-container { background: #1e2130; box-shadow: 0 4px 18px rgba(0,0,0,0.3); }
+        body.dark-mode .table-container h3 { color: #e0e0e0; }
+        body.dark-mode table.dash-table td { border-color: #2a2d3a; color: #ccc; }
+        body.dark-mode table.dash-table tr:hover td { background: #252838; }
+        body.dark-mode .modal-content { background: #1a1d27; color: #e0e0e0; }
+        body.dark-mode .modal-header { border-color: #2a2d3a; }
+        body.dark-mode .modal-header h3 { color: #4ecdc4; }
+        body.dark-mode .form-group input, body.dark-mode .form-group select { background: #23273a; border-color: #3a3d4a; color: #e0e0e0; }
+        body.dark-mode .history-table th { background: #23273a; border-color: #3a3d4a; color: #ccc; }
+        body.dark-mode .history-table td { border-color: #2a2d3a; color: #ccc; }
+        body.dark-mode .commission-summary { background: #23273a; }
+        body.dark-mode .commission-summary h3 { color: #4ecdc4; }
+        body.dark-mode .commission-card { background: #1a1d27; border-color: #3a3d4a; }
+        body.dark-mode .del-detail-row { border-color: #2a2d3a; }
+        body.dark-mode .del-detail-label { color: #778; }
+        body.dark-mode .del-detail-value { color: #ccc; }
+
+        /* ═══════════════════════════════════════
+           FULL DARK MODE (সব কিছু dark)
+        ═══════════════════════════════════════ */
+        body.dark-full { background: #080b0f; color: #e0e0e0; }
+        body.dark-full .sidebar { background: #10131c; border-color: #1e2130; box-shadow: 2px 0 12px rgba(0,0,0,0.6); }
+        body.dark-full .sidebar-brand { background: #080b0f; }
+        body.dark-full .sidebar-section { color: #444; }
+        body.dark-full .sidebar-menu li a { color: #8a9aa8; }
+        body.dark-full .sidebar-menu li a:hover { background: #1a1f2e; color: #5de8df; }
+        body.dark-full .sidebar-menu li a.active { background: #142828; color: #5de8df; }
+        body.dark-full .sidebar-footer { color: #444; border-color: #1e2130; }
+        body.dark-full .topbar { background: #10131c; border-color: #1e2130; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        body.dark-full .topbar h2 { color: #ddd; }
+        body.dark-full .page-view { background: #080b0f; }
+        body.dark-full .stat-card { background: #12161f; border-bottom-color: #3a4a6b !important; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        body.dark-full .stat-card h3 { color: #e8e8e8; }
+        body.dark-full .stat-card p { color: #556; }
+        body.dark-full .table-container { background: #12161f; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        body.dark-full .table-container h3 { color: #ddd; }
+        body.dark-full table.dash-table td { border-color: #1e2130; color: #bbb; background: transparent; }
+        body.dark-full table.dash-table tr:hover td { background: #1a1f2e; }
+        body.dark-full .modal-content { background: #12161f; color: #e0e0e0; }
+        body.dark-full .modal-header { border-color: #1e2130; }
+        body.dark-full .modal-header h3 { color: #5de8df; }
+        body.dark-full .form-group input, body.dark-full .form-group select { background: #1a1f2e; border-color: #2a3050; color: #e0e0e0; }
+        body.dark-full .history-table th { background: #1a1f2e; border-color: #2a3050; color: #bbb; }
+        body.dark-full .history-table td { border-color: #1e2130; color: #bbb; }
+        body.dark-full .commission-summary { background: #1a1f2e; }
+        body.dark-full .commission-card { background: #12161f; border-color: #2a3050; }
+        body.dark-full .del-detail-row { border-color: #1e2130; }
+        body.dark-full .del-detail-label { color: #667; }
+        body.dark-full .del-detail-value { color: #bbb; }
+        /* Document areas also dark in full mode */
+        body.dark-full .inv-a4-page { background: #141820 !important; color: #d0d8e8 !important; border-color: #2a3050 !important; }
+        body.dark-full .inv-a4-page input, body.dark-full .inv-a4-page select, body.dark-full .inv-a4-page textarea { color: #ccd !important; background: transparent !important; }
+        body.dark-full .inv-a4-page .bill-to-table th, body.dark-full .inv-a4-page .item-table th { background: #1e2540 !important; color: #9ab !important; }
+        body.dark-full .inv-a4-page .bill-to-table, body.dark-full .inv-a4-page .item-table, body.dark-full .inv-a4-page .totals-table { border-color: #2a3456 !important; }
+        body.dark-full .inv-a4-page .bill-to-table td, body.dark-full .inv-a4-page .item-table td, body.dark-full .inv-a4-page .totals-table td { border-color: #2a3456 !important; }
+        body.dark-full .inv-a4-page .inv-info-box { background: #1e2540 !important; border-color: #3a4870 !important; }
+        body.dark-full .inv-a4-page .photo-box { background: #1a1f2e !important; border-color: #2a3050 !important; color: #667 !important; }
+        body.dark-full .invoice-topbar { background: #080b0f !important; }
+        body.dark-full #invoice-view { background: #0a0d12 !important; }
+        body.dark-full .del-a4-page { background: #141820 !important; color: #d0d8e8 !important; }
+        body.dark-full .del-a4-page input, body.dark-full .del-a4-page textarea { color: #ccd !important; background: transparent !important; }
+        body.dark-full .del-a4-page .del-table { border-color: #2a3456 !important; }
+        body.dark-full .del-a4-page .del-table th { background: #1e2540 !important; color: #9ab !important; }
+        body.dark-full .del-a4-page .del-table td { border-color: #2a3456 !important; }
+        body.dark-full #delivery-view { background: #0a0d12 !important; }
+        body.dark-full .delivery-topbar { background: #080b0f !important; }
+
+        /* Shared dark search styles */
+        body.dark-mode .search-glass, body.dark-full .search-glass {
+            background: rgba(30,33,48,0.85) !important;
+            border-color: rgba(78,205,196,0.2) !important;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+        }
+        body.dark-mode .search-glass:hover, body.dark-full .search-glass:hover {
+            border-color: rgba(78,205,196,0.4) !important;
+            box-shadow: 0 6px 30px rgba(78,205,196,0.12), inset 0 1px 0 rgba(255,255,255,0.06) !important;
+        }
+        body.dark-mode .search-glass:focus-within, body.dark-full .search-glass:focus-within {
+            border-color: rgba(78,205,196,0.6) !important;
+            box-shadow: 0 0 0 3px rgba(78,205,196,0.12), 0 6px 30px rgba(0,0,0,0.4) !important;
+        }
+        body.dark-mode .search-glass input, body.dark-full .search-glass input { color: #e0e0e0 !important; }
+        body.dark-mode .search-glass input::placeholder, body.dark-full .search-glass input::placeholder { color: #556 !important; }
+        body.dark-mode .search-glass .sg-icon, body.dark-full .search-glass .sg-icon { color: #4ecdc4 !important; opacity: 0.7; }
+        body.dark-mode .search-result-info, body.dark-full .search-result-info { background: rgba(30,33,48,0.85); border-color: #2a2d3a; color: #778; }
+
+        /* ═══════════════════════════════════════
+           3-OPTION THEME SWITCHER (pill group)
+        ═══════════════════════════════════════ */
+        .theme-switcher {
+            display: flex; align-items: center;
+            background: #f0f2f5; border: 1.5px solid #e0e0e0;
+            border-radius: 50px; padding: 3px; gap: 2px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+        }
+        body.dark-mode .theme-switcher { background: #1a1d27; border-color: #2a2d3a; }
+        body.dark-full .theme-switcher  { background: #10131c; border-color: #1e2130; }
+
+        .theme-btn {
+            display: flex; align-items: center; gap: 5px;
+            padding: 5px 12px; border-radius: 40px; border: none;
+            background: transparent; cursor: pointer; font-size: 12px; font-weight: 600;
+            color: #888; white-space: nowrap; transition: all 0.25s cubic-bezier(.34,1.56,.64,1) !important;
+        }
+        .theme-btn:hover { color: #008080; background: rgba(0,128,128,0.08); transform: none !important; }
+        .theme-btn.active {
+            background: #fff; color: #008080;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.08);
+        }
+        body.dark-mode .theme-btn { color: #667; }
+        body.dark-mode .theme-btn:hover { color: #4ecdc4; background: rgba(78,205,196,0.1); }
+        body.dark-mode .theme-btn.active { background: #252838; color: #4ecdc4; box-shadow: 0 2px 10px rgba(0,0,0,0.4); }
+        body.dark-full .theme-btn  { color: #556; }
+        body.dark-full .theme-btn:hover  { color: #5de8df; background: rgba(93,232,223,0.1); }
+        body.dark-full .theme-btn.active { background: #1a1f2e; color: #5de8df; box-shadow: 0 2px 10px rgba(0,0,0,0.6); }
+
+        /* ═══════════════════════════════════════
+           GLASS SEARCH BAR
+        ═══════════════════════════════════════ */
+        .search-section { margin-bottom: 16px; }
+
+        .search-glass {
+            display: flex; align-items: center; gap: 9px;
+            background: rgba(255,255,255,0.72);
+            backdrop-filter: blur(14px) saturate(160%);
+            -webkit-backdrop-filter: blur(14px) saturate(160%);
+            border: 1.5px solid rgba(0,128,128,0.18);
+            border-radius: 40px;
+            padding: 7px 14px 7px 12px;
+            box-shadow: 0 2px 16px rgba(0,128,128,0.07), inset 0 1px 0 rgba(255,255,255,0.8);
+            transition: all 0.28s cubic-bezier(.34,1.56,.64,1) !important;
+            cursor: text;
+            max-width: 480px;
+        }
+        .search-glass:hover {
+            border-color: rgba(0,128,128,0.38);
+            box-shadow: 0 6px 28px rgba(0,128,128,0.13), inset 0 1px 0 rgba(255,255,255,0.9);
+            transform: translateY(-1px);
+        }
+        .search-glass:focus-within {
+            border-color: rgba(0,128,128,0.55);
+            box-shadow: 0 0 0 3px rgba(0,128,128,0.10), 0 4px 24px rgba(0,128,128,0.13);
+            transform: translateY(-1px);
+            background: rgba(255,255,255,0.88);
+        }
+        .sg-icon {
+            font-size: 14px; color: var(--teal); opacity: 0.6; flex-shrink: 0;
+            transition: opacity 0.2s, transform 0.25s cubic-bezier(.34,1.56,.64,1) !important;
+        }
+        .search-glass:hover .sg-icon, .search-glass:focus-within .sg-icon { opacity: 1; transform: scale(1.15); }
+        .search-glass input {
+            border: none; outline: none; flex: 1; font-size: 13px;
+            font-family: inherit; background: transparent; color: #333; min-width: 0;
+        }
+        .search-glass input::placeholder { color: #aab; font-size: 12.5px; }
+        .search-clear-btn {
+            background: none; border: none; cursor: pointer; color: #bbb;
+            font-size: 13px; padding: 2px 4px; line-height: 1; flex-shrink: 0;
+            display: none; border-radius: 50%; transition: all 0.2s !important;
+        }
+        .search-clear-btn:hover { color: #fff !important; background: #dc3545; transform: rotate(90deg) scale(1.1); }
+        .search-result-info {
+            font-size: 11.5px; color: #889; margin-top: 6px; padding: 5px 14px;
+            background: rgba(248,249,250,0.8); border-radius: 20px; border: 1px solid rgba(0,0,0,0.06);
+            display: none; backdrop-filter: blur(8px);
+        }
 
         /* ===================== SIDEBAR ===================== */
         .sidebar {
@@ -1110,8 +1298,20 @@ table.dash-table tbody tr:nth-child(n+6){ animation-delay: 0.30s; }
     <!-- Topbar -->
     <div class="topbar">
         <h2 id="topbar-title">Rahman Furniture Management</h2>
-        <div class="topbar-actions" id="topbar-actions">
-            <!-- dynamic buttons injected here -->
+        <div style="display:flex;align-items:center;gap:12px;">
+            <div class="topbar-actions" id="topbar-actions"></div>
+            <!-- ── 3-Option Theme Switcher ── -->
+            <div class="theme-switcher" id="themeSwitcher">
+                <button class="theme-btn" id="themeFullDark" onclick="setTheme('full-dark')" title="পূর্ণ Dark — সব কিছু dark">
+                    🌑 <span>Full Dark</span>
+                </button>
+                <button class="theme-btn" id="themeDark" onclick="setTheme('dark')" title="Dark — শুধু UI dark">
+                    🌗 <span>Dark</span>
+                </button>
+                <button class="theme-btn active" id="themeLight" onclick="setTheme('light')" title="Light — স্বাভাবিক">
+                    ☀️ <span>Light</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -1142,6 +1342,18 @@ table.dash-table tbody tr:nth-child(n+6){ animation-delay: 0.30s; }
 
         <div class="table-container">
             <h3>Recent Invoices</h3>
+
+            <!-- ── Glass Search Bar ── -->
+            <div class="search-section">
+                <div class="search-glass" onclick="document.getElementById('dashSearchInput').focus()">
+                    <span class="sg-icon">🔍</span>
+                    <input type="text" id="dashSearchInput"
+                           placeholder="Invoice No বা Phone দিয়ে খুঁজুন… (#2573 / 01XXXXXXXXX)"
+                           oninput="handleDashSearch(this.value)">
+                    <button class="search-clear-btn" id="searchClearBtn" onclick="clearDashSearch()" title="Clear">✕</button>
+                </div>
+                <div class="search-result-info" id="searchResultInfo"></div>
+            </div>
             <table class="dash-table">
                 <thead>
                     <tr>
@@ -2347,6 +2559,113 @@ function renderDashboard() {
     document.getElementById('db-pending').innerText = pending;
 }
 
+// ========================================================
+// 🔍 DASHBOARD SEARCH — Invoice No / Customer Phone
+// ========================================================
+function handleDashSearch(query) {
+    const clearBtn = document.getElementById('searchClearBtn');
+    const infoEl   = document.getElementById('searchResultInfo');
+    const q = query.trim().replace(/^#/, '').toLowerCase();
+
+    if (!q) {
+        clearBtn.style.display = 'none';
+        infoEl.style.display = 'none';
+        renderDashboard();
+        return;
+    }
+
+    clearBtn.style.display = 'block';
+    const history = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
+    const results = history.filter(inv => {
+        const invNo  = String(inv.invoiceNo  || '').toLowerCase();
+        const phone  = String(inv.customerPhone || '').replace(/\D/g, '');
+        const qDigit = q.replace(/\D/g, '');
+        return invNo.includes(q) || (qDigit && phone.includes(qDigit));
+    });
+
+    const tbody = document.getElementById('dashboard-tbody');
+    tbody.innerHTML = '';
+
+    const statusMap = { 'Processing':'processing','On Delivery':'ondelivery','Delivered':'delivered','Cancelled':'cancelled' };
+
+    if (results.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:#aaa;">
+            🔍 "<b>${query}</b>" — কোনো invoice পাওয়া যায়নি।</td></tr>`;
+        infoEl.style.display = 'block';
+        infoEl.innerHTML = `<span style="color:#dc3545;">❌ কোনো ফলাফল নেই</span>`;
+        return;
+    }
+
+    results.forEach((inv, idx) => {
+        const grand = parseFloat(inv.grandTotal) || 0;
+        const paid  = parseFloat(inv.paid) || 0;
+        const cls   = statusMap[inv.deliveryStatus] || 'processing';
+        const invNoHighlight = String(inv.invoiceNo).replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'), '<mark style="background:#ffe066;border-radius:3px;padding:0 2px;">$1</mark>');
+        tbody.innerHTML += `<tr>
+            <td>${idx + 1}</td>
+            <td>${inv.date || '—'}</td>
+            <td><a class="inv-link" onclick="reEditInvoice('${inv.invoiceNo}'); showPage('invoice');">#${invNoHighlight}</a></td>
+            <td>${inv.customerName || '—'}</td>
+            <td>${paid.toLocaleString()} ৳</td>
+            <td>${grand.toLocaleString()} ৳</td>
+            <td>
+                <select class="status-select ${cls}" onchange="updateDeliveryStatus('${inv.invoiceNo}', this)">
+                    <option value="Processing" ${inv.deliveryStatus==='Processing'?'selected':''}>Processing</option>
+                    <option value="On Delivery" ${inv.deliveryStatus==='On Delivery'?'selected':''}>On Delivery</option>
+                    <option value="Delivered" ${inv.deliveryStatus==='Delivered'?'selected':''}>Delivered</option>
+                    <option value="Cancelled" ${inv.deliveryStatus==='Cancelled'?'selected':''}>Cancelled</option>
+                </select>
+            </td>
+            <td><span class="view-btn" onclick="showDeliveryDetail('${inv.invoiceNo}')">View Details</span></td>
+        </tr>`;
+    });
+
+    infoEl.style.display = 'block';
+    infoEl.innerHTML = `✅ <b>${results.length}</b>টি invoice পাওয়া গেছে "<b>${query}</b>" এর জন্য`;
+}
+
+function clearDashSearch() {
+    document.getElementById('dashSearchInput').value = '';
+    document.getElementById('searchClearBtn').style.display = 'none';
+    document.getElementById('searchResultInfo').style.display = 'none';
+    renderDashboard();
+    document.getElementById('dashSearchInput').focus();
+}
+
+// ========================================================
+// 🌙 THREE-THEME SYSTEM: light | dark | full-dark
+// ========================================================
+function setTheme(mode) {
+    document.body.classList.remove('dark-mode', 'dark-full');
+    if (mode === 'dark')      document.body.classList.add('dark-mode');
+    if (mode === 'full-dark') document.body.classList.add('dark-full');
+    localStorage.setItem('rfTheme', mode);
+    updateThemeBtns(mode);
+}
+
+function updateThemeBtns(mode) {
+    ['themeFullDark','themeDark','themeLight'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('active');
+    });
+    const activeId = mode === 'full-dark' ? 'themeFullDark' : mode === 'dark' ? 'themeDark' : 'themeLight';
+    const el = document.getElementById(activeId);
+    if (el) el.classList.add('active');
+}
+
+// Apply saved theme immediately (before page paints)
+(function() {
+    const saved = localStorage.getItem('rfTheme') || 'light';
+    if (saved === 'dark')      document.body.classList.add('dark-mode');
+    if (saved === 'full-dark') document.body.classList.add('dark-full');
+    // buttons updated after DOM ready
+    window.addEventListener('load', function() { updateThemeBtns(saved); });
+})();
+
+// Legacy aliases (in case anything calls old functions)
+function toggleDarkMode() { setTheme(document.body.classList.contains('dark-mode') ? 'light' : 'dark'); }
+function updateDarkModeBtn() { updateThemeBtns(localStorage.getItem('rfTheme') || 'light'); }
+
 function updateDeliveryStatus(invoiceNo, selectEl) {
     const newStatus = selectEl.value;
     let history = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
@@ -3000,6 +3319,9 @@ window.onload = async function() {
 
     // Render dashboard
     renderDashboard();
+
+    // Apply dark mode button state
+    updateThemeBtns(localStorage.getItem('rfTheme') || 'light');
 
     // Close modals on outside click
     window.onclick = function(event) {
