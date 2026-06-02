@@ -11,7 +11,36 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        /* ===================== RESET & ROOT ===================== */
+        /* =================== ANIMATIONS =================== */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(18px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideInRow {
+            from { opacity: 0; transform: translateX(-12px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes pulse-green {
+            0%,100% { box-shadow: 0 0 0 0 rgba(39,174,96,0); }
+            50%      { box-shadow: 0 0 0 5px rgba(39,174,96,0.2); }
+        }
+        .stat-card { animation: fadeInUp 0.35s ease both; }
+        .stat-card:nth-child(1){animation-delay:.05s}
+        .stat-card:nth-child(2){animation-delay:.1s}
+        .stat-card:nth-child(3){animation-delay:.15s}
+        .stat-card:nth-child(4){animation-delay:.2s}
+        .stat-card:nth-child(5){animation-delay:.25s}
+        .table-container { animation: fadeInUp 0.4s ease 0.2s both; }
+        .modal-content { animation: fadeInUp 0.3s cubic-bezier(.34,1.56,.64,1); }
+        .del-a4-page .del-table { animation: fadeInUp 0.3s ease; }
+        table.dash-table tr { transition: background 0.18s; }
+        .btn { transition: all 0.2s cubic-bezier(.34,1.56,.64,1) !important; }
+        .btn:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 4px 14px rgba(0,0,0,0.13); }
+        .btn:active { transform: scale(0.97); }
+        #deposit-table input { transition: all 0.25s ease; }
+        #deposit-table input:focus { transform: scale(1.03); }
+        #dep-total { font-weight: bold; }
+
         @import url('https://fonts.googleapis.com/css2?family=Tiro+Bangla&display=swap');
         :root {
             --navy: #001f3f;
@@ -358,9 +387,10 @@
         #delivery-view { background: #f0f0f0; min-height: calc(100vh - 61px); display: none; padding: 0; }
         #delivery-view.active { display: block; }
         .del-a4-page {
-            width: 210mm; height: 296mm; padding: 10mm 12mm; margin: 10px auto;
+            width: 210mm; min-height: 296mm; padding: 8mm 12mm; margin: 10px auto;
             background: white; position: relative; border: 1px solid #ddd;
-            font-family: 'Times New Roman', 'Tiro Bangla', serif; overflow: hidden;
+            font-family: 'Times New Roman', 'Tiro Bangla', serif; overflow: visible;
+            display: flex; flex-direction: column;
         }
         .del-header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
         .del-header-left { display: flex; align-items: center; gap: 15px; text-align: left; }
@@ -372,7 +402,7 @@
         .del-table th, .del-table td { border: 1.5px solid #000; padding: 6px; text-align: center; font-size: 14px; }
         .del-table input { border: none; width: 100%; text-align: center; font-family: inherit; font-size: 14px; outline: none; background: transparent; }
         .del-total-label { text-align: right !important; font-weight: bold; background: #f9f9f9; }
-        .del-watermark { position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); opacity: 0.08; width: 65%; pointer-events: none; z-index: 0; }
+        .del-watermark { display: none !important; }
         .oil-input-container { display: flex; border-bottom: 1px solid #ccc; margin-bottom: 5px; }
         .oil-item { display: flex; align-items: center; flex: 1; border-right: 1px solid #ccc; padding: 8px 2px; }
         .oil-item:last-child { border-right: none; }
@@ -435,7 +465,10 @@
             .remove-btn { display: none !important; }
 
             /* Delivery print */
-            .del-a4-page { margin: 0; border: none; }
+            .del-a4-page { margin: 0; border: none; min-height: unset; height: auto; padding: 6mm 10mm; }
+            @page { size: A4; margin: 0; }
+            .del-a4-page * { page-break-inside: avoid; }
+            .del-sig-row { page-break-before: avoid !important; margin-top: 20px !important; }
             .page-view { display: none !important; }
             .page-view.active { display: block !important; padding: 0; }
             #invoice-view { display: none !important; }
@@ -1766,10 +1799,10 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
     <div id="delivery-view">
         <div class="delivery-topbar invoice-topbar no-print">
             <button onclick="window.print()" style="background:#28a745; color:white;">🖨️ Print / Save PDF</button>
+            <button onclick="saveDeliverySettlement()" style="background:#008080; color:white;">💾 Save Settlement</button>
             <button onclick="delResetPage()" style="background:#dc3545; color:white;">🔄 Reset</button>
         </div>
         <div class="del-a4-page">
-            <img class="del-watermark" id="del-watermark" src="" alt="">
 
             <div class="del-header-top">
                 <div class="del-header-left">
@@ -1816,9 +1849,9 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
                     </tr>
                 </thead>
                 <tbody id="del-settlement-items">
-                    <tr><td>1.</td><td><input type="text" class="del-inv-no-link"></td><td><input type="text"></td><td><input type="number" class="set-amt" oninput="calcSettlement()"></td></tr>
-                    <tr><td>2.</td><td><input type="text" class="del-inv-no-link"></td><td><input type="text"></td><td><input type="number" class="set-amt" oninput="calcSettlement()"></td></tr>
-                    <tr><td>3.</td><td><input type="text" class="del-inv-no-link"></td><td><input type="text"></td><td><input type="number" class="set-amt" oninput="calcSettlement()"></td></tr>
+                    <tr><td>1.</td><td><input type="text" class="del-inv-no-link" placeholder="Invoice No." oninput="autoFillDelRow(this)"></td><td><input type="text" class="del-sales-name" placeholder="Salesperson"></td><td><input type="number" class="set-amt" placeholder="0" oninput="calcSettlement()"></td></tr>
+                    <tr><td>2.</td><td><input type="text" class="del-inv-no-link" placeholder="Invoice No." oninput="autoFillDelRow(this)"></td><td><input type="text" class="del-sales-name" placeholder="Salesperson"></td><td><input type="number" class="set-amt" placeholder="0" oninput="calcSettlement()"></td></tr>
+                    <tr><td>3.</td><td><input type="text" class="del-inv-no-link" placeholder="Invoice No." oninput="autoFillDelRow(this)"></td><td><input type="text" class="del-sales-name" placeholder="Salesperson"></td><td><input type="number" class="set-amt" placeholder="0" oninput="calcSettlement()"></td></tr>
                 </tbody>
                 <tfoot>
                     <tr>
@@ -1827,6 +1860,7 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
                     </tr>
                 </tfoot>
             </table>
+            <button type="button" onclick="addDelSettlementRow()" class="no-print" style="margin:6px 0 10px;padding:6px 18px;background:var(--teal);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;">+ Add Row</button>
 
             <div style="color:red; font-weight:bold; text-align:center; margin-bottom:5px;">Total Delivery Expenses</div>
             <table class="del-table">
@@ -1862,7 +1896,7 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
                 </tr>
             </table>
 
-            <table class="del-table" style="width:70%; margin:20px 0;">
+            <table class="del-table" style="width:70%; margin:10px 0;">
                 <tr>
                     <td style="text-align:left; color:#003366; font-weight:bold;">Total Amount</td>
                     <td width="40%"><input type="text" id="sum-total" readonly style="font-weight:bold; font-size:15px;"></td>
@@ -1877,26 +1911,39 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
                 </tr>
             </table>
 
-            <table class="del-table" style="width:100%;">
+            <table class="del-table" style="width:100%;" id="deposit-table">
                 <tr>
                     <td style="font-weight:bold;white-space:nowrap;width:17%;">Total Deposit</td>
-                    <td style="width:13%;"><input type="text" placeholder="Total"></td>
+                    <td style="width:13%;"><input type="number" id="dep-total" placeholder="0" oninput="calcDeposit()" style="font-weight:bold;text-align:center;background:transparent;"></td>
                     <td style="font-weight:bold;width:9%;">Cash</td>
-                    <td style="width:13%;"><input type="text" placeholder="Cash"></td>
+                    <td style="width:13%;"><input type="number" id="dep-cash" placeholder="0" oninput="calcDeposit()" style="text-align:center;"></td>
                     <td style="font-weight:bold;width:9%;">Bank</td>
-                    <td style="width:13%;"><input type="text" placeholder="Bank"></td>
+                    <td style="width:13%;"><input type="number" id="dep-bank" placeholder="0" oninput="calcDeposit()" style="text-align:center;"></td>
                     <td style="font-weight:bold;width:11%;">BKash</td>
-                    <td style="width:15%;"><input type="text" placeholder="BKash"></td>
+                    <td style="width:15%;"><input type="number" id="dep-bkash" placeholder="0" oninput="calcDeposit()" style="text-align:center;"></td>
+                </tr>
+                <tr>
+                    <td colspan="2" style="font-weight:bold;color:#27ae60;font-size:12px;padding:5px 8px;">Total Pays</td>
+                    <td colspan="6" style="padding:4px 8px;"><input type="text" id="dep-total-pays" readonly style="font-weight:700;font-size:12px;color:#27ae60;background:transparent;text-align:left;width:100%;border:none;outline:none;"></td>
+                </tr>
+                <tr>
+                    <td colspan="2" style="font-weight:bold;color:#e74c3c;font-size:12px;padding:5px 8px;">Due</td>
+                    <td colspan="6" style="padding:4px 8px;"><input type="text" id="dep-due" readonly style="font-weight:700;font-size:12px;color:#e74c3c;background:transparent;text-align:left;width:100%;border:none;outline:none;"></td>
                 </tr>
             </table>
             <div style="margin-top:14px;padding-bottom:10px;">
                 <div style="font-weight:bold;font-size:14px;margin-bottom:6px;color:#333;">Note:</div>
-                <textarea style="width:100%;min-height:85px;border:1.5px solid #bbb;border-radius:6px;resize:vertical;font-family:inherit;font-size:13px;padding:8px;outline:none;background:#fafafa;" placeholder="যেকোনো গুরুত্বপূর্ণ তথ্য এখানে লিখুন..."></textarea>
+                <textarea style="width:100%;min-height:55px;border:1.5px solid #bbb;border-radius:6px;resize:vertical;font-family:inherit;font-size:13px;padding:8px;outline:none;background:#fafafa;" placeholder="যেকোনো গুরুত্বপূর্ণ তথ্য এখানে লিখুন..."></textarea>
             </div>
 
-            <div style="display:flex; justify-content:space-between; margin-top:60px; position:relative; z-index:1;">
-                <div style="border-top:1px solid #000; width:180px; text-align:center; font-weight:bold;">Owner's Signature</div>
-                <div style="border-top:1px solid #000; width:180px; text-align:center; font-weight:bold;">Account Manager</div>
+
+            <div class="del-sig-row" style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:40px;position:relative;z-index:1;">
+                <div style="width:200px;text-align:center;">
+                    <div style="border-top:2px solid #000;padding-top:6px;font-weight:bold;font-size:13px;color:#111;">Owner's Signature</div>
+                </div>
+                <div style="width:200px;text-align:center;">
+                    <div style="border-top:2px solid #000;padding-top:6px;font-weight:bold;font-size:13px;color:#111;">Account Manager</div>
+                </div>
             </div>
         </div>
     </div>
@@ -2963,36 +3010,81 @@ function showDeliveryDetail(invoiceNo) {
     const inv = history.find(i => i.invoiceNo === invoiceNo);
     if (!inv) return;
 
-    // Get delivery settlements
     const deliveries = JSON.parse(localStorage.getItem('deliverySettlements') || '[]');
-    const del = deliveries.find(d => d.invoiceNo === invoiceNo);
+    const del = deliveries.find(d =>
+        d.invoiceNo === invoiceNo ||
+        d.invoiceNo === String(invoiceNo) ||
+        (d.allRows && d.allRows.some(r => r.invoiceNo === invoiceNo || r.invoiceNo === String(invoiceNo)))
+    );
 
     let html = `
-        <div style="background:#f8f9fa; padding:15px; border-radius:8px; margin-bottom:15px;">
-            <h4 style="margin:0 0 10px; color:var(--navy);">Invoice #${inv.invoiceNo} — ${inv.customerName || 'N/A'}</h4>
-            <div class="del-detail-row"><span class="del-detail-label">Date:</span><span class="del-detail-value">${inv.date || '—'}</span></div>
-            <div class="del-detail-row"><span class="del-detail-label">Customer Phone:</span><span class="del-detail-value">${inv.customerPhone || '—'}</span></div>
-            <div class="del-detail-row"><span class="del-detail-label">Address:</span><span class="del-detail-value">${inv.customerAddress || '—'}</span></div>
-            <div class="del-detail-row"><span class="del-detail-label">Grand Total:</span><span class="del-detail-value" style="font-weight:bold; color:var(--teal);">${parseFloat(inv.grandTotal||0).toLocaleString()} ৳</span></div>
-            <div class="del-detail-row"><span class="del-detail-label">Paid:</span><span class="del-detail-value" style="color:green;">${parseFloat(inv.paid||0).toLocaleString()} ৳</span></div>
-            <div class="del-detail-row"><span class="del-detail-label">Due:</span><span class="del-detail-value" style="color:red;">${parseFloat(inv.due||0).toLocaleString()} ৳</span></div>
-            <div class="del-detail-row"><span class="del-detail-label">Payment Method:</span><span class="del-detail-value">${inv.paymentMethod || '—'}</span></div>
-            <div class="del-detail-row"><span class="del-detail-label">Salesman:</span><span class="del-detail-value">${inv.salesman || '—'}</span></div>
-            <div class="del-detail-row"><span class="del-detail-label">Delivery Status:</span><span class="del-detail-value"><b>${inv.deliveryStatus || 'Processing'}</b></span></div>
-        </div>`;
+    <div style="background:linear-gradient(135deg,#f8f9fa,#e8f4f4);padding:16px;border-radius:10px;margin-bottom:14px;border:1.5px solid #b2dfdb;animation:fadeInUp 0.3s ease;">
+        <h4 style="margin:0 0 12px;color:#001f3f;font-size:15px;display:flex;align-items:center;gap:8px;">
+            📄 Invoice <span style="background:#001f3f;color:#fff;padding:2px 10px;border-radius:12px;font-size:13px;">#${inv.invoiceNo}</span>
+            <span style="margin-left:auto;font-size:12px;background:#008080;color:#fff;padding:3px 10px;border-radius:12px;">${inv.deliveryStatus || 'Processing'}</span>
+        </h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div class="del-detail-row"><span class="del-detail-label">👤 Customer:</span><span class="del-detail-value">${inv.customerName || '—'}</span></div>
+            <div class="del-detail-row"><span class="del-detail-label">📞 Phone:</span><span class="del-detail-value">${inv.customerPhone || '—'}</span></div>
+            <div class="del-detail-row"><span class="del-detail-label">📍 Address:</span><span class="del-detail-value">${inv.customerAddress || '—'}</span></div>
+            <div class="del-detail-row"><span class="del-detail-label">👔 Salesman:</span><span class="del-detail-value">${inv.salesman || '—'}</span></div>
+            <div class="del-detail-row"><span class="del-detail-label">📅 Date:</span><span class="del-detail-value">${inv.date || '—'}</span></div>
+            <div class="del-detail-row"><span class="del-detail-label">💳 Payment:</span><span class="del-detail-value">${inv.paymentMethod || '—'}</span></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px;">
+            <div style="background:#fff;border-radius:8px;padding:10px;text-align:center;border:1.5px solid #e0e0e0;">
+                <div style="font-size:10px;color:#888;margin-bottom:3px;">Grand Total</div>
+                <div style="font-size:18px;font-weight:800;color:#008080;">৳${parseFloat(inv.grandTotal||0).toLocaleString()}</div>
+            </div>
+            <div style="background:#fff;border-radius:8px;padding:10px;text-align:center;border:1.5px solid #d4edda;">
+                <div style="font-size:10px;color:#888;margin-bottom:3px;">Paid</div>
+                <div style="font-size:18px;font-weight:800;color:#28a745;">৳${parseFloat(inv.paid||0).toLocaleString()}</div>
+            </div>
+            <div style="background:#fff;border-radius:8px;padding:10px;text-align:center;border:1.5px solid #f8d7da;">
+                <div style="font-size:10px;color:#888;margin-bottom:3px;">Due</div>
+                <div style="font-size:18px;font-weight:800;color:#dc3545;">৳${parseFloat(inv.due||0).toLocaleString()}</div>
+            </div>
+        </div>
+    </div>`;
 
     if (del) {
-        html += `<div style="background:#fff3cd; padding:15px; border-radius:8px;">
-            <h4 style="margin:0 0 10px; color:#856404;">🚚 Delivery Settlement Info</h4>
-            <div class="del-detail-row"><span class="del-detail-label">Driver:</span><span class="del-detail-value">${del.driverName || '—'}</span></div>
-            <div class="del-detail-row"><span class="del-detail-label">Labour:</span><span class="del-detail-value">${del.labourName || '—'}</span></div>
-            <div class="del-detail-row"><span class="del-detail-label">Settlement Date:</span><span class="del-detail-value">${del.date || '—'}</span></div>
-            <div class="del-detail-row"><span class="del-detail-label">Total Amount:</span><span class="del-detail-value">${parseFloat(del.totalAmount||0).toLocaleString()} ৳</span></div>
-            <div class="del-detail-row"><span class="del-detail-label">Total Expenses:</span><span class="del-detail-value" style="color:red;">${parseFloat(del.totalExpenses||0).toLocaleString()} ৳</span></div>
-            <div class="del-detail-row"><span class="del-detail-label">Net Collected:</span><span class="del-detail-value" style="color:green; font-weight:bold; font-size:16px;">${parseFloat(del.netCollected||0).toLocaleString()} ৳</span></div>
+        const allRows = del.allRows || [{ invoiceNo: del.invoiceNo, salesman: del.salesman, amount: del.totalAmount }];
+        html += `
+        <div style="background:linear-gradient(135deg,#fffbf0,#fff3cd);padding:16px;border-radius:10px;border:1.5px solid #ffc107;animation:fadeInUp 0.4s ease;">
+            <h4 style="margin:0 0 12px;color:#856404;font-size:15px;">🚚 Delivery Settlement</h4>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+                <div class="del-detail-row"><span class="del-detail-label">🚗 Driver:</span><span class="del-detail-value">${del.driverName || '—'}</span></div>
+                <div class="del-detail-row"><span class="del-detail-label">👷 Labour:</span><span class="del-detail-value">${del.labourName || '—'}</span></div>
+                <div class="del-detail-row"><span class="del-detail-label">📅 Settlement Date:</span><span class="del-detail-value">${del.date || '—'}</span></div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;">
+                <div style="background:#fff;border-radius:8px;padding:10px;text-align:center;border:1.5px solid #ffc107;">
+                    <div style="font-size:10px;color:#888;margin-bottom:3px;">Total Amount</div>
+                    <div style="font-size:16px;font-weight:800;color:#856404;">৳${parseFloat(del.totalAmount||0).toLocaleString()}</div>
+                </div>
+                <div style="background:#fff;border-radius:8px;padding:10px;text-align:center;border:1.5px solid #f8d7da;">
+                    <div style="font-size:10px;color:#888;margin-bottom:3px;">Expenses</div>
+                    <div style="font-size:16px;font-weight:800;color:#dc3545;">৳${parseFloat(del.totalExpenses||0).toLocaleString()}</div>
+                </div>
+                <div style="background:#fff;border-radius:8px;padding:10px;text-align:center;border:1.5px solid #d4edda;">
+                    <div style="font-size:10px;color:#888;margin-bottom:3px;">Net Collected</div>
+                    <div style="font-size:16px;font-weight:800;color:#28a745;">৳${parseFloat(del.netCollected||0).toLocaleString()}</div>
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;background:#fff;border-radius:8px;padding:10px;border:1.5px solid #e0e0e0;">
+                <div style="text-align:center;"><div style="font-size:10px;color:#888;">💵 Cash</div><div style="font-weight:700;">৳${parseFloat(del.depositCash||0).toLocaleString()}</div></div>
+                <div style="text-align:center;"><div style="font-size:10px;color:#888;">🏦 Bank</div><div style="font-weight:700;">৳${parseFloat(del.depositBank||0).toLocaleString()}</div></div>
+                <div style="text-align:center;"><div style="font-size:10px;color:#888;">📱 BKash</div><div style="font-weight:700;">৳${parseFloat(del.depositBkash||0).toLocaleString()}</div></div>
+            </div>
         </div>`;
     } else {
-        html += `<div style="background:#e2e3e5; padding:15px; border-radius:8px; text-align:center; color:#666;">No delivery settlement recorded yet for this invoice.</div>`;
+        html += `
+        <div style="background:linear-gradient(135deg,#f8f9fa,#e9ecef);padding:20px;border-radius:10px;text-align:center;border:2px dashed #ced4da;animation:fadeInUp 0.4s ease;">
+            <div style="font-size:36px;margin-bottom:8px;">📦</div>
+            <div style="font-weight:700;color:#495057;margin-bottom:4px;">Delivery Settlement এখনো করা হয়নি</div>
+            <div style="font-size:12px;color:#888;">Delivery Settlement পেজে গিয়ে Invoice No. <b>${invoiceNo}</b> লিখলে আপনাআপনি সব তথ্য আসবে।</div>
+            <button onclick="showPage('delivery'); closeModal('deliveryDetailModal');" style="margin-top:12px;padding:8px 20px;background:#008080;color:#fff;border:none;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;">👉 Delivery Settlement করুন</button>
+        </div>`;
     }
 
     document.getElementById('deliveryDetailContent').innerHTML = html;
@@ -3001,10 +3093,35 @@ function showDeliveryDetail(invoiceNo) {
 
 function printDeliveryDetail() {
     const content = document.getElementById('deliveryDetailContent').innerHTML;
+    const shopName = localStorage.getItem('companyName') || 'RAHMAN FURNITURE';
+    const shopPhone = localStorage.getItem('compPhone') || '01794-526688';
     const w = window.open('', '_blank');
-    w.document.write(`<html><head><title>Delivery Detail</title><style>body{font-family:Arial,sans-serif;padding:20px;}.del-detail-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;font-size:14px;}.del-detail-label{font-weight:bold;color:#555;}.del-detail-value{color:#222;}h4{margin:0 0 10px;}</style></head><body>${content}</body></html>`);
+    w.document.write(`<!DOCTYPE html><html><head><title>Delivery Detail</title>
+<style>
+@page{size:A5;margin:12mm}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;font-size:11px;background:#fff;color:#222;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+.no-btn{display:none}
+.header{text-align:center;border-bottom:2px solid #001f3f;padding-bottom:8px;margin-bottom:12px;}
+.header h2{font-size:16px;color:#001f3f;font-weight:900;}
+.header p{font-size:10px;color:#555;}
+.del-detail-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f0f0f0;font-size:11px;}
+.del-detail-label{font-weight:700;color:#555;}
+.del-detail-value{color:#222;text-align:right;}
+h4{font-size:12px;font-weight:800;}
+.no-print{display:none!important}
+.np{display:flex;gap:8px;padding:10px;background:#f5f5f5;border-bottom:1px solid #ddd;justify-content:center;}
+.np button{padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;}
+.bp{background:#008080;color:#fff}.bc{background:#eee;color:#555}
+@media print{.np{display:none!important}}
+</style></head><body>
+<div class="np"><button class="bp" onclick="window.print()">🖨️ Print</button><button class="bc" onclick="window.close()">✕ Close</button></div>
+<div style="padding:12px;">
+<div class="header"><h2>${shopName}</h2><p>${shopPhone}</p><p>Delivery Settlement Report — Printed: ${new Date().toLocaleString('en-BD')}</p></div>
+${content}
+</div></body></html>`);
     w.document.close();
-    setTimeout(() => { w.print(); w.close(); }, 500);
+    setTimeout(() => { w.print(); }, 600);
 }
 
 // ========================================================
@@ -3517,6 +3634,45 @@ function calcOil() {
     calcSettlement();
 }
 
+function autoFillDelRow(input) {
+    const invNo = input.value.trim();
+    const row = input.closest('tr');
+    const salesInput = row.querySelector('.del-sales-name');
+    const amtInput = row.querySelector('.set-amt');
+    if (!invNo) return;
+    const history = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
+    // Match with or without "RF-" prefix
+    const inv = history.find(i =>
+        String(i.invoiceNo) === invNo ||
+        String(i.invoiceNo) === invNo.replace(/^RF-/i,'') ||
+        'RF-' + String(i.invoiceNo) === invNo
+    );
+    if (inv) {
+        if (salesInput && !salesInput.value) salesInput.value = inv.salesman || '';
+        if (amtInput && (!amtInput.value || amtInput.value === '0')) {
+            amtInput.value = parseFloat(inv.grandTotal || 0);
+        }
+        // flash green
+        input.style.background = '#e8f8f0';
+        input.style.borderColor = '#27ae60';
+        setTimeout(() => { input.style.background = ''; input.style.borderColor = ''; }, 1500);
+        calcSettlement();
+        calcDeposit();
+    }
+}
+
+function addDelSettlementRow() {
+    const tbody = document.getElementById('del-settlement-items');
+    const rowNum = tbody.rows.length + 1;
+    const tr = document.createElement('tr');
+    tr.style.animation = 'slideInRow 0.3s ease';
+    tr.innerHTML = `<td>${rowNum}.</td>
+        <td><input type="text" class="del-inv-no-link" placeholder="Invoice No." oninput="autoFillDelRow(this)"></td>
+        <td><input type="text" class="del-sales-name" placeholder="Salesperson"></td>
+        <td><input type="number" class="set-amt" placeholder="0" oninput="calcSettlement()"></td>`;
+    tbody.appendChild(tr);
+}
+
 function calcSettlement() {
     let totalAmt = 0;
     document.querySelectorAll('.set-amt').forEach(input => { totalAmt += parseFloat(input.value) || 0; });
@@ -3533,6 +3689,94 @@ function calcSettlement() {
     if(setTotalExp) setTotalExp.value = totalExp || '';
     if(sumExp) sumExp.value = totalExp || '';
     if(sumCollected) sumCollected.value = (totalAmt - totalExp) || '';
+
+    calcDeposit();
+}
+
+function calcDeposit() {
+    const cash = parseFloat(document.getElementById('dep-cash')?.value) || 0;
+    const bank = parseFloat(document.getElementById('dep-bank')?.value) || 0;
+    const bkash = parseFloat(document.getElementById('dep-bkash')?.value) || 0;
+    const total = cash + bank + bkash;
+
+    // Auto-fill dep-total as sum of cash+bank+bkash
+    const depTotal = document.getElementById('dep-total');
+    if (depTotal && depTotal !== document.activeElement) {
+        depTotal.value = total || '';
+    }
+
+    const depTotalPays = document.getElementById('dep-total-pays');
+    const depDue = document.getElementById('dep-due');
+
+    const totalAmt = parseFloat(document.getElementById('sum-total')?.value?.replace(/,/g,'')) || 0;
+    const totalExp = parseFloat(document.getElementById('sum-exp')?.value?.replace(/,/g,'')) || 0;
+    const netCollected = totalAmt - totalExp;
+
+    if (depTotalPays) depTotalPays.value = total ? '৳ ' + total.toLocaleString() : '';
+    if (depDue) {
+        const due = netCollected - total;
+        depDue.value = netCollected > 0 ? '৳ ' + due.toLocaleString() : '';
+    }
+}
+
+function saveDeliverySettlement() {
+    // Collect all rows
+    const rows = [];
+    document.querySelectorAll('#del-settlement-items tr').forEach(tr => {
+        const invNo = tr.querySelector('.del-inv-no-link')?.value?.trim();
+        const sales = tr.querySelector('.del-sales-name')?.value?.trim();
+        const amt = parseFloat(tr.querySelector('.set-amt')?.value) || 0;
+        if (invNo || amt) rows.push({ invoiceNo: invNo, salesman: sales, amount: amt });
+    });
+
+    if (rows.length === 0) { alert('কোনো invoice entry নেই!'); return; }
+
+    const driverName = document.getElementById('del-driver-name')?.value?.trim() || '';
+    const labourName = document.getElementById('del-labour-name')?.value?.trim() || '';
+    const totalAmount = parseFloat(document.getElementById('sum-total')?.value) || 0;
+    const totalExpenses = parseFloat(document.getElementById('sum-exp')?.value) || 0;
+    const netCollected = totalAmount - totalExpenses;
+    const cash = parseFloat(document.getElementById('dep-cash')?.value) || 0;
+    const bank = parseFloat(document.getElementById('dep-bank')?.value) || 0;
+    const bkash = parseFloat(document.getElementById('dep-bkash')?.value) || 0;
+    const now = new Date();
+    const date = now.toLocaleDateString('en-GB');
+
+    // Save each invoice row as a separate settlement record + one combined record
+    let settlements = JSON.parse(localStorage.getItem('deliverySettlements') || '[]');
+
+    rows.forEach(r => {
+        if (!r.invoiceNo) return;
+        // Remove old entry for same invoice
+        settlements = settlements.filter(s => s.invoiceNo !== r.invoiceNo);
+        settlements.push({
+            invoiceNo: r.invoiceNo,
+            salesman: r.salesman || driverName,
+            driverName,
+            labourName,
+            date,
+            totalAmount: r.amount,
+            totalExpenses,
+            netCollected: r.amount - totalExpenses,
+            depositCash: cash,
+            depositBank: bank,
+            depositBkash: bkash,
+            allRows: rows
+        });
+    });
+
+    try { localStorage.setItem('deliverySettlements', JSON.stringify(settlements)); }
+    catch(e) { alert('Storage full!'); return; }
+
+    // Show toast
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;top:22px;left:50%;transform:translateX(-50%) translateY(-30px);background:#008080;color:#fff;padding:12px 28px;border-radius:30px;font-size:14px;font-weight:700;z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,0.2);opacity:0;transition:all 0.4s cubic-bezier(.34,1.56,.64,1);';
+    toast.textContent = '✅ Settlement সংরক্ষিত হয়েছে! (' + rows.length + 'টি invoice)';
+    document.body.appendChild(toast);
+    setTimeout(() => { toast.style.opacity='1'; toast.style.transform='translateX(-50%) translateY(0)'; }, 50);
+    setTimeout(() => { toast.style.opacity='0'; setTimeout(()=>toast.remove(), 400); }, 2500);
+
+    renderDashboard();
 }
 
 function delResetPage() {
@@ -3541,6 +3785,7 @@ function delResetPage() {
             if(!el.readOnly) el.value = '';
         });
         calcSettlement();
+        calcDeposit();
     }
 }
 
