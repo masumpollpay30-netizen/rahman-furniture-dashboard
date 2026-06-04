@@ -11,6 +11,36 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
+        /* ── Absent Cell ── */
+        .tc.absent-cell { background:#fde8e8!important; color:#c0392b!important; font-weight:800!important; font-size:9px!important; }
+        .tc.absent-main { background:#e74c3c!important; color:#fff!important; font-size:9.5px!important; cursor:pointer; }
+        .tc.absent-main:hover { background:#c0392b!important; }
+        .tc.absent-empty { background:#fde8e8!important; color:transparent!important; }
+        body.printing-attendance .tc.absent-cell,.tc.absent-main { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+
+        /* ── Absent Modal ── */
+        .abs-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;z-index:9999;opacity:0;pointer-events:none;transition:opacity 0.25s ease;backdrop-filter:blur(3px); }
+        .abs-overlay.open { opacity:1;pointer-events:all; }
+        .abs-modal { background:#fff;border-radius:20px;padding:28px 26px 22px;width:min(360px,92vw);box-shadow:0 20px 60px rgba(0,0,0,0.25);transform:translateY(30px) scale(0.95);transition:transform 0.3s cubic-bezier(.34,1.56,.64,1); }
+        .abs-overlay.open .abs-modal { transform:none; }
+        .abs-head { font-size:17px;font-weight:800;color:#c0392b;margin-bottom:10px;text-align:center; }
+        .abs-info { display:flex;align-items:center;justify-content:center;gap:8px;background:#fde8e8;border-radius:10px;padding:8px 14px;margin-bottom:16px; }
+        .abs-emp { font-weight:800;color:#333;font-size:13px; }
+        .abs-sep { color:#e74c3c;font-weight:700; }
+        .abs-date { color:#666;font-size:12px; }
+        .abs-reason-label { display:block;font-size:12px;font-weight:700;color:#444;margin-bottom:6px; }
+        .abs-reason-input { width:100%;border:1.5px solid #ddd;border-radius:10px;padding:10px 12px;font-size:13px;font-family:inherit;resize:none;outline:none;transition:border 0.2s;background:#fafafa;box-sizing:border-box; }
+        .abs-reason-input:focus { border-color:#e74c3c;background:#fff; }
+        .abs-btns { display:flex;gap:8px;margin-top:16px; }
+        .abs-btn-clear { flex:0 0 auto;padding:10px 14px;border-radius:10px;border:1.5px solid #e74c3c;background:#fff;color:#e74c3c;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.18s; }
+        .abs-btn-clear:hover { background:#fde8e8; }
+        .abs-btn-cancel { flex:1;padding:10px;border-radius:10px;border:1.5px solid #ddd;background:#f8f9fa;color:#666;font-size:13px;font-weight:600;cursor:pointer; }
+        .abs-btn-cancel:hover { background:#eee; }
+        .abs-btn-confirm { flex:1.5;padding:10px;border-radius:10px;border:none;background:#e74c3c;color:#fff;font-size:13px;font-weight:800;cursor:pointer;transition:all 0.2s cubic-bezier(.34,1.56,.64,1); }
+        .abs-btn-confirm:hover { background:#c0392b;transform:scale(1.03); }
+        .tp-absent-btn { padding:10px 14px;border-radius:10px;border:1.5px solid #e74c3c;background:#fff;color:#e74c3c;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.18s; }
+        .tp-absent-btn:hover { background:#fde8e8;transform:scale(1.04); }
+
         /* =================== ANIMATIONS =================== */
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(18px); }
@@ -2067,6 +2097,7 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
     <div class="tp-btns">
       <button class="tp-clear" onclick="clearCell()">✕ Clear</button>
       <button class="tp-cancel" onclick="closeTP()">বাতিল</button>
+      <button class="tp-absent-btn" onclick="openAbsent()">🔴 Absent</button>
       <button class="tp-confirm" onclick="confirmTP()">✔ Set Time</button>
     </div>
   </div>
@@ -2119,7 +2150,26 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
   </div>
 </div>
 
-<!-- ══ NAME MODAL ══ -->
+<!-- ══ ABSENT MODAL ══ -->
+<div class="abs-overlay" id="absOverlay">
+  <div class="abs-modal">
+    <div class="abs-head">🔴 Mark Absent</div>
+    <div class="abs-info">
+      <span class="abs-emp" id="abs-emp-name"></span>
+      <span class="abs-sep">—</span>
+      <span class="abs-date" id="abs-date"></span>
+    </div>
+    <div class="abs-reason-wrap">
+      <label class="abs-reason-label">Reason <span style="font-weight:400;color:#999;">(optional)</span></label>
+      <textarea id="abs-reason" class="abs-reason-input" placeholder="e.g. Sick leave, Personal, No notice..." rows="3"></textarea>
+    </div>
+    <div class="abs-btns">
+      <button class="abs-btn-clear" id="abs-clear-btn" onclick="clearAbsent()">✕ Clear Absent</button>
+      <button class="abs-btn-cancel" onclick="closeAbsent()">বাতিল</button>
+      <button class="abs-btn-confirm" onclick="confirmAbsent()">✔ Mark Absent</button>
+    </div>
+  </div>
+</div>
 <div class="nm-overlay" id="nmOverlay">
   <div class="nm-modal">
     <h3 id="nm-title">কর্মীর নাম</h3>
@@ -4299,12 +4349,32 @@ function renderSheet(){
         ? {late:0, ot:0, lunchDiff:0}
         : computeAttendance(inVal, lOutVal, lInVal, outVal, empIdx, ndFlag);
 
+      // Check absent flag
+      const absKey = `${day}-${empIdx}-abs`;
+      const isAbsent = !!(data[absKey]);
+      const absReason = isAbsent ? (data[absKey] !== '1' ? data[absKey] : '') : '';
+
       ['in','lout','lin','out'].forEach((slot,slotIdx)=>{
         const ck=`${day}-${empIdx}-${slotIdx}`;
         const saved=data[ck]||'';
         const td=document.createElement('td');
         const isFuture = isCurrentMonth && day > todayDay;
         const isEditable = isToday || (!isFuture);
+
+        if(isAbsent){
+          if(slotIdx===0){
+            td.className='tc absent-cell absent-main';
+            td.textContent='Absent';
+            if(absReason) td.title='Reason: '+absReason;
+            if(isEditable) td.addEventListener('click',()=>openAbsentFromCell(empIdx,day));
+          } else {
+            td.className='tc absent-cell absent-empty';
+          }
+          td.dataset.key=ck; td.dataset.day=day; td.dataset.emp=empIdx; td.dataset.slot=slotIdx;
+          tr.appendChild(td);
+          return;
+        }
+
         td.className='tc'+(isEditable?' today-cell':' locked-cell')+(saved?' filled':'');
         td.dataset.key=ck; td.dataset.day=day;
         td.dataset.emp=empIdx; td.dataset.slot=slotIdx;
@@ -4345,16 +4415,24 @@ function renderSheet(){
 
       /* Late cell */
       const lateTd = document.createElement('td');
-      lateTd.className = 'tc locked-cell'+(att.late>0?' late-cell':'');
-      if(att.late>0) lateTd.textContent = fmtMins(att.late);
-      if(isFriday) { lateTd.style.background='#f7f7f7'; lateTd.title='শুক্রবার — Late/OT নেই'; }
+      if(isAbsent){
+        lateTd.className='tc locked-cell absent-cell'; lateTd.textContent='—';
+      } else {
+        lateTd.className = 'tc locked-cell'+(att.late>0?' late-cell':'');
+        if(att.late>0) lateTd.textContent = fmtMins(att.late);
+        if(isFriday) { lateTd.style.background='#f7f7f7'; lateTd.title='শুক্রবার — Late/OT নেই'; }
+      }
       tr.appendChild(lateTd);
 
       /* OT cell */
       const otTd = document.createElement('td');
-      otTd.className = 'tc locked-cell emp-out-border'+(att.ot>0?' ot-cell':'');
-      if(att.ot>0) otTd.textContent = fmtMins(att.ot);
-      if(isFriday) { otTd.style.background='#f7f7f7'; otTd.title='শুক্রবার — Late/OT নেই'; }
+      if(isAbsent){
+        otTd.className='tc locked-cell absent-cell emp-out-border'; otTd.textContent='—';
+      } else {
+        otTd.className = 'tc locked-cell emp-out-border'+(att.ot>0?' ot-cell':'');
+        if(att.ot>0) otTd.textContent = fmtMins(att.ot);
+        if(isFriday) { otTd.style.background='#f7f7f7'; otTd.title='শুক্রবার — Late/OT নেই'; }
+      }
       tr.appendChild(otTd);
     });
     tbody.appendChild(tr);
@@ -4575,6 +4653,77 @@ function closeTP(){
 }
 document.getElementById('tpOverlay').addEventListener('click',e=>{
   if(e.target===e.currentTarget) closeTP();
+});
+
+/* ════════════════════════════════════════════
+   ABSENT SYSTEM
+════════════════════════════════════════════ */
+let absentEmp=null, absentDay=null;
+
+function openAbsent(){
+  // Grab emp/day from the currently-open time picker
+  absentEmp = activeEmpIdx;
+  absentDay = activeTD ? activeTD.dataset.day : null;
+  closeTP();
+  if(absentEmp===null || !absentDay) return;
+
+  document.getElementById('abs-emp-name').textContent = employees[absentEmp] || '';
+  document.getElementById('abs-date').textContent = `${absentDay} ${MN_EN[cMonth]} ${cYear}`;
+
+  const data = loadAtt(cYear, cMonth);
+  const existing = data[`${absentDay}-${absentEmp}-abs`];
+  document.getElementById('abs-reason').value = (existing && existing!=='1') ? existing : '';
+
+  const clearBtn = document.getElementById('abs-clear-btn');
+  clearBtn.style.display = existing ? '' : 'none';
+
+  document.getElementById('absOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('abs-reason').focus(), 300);
+}
+
+function openAbsentFromCell(empIdx, day){
+  absentEmp = empIdx;
+  absentDay = String(day);
+  document.getElementById('abs-emp-name').textContent = employees[empIdx] || '';
+  document.getElementById('abs-date').textContent = `${day} ${MN_EN[cMonth]} ${cYear}`;
+
+  const data = loadAtt(cYear, cMonth);
+  const existing = data[`${day}-${empIdx}-abs`];
+  document.getElementById('abs-reason').value = (existing && existing!=='1') ? existing : '';
+
+  document.getElementById('abs-clear-btn').style.display = '';
+  document.getElementById('absOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('abs-reason').focus(), 300);
+}
+
+function confirmAbsent(){
+  if(absentEmp===null || !absentDay) return;
+  const reason = document.getElementById('abs-reason').value.trim() || '1';
+  const data = loadAtt(cYear, cMonth);
+  const absKey = `${absentDay}-${absentEmp}-abs`;
+  data[absKey] = reason;
+  // Clear all time slots for this day/emp
+  [0,1,2,3].forEach(s => delete data[`${absentDay}-${absentEmp}-${s}`]);
+  delete data[`${absentDay}-${absentEmp}-nd`];
+  saveAtt(cYear, cMonth, data);
+  closeAbsent();
+  renderSheet();
+}
+
+function clearAbsent(){
+  if(absentEmp===null || !absentDay) return;
+  const data = loadAtt(cYear, cMonth);
+  delete data[`${absentDay}-${absentEmp}-abs`];
+  saveAtt(cYear, cMonth, data);
+  closeAbsent();
+  renderSheet();
+}
+
+function closeAbsent(){
+  document.getElementById('absOverlay').classList.remove('open');
+}
+document.getElementById('absOverlay').addEventListener('click', e=>{
+  if(e.target===e.currentTarget) closeAbsent();
 });
 
 /* ════════════════════════════════════════════
