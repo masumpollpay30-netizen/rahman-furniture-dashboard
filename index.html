@@ -12,10 +12,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         /* ── Absent Cell ── */
-        .tc.absent-cell { background:#fde8e8!important; color:#c0392b!important; font-weight:800!important; font-size:9px!important; }
-        .tc.absent-main { background:#e74c3c!important; color:#fff!important; font-size:9.5px!important; cursor:pointer; }
-        .tc.absent-main:hover { background:#c0392b!important; }
-        .tc.absent-empty { background:#fde8e8!important; color:transparent!important; }
+        .tc.absent-cell { background:transparent!important; color:#c0392b!important; font-weight:900!important; font-size:9.5px!important; text-transform:uppercase!important; letter-spacing:.3px!important; }
+        .tc.absent-main { background:transparent!important; color:#c0392b!important; font-size:9.5px!important; font-weight:900!important; text-transform:uppercase!important; cursor:pointer; border:none!important; }
+        .tc.absent-main:hover { background:#fde8e8!important; }
+        .tc.absent-empty { background:transparent!important; color:transparent!important; }
         body.printing-attendance .tc.absent-cell,.tc.absent-main { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 
         /* ── Absent Modal ── */
@@ -1149,7 +1149,6 @@ th.sub-th.emp-out-border {
 .sidebar-menu li:nth-child(4) { animation-delay: 0.36s; }
 .sidebar-menu li:nth-child(5) { animation-delay: 0.42s; }
 .sidebar-menu li:nth-child(6) { animation-delay: 0.48s; }
-
 /* Sidebar menu hover — lift effect */
 .sidebar-menu li a {
   transition: background 0.18s ease, color 0.18s ease, transform 0.18s cubic-bezier(.34,1.56,.64,1), box-shadow 0.18s ease !important;
@@ -1598,6 +1597,7 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
         <li><a onclick="showPage('invoice')" id="menu-invoice"><span class="icon">📄</span> Invoice তৈরি</a></li>
         <li><a onclick="showPage('delivery')" id="menu-delivery"><span class="icon">🚚</span> Delivery Settlement</a></li>
         <li><a onclick="showPage('attendance')" id="menu-attendance"><span class="icon">🗓️</span> Attendance</a></li>
+        <li><a onclick="showPage('stock')" id="menu-stock"><span class="icon">📦</span> Stock & Inventory</a></li>
     </ul>
     <div class="sidebar-section">Others</div>
     <ul class="sidebar-menu">
@@ -2002,6 +2002,7 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
     <button class="btn btn-ghost" onclick="document.getElementById('ri').click()">⬆ Restore</button>
     <button class="btn btn-ghost" onclick="document.getElementById('li').click()">🖼 Logo</button>
     <button class="btn btn-ghost" onclick="printAttendance()">🖨 Print / PDF</button>
+    <button class="btn btn-ghost" id="reason-toggle-btn" onclick="window.toggleReasonCol()" title="L-Out কলামে Absent কারণ দেখাবে/লুকাবে">💬 Reason</button>
     <div class="print-tip">💡 Print এ <b>"More settings → Scale: Fit to page"</b> দিন</div>
     <div class="save-badge"><span class="save-dot"></span><span id="sv">Saved</span></div>
   </div>
@@ -2184,6 +2185,81 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
 <!-- ══ TOAST ══ -->
 <div class="toast" id="toast"></div>
     </div>
+
+<!-- ===================== STOCK & INVENTORY PAGE ===================== -->
+<div id="stock-view" style="display:none; padding:20px; background:#f0f4f8; min-height:calc(100vh - 61px);">
+  <div style="width:210mm; margin:0 auto;">
+    <!-- Top bar -->
+    <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
+      <button onclick="window.printStockPage()" style="background:linear-gradient(135deg,#28a745,#218838);color:#fff;border:none;padding:8px 22px;font-size:13px;font-weight:bold;cursor:pointer;border-radius:5px;box-shadow:0 4px 10px rgba(40,167,69,0.2);transition:all 0.25s;">🖨️ Print / Save</button>
+    </div>
+
+    <!-- A4 Page -->
+    <div id="stock-a4" style="width:210mm;min-height:297mm;background:#fff;box-shadow:0 8px 25px rgba(0,0,0,0.12);padding:15px 25px;box-sizing:border-box;border-radius:6px;display:flex;flex-direction:column;justify-content:space-between;">
+      
+      <!-- Header -->
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;border-bottom:2px solid #1a4d80;padding-bottom:6px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div id="sk-logo-box" onclick="document.getElementById('sk-logo-file').click();" title="Click to upload logo" style="width:60px;height:60px;border:1px dashed #1a4d80;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#fafafa;flex-shrink:0;">
+              <svg id="sk-default-logo" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
+                <path d="M16 42V24C16 19.58 19.58 16 24 16H40C44.42 16 48 19.58 48 24V42" stroke="#1a4d80" stroke-width="3" stroke-linecap="round"/>
+                <path d="M12 32H52" stroke="#1a4d80" stroke-width="3" stroke-linecap="round"/>
+                <path d="M20 42V50" stroke="#1a4d80" stroke-width="3" stroke-linecap="round"/>
+                <path d="M44 42V50" stroke="#1a4d80" stroke-width="3" stroke-linecap="round"/>
+                <path d="M16 37H48" stroke="#1a4d80" stroke-width="3.5" stroke-linecap="round"/>
+              </svg>
+              <img id="sk-display-logo" src="" style="display:none;width:100%;height:100%;object-fit:contain;">
+              <input type="file" id="sk-logo-file" style="display:none;" accept="image/*" onchange="window.skUploadLogo(event)">
+            </div>
+            <div>
+              <h1 id="sk-company-title" contenteditable="true" style="font-size:26px;font-weight:bold;color:#003366;margin:0 0 2px 0;letter-spacing:.5px;outline:none;">RAHMAN FURNITURE</h1>
+              <p id="sk-company-addr" contenteditable="true" style="font-size:11px;font-weight:bold;color:#333;line-height:1.25;margin:0;outline:none;">Madaninagar, Gol Chattar 2nd Goli, Chittagong Road<br>Siddhirganj, Narayanganj<br>Phone: 01794-526688</p>
+            </div>
+          </div>
+          <div style="border:1.5px solid #000;padding:4px 10px;text-align:center;min-width:130px;font-weight:bold;font-size:11px;background:#fff;">
+            <div style="margin-bottom:2px;">Date: <span id="sk-live-date" contenteditable="true">-- --- ----</span></div>
+            <div>Time: <span id="sk-live-time" contenteditable="true">--:--:-- --</span></div>
+          </div>
+        </div>
+
+        <div style="text-align:center;margin-bottom:10px;">
+          <h2 contenteditable="true" style="font-size:25px;font-weight:800;color:#1a4d80;text-decoration:underline;display:inline-block;margin:0;letter-spacing:.5px;outline:none;">Stock And Inventory</h2>
+        </div>
+
+        <!-- Table -->
+        <div style="width:100%;">
+          <table id="sk-inventory-table" style="width:100%;border-collapse:collapse;table-layout:fixed;">
+            <thead>
+              <tr>
+                <th style="border:1px solid #000;padding:2px 5px;font-size:12px;font-weight:bold;color:#003366;text-align:center;background:#f5f7f8;height:22px;width:6%;">Sl</th>
+                <th contenteditable="true" style="border:1px solid #000;padding:2px 5px;font-size:12px;font-weight:bold;color:#003366;text-align:center;background:#f5f7f8;height:22px;width:35%;outline:none;">Items Name</th>
+                <th contenteditable="true" style="border:1px solid #000;padding:2px 5px;font-size:12px;font-weight:bold;color:#003366;text-align:center;background:#f5f7f8;height:22px;width:10%;outline:none;">Qty</th>
+                <th contenteditable="true" style="border:1px solid #000;padding:2px 5px;font-size:12px;font-weight:bold;color:#003366;text-align:center;background:#f5f7f8;height:22px;width:25%;outline:none;">Due Delivery</th>
+                <th contenteditable="true" style="border:1px solid #000;padding:2px 5px;font-size:12px;font-weight:bold;color:#003366;text-align:center;background:#f5f7f8;height:22px;width:24%;outline:none;">Comments</th>
+              </tr>
+            </thead>
+            <tbody id="sk-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Bottom controls -->
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:4px;border-top:1px dashed #ccc;">
+          <div style="font-size:11px;color:#555;font-weight:600;">Total Available Products: <span id="sk-product-count" style="font-weight:900;color:#003366;">0</span></div>
+          <button onclick="window.skAddRow()" style="padding:5px 14px;background:#1a4d80;color:#fff;border:none;border-radius:4px;font-size:11px;font-weight:bold;cursor:pointer;" class="no-print-sk">+ Add New Row</button>
+        </div>
+
+        <!-- Signatures -->
+        <div style="display:flex;justify-content:space-between;margin-top:40px;padding-top:8px;">
+          <div contenteditable="true" style="width:180px;border-top:1.5px solid #000;padding-top:6px;font-size:12px;font-weight:bold;text-align:center;outline:none;">Manager Signature</div>
+          <div contenteditable="true" style="width:180px;border-top:1.5px solid #000;padding-top:6px;font-size:12px;font-weight:bold;text-align:center;outline:none;">Owner Signature</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 </div><!-- end main-content -->
 
@@ -2846,10 +2922,11 @@ function showPage(page) {
     document.getElementById('delivery-view').style.display = 'none';
     document.getElementById('delivery-view').classList.remove('active');
     document.getElementById('attendance-view').classList.remove('att-active');
+    document.getElementById('stock-view').style.display = 'none';
 
     document.querySelectorAll('.sidebar-menu li a').forEach(a => a.classList.remove('active'));
 
-    const titles = { dashboard: 'Dashboard', invoice: 'Invoice তৈরি', delivery: 'Delivery Settlement', attendance: 'Attendance' };
+    const titles = { dashboard: 'Dashboard', invoice: 'Invoice তৈরি', delivery: 'Delivery Settlement', attendance: 'Attendance', stock: 'Stock & Inventory' };
     document.getElementById('topbar-title').innerText = 'Rahman Furniture — ' + titles[page];
 
     if (page === 'dashboard') {
@@ -2872,6 +2949,21 @@ function showPage(page) {
         document.getElementById('menu-attendance').classList.add('active');
         document.getElementById('topbar-actions').innerHTML = '';
         if (!window._attInited) { window._attInited = true; init(); }
+    } else if (page === 'stock') {
+        document.getElementById('stock-view').style.display = 'block';
+        document.getElementById('menu-stock').classList.add('active');
+        document.getElementById('topbar-actions').innerHTML = '';
+        // Init stock table and logo on first open
+        if(window.skAddRow) {
+            var tb = document.getElementById('sk-table-body');
+            if(tb && tb.children.length === 0) {
+                for(var _i=0;_i<35;_i++) window.skAddRow();
+            }
+            try{ 
+                var sl=localStorage.getItem('sk_logo');
+                if(sl){ var im=document.getElementById('sk-display-logo'); var sv2=document.getElementById('sk-default-logo'); im.src=sl; im.style.display='block'; if(sv2)sv2.style.display='none'; }
+            }catch(e){}
+        }
     }
 }
 
@@ -4364,9 +4456,17 @@ function renderSheet(){
         if(isAbsent){
           if(slotIdx===0){
             td.className='tc absent-cell absent-main';
-            td.textContent='Absent';
+            td.textContent='ABSENT';
             if(absReason) td.title='Reason: '+absReason;
             if(isEditable) td.addEventListener('click',()=>openAbsentFromCell(empIdx,day));
+          } else if(slotIdx===1){
+            // L-Out column: show reason if toggle is ON
+            td.className='tc absent-cell absent-empty reason-cell';
+            td.dataset.reason = absReason || '';
+            if(window._showReason && absReason){
+              td.textContent = absReason;
+              td.style.cssText='font-size:7.5px!important;color:#c0392b!important;font-weight:700!important;text-align:left!important;padding:1px 3px!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+            }
           } else {
             td.className='tc absent-cell absent-empty';
           }
@@ -5505,6 +5605,171 @@ window.doPrintLabel = function() {
 document.getElementById('printLabelModal').addEventListener('click', function(e) {
     if (e.target === this) closePrintLabel();
 });
+
+// ══════════════════════════════════════
+// REASON COLUMN TOGGLE (L-Out column)
+// ══════════════════════════════════════
+window._showReason = false;
+window.toggleReasonCol = function() {
+  window._showReason = !window._showReason;
+  const btn = document.getElementById('reason-toggle-btn');
+  if(btn){
+    btn.style.background = window._showReason ? '#e74c3c' : '';
+    btn.style.color = window._showReason ? '#fff' : '';
+    btn.textContent = window._showReason ? '💬 Reason ✔' : '💬 Reason';
+  }
+  // Update all existing reason-cells without re-rendering
+  document.querySelectorAll('.reason-cell').forEach(td=>{
+    const reason = td.dataset.reason || '';
+    if(window._showReason && reason){
+      td.textContent = reason;
+      td.style.cssText='font-size:7.5px!important;color:#c0392b!important;font-weight:700!important;text-align:left!important;padding:1px 3px!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+    } else {
+      td.textContent = '';
+      td.style.cssText='';
+    }
+  });
+};
+
+// ══════════════════════════════════════
+// STOCK & INVENTORY PAGE SCRIPTS
+// ══════════════════════════════════════
+(function(){
+  // Clock
+  function skUpdateClock(){
+    const now=new Date();
+    const months=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    let h=now.getHours(), m=String(now.getMinutes()).padStart(2,'0'), s=String(now.getSeconds()).padStart(2,'0');
+    const ap=h>=12?'PM':'AM'; h=h%12||12;
+    const dl=document.getElementById('sk-live-date'), tl=document.getElementById('sk-live-time');
+    if(dl && document.activeElement!==dl) dl.innerText=`${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+    if(tl && document.activeElement!==tl) tl.innerText=`${h}:${m}:${s} ${ap}`;
+  }
+  setInterval(skUpdateClock,1000);
+  skUpdateClock();
+
+  // Generate 35 rows
+  function skBuildRows(){
+    const tbody=document.getElementById('sk-table-body');
+    if(!tbody || tbody.children.length>0) return;
+    for(let i=0;i<35;i++){
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td class="sk-sl" style="border:1px solid #000;padding:2px 5px;font-size:12px;text-align:center;font-weight:bold;height:17px;"></td>
+        <td contenteditable="true" style="border:1px solid #000;padding:2px 5px;font-size:12px;height:17px;outline:none;"></td>
+        <td contenteditable="true" style="border:1px solid #000;padding:2px 5px;font-size:12px;height:17px;text-align:center;font-weight:bold;outline:none;"></td>
+        <td contenteditable="true" style="border:1px solid #000;padding:2px 5px;font-size:12px;height:17px;outline:none;"></td>
+        <td contenteditable="true" style="border:1px solid #000;padding:2px 5px;font-size:12px;height:17px;outline:none;"></td>`;
+      tbody.appendChild(tr);
+    }
+    skUpdateSl();
+    skCalcQty();
+  }
+
+  function skUpdateSl(){
+    document.querySelectorAll('#sk-table-body tr').forEach((tr,i)=>{
+      const sl=tr.querySelector('.sk-sl');
+      if(sl) sl.textContent=i+1;
+    });
+  }
+
+  function skCalcQty(){
+    let total=0;
+    document.querySelectorAll('#sk-table-body tr').forEach(tr=>{
+      const v=parseInt((tr.cells[2]||{}).innerText||'',10);
+      if(!isNaN(v)) total+=v;
+    });
+    const el=document.getElementById('sk-product-count');
+    if(el) el.textContent=total;
+  }
+
+  window.skAddRow = function(){
+    const tbody=document.getElementById('sk-table-body');
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td class="sk-sl" style="border:1px solid #000;padding:2px 5px;font-size:12px;text-align:center;font-weight:bold;height:17px;"></td>
+      <td contenteditable="true" style="border:1px solid #000;padding:2px 5px;font-size:12px;height:17px;outline:none;"></td>
+      <td contenteditable="true" style="border:1px solid #000;padding:2px 5px;font-size:12px;height:17px;text-align:center;font-weight:bold;outline:none;"></td>
+      <td contenteditable="true" style="border:1px solid #000;padding:2px 5px;font-size:12px;height:17px;outline:none;"></td>
+      <td contenteditable="true" style="border:1px solid #000;padding:2px 5px;font-size:12px;height:17px;outline:none;"></td>`;
+    tbody.appendChild(tr);
+    skUpdateSl();
+  };
+
+  // Logo
+  window.skUploadLogo = function(event){
+    const file=event.target.files[0]; if(!file) return;
+    const reader=new FileReader();
+    reader.onload=function(){
+      const img=document.getElementById('sk-display-logo');
+      const svg=document.getElementById('sk-default-logo');
+      img.src=reader.result; img.style.display='block';
+      if(svg) svg.style.display='none';
+      try{ localStorage.setItem('sk_logo',reader.result); }catch(e){}
+    };
+    reader.readAsDataURL(file);
+  };
+
+  function skLoadLogo(){
+    try{
+      const s=localStorage.getItem('sk_logo');
+      if(s){ 
+        const img=document.getElementById('sk-display-logo');
+        const svg=document.getElementById('sk-default-logo');
+        img.src=s; img.style.display='block';
+        if(svg) svg.style.display='none';
+      }
+    }catch(e){}
+  }
+
+  // Print
+  window.printStockPage = function(){
+    const a4=document.getElementById('stock-a4');
+    if(!a4) return;
+    const clone=a4.cloneNode(true);
+    // Remove buttons from clone
+    clone.querySelectorAll('.no-print-sk, button').forEach(el=>el.remove());
+    const w=window.open('','_blank','width=900,height=700');
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Stock & Inventory</title>
+    <style>
+    @page{size:A4;margin:8mm 12mm}
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body{font-family:'Segoe UI',Arial,sans-serif;background:#fff}
+    .np{display:flex;gap:10px;padding:10px;background:#f5f5f5;border-bottom:1px solid #ddd;}
+    .np button{padding:9px 20px;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:700}
+    .bp{background:#28a745;color:#fff}.bc{background:#eee;color:#555}
+    @media print{.np{display:none!important}body{margin:0}}
+    table{width:100%;border-collapse:collapse;}
+    th,td{border:1px solid #000;padding:2px 5px;font-size:12px;}
+    th{background:#eaedf0!important;font-weight:bold;color:#003366;text-align:center;}
+    </style></head><body>
+    <div class="np">
+    <button class="bp" onclick="window.print()">🖨️ Print</button>
+    <button class="bc" onclick="window.close()">✕ Close</button>
+    </div>
+    ${clone.outerHTML}
+    </body></html>`);
+    w.document.close();
+    setTimeout(()=>w.print(),600);
+  };
+
+  // Init when stock page becomes visible
+  const observer=new MutationObserver(()=>{
+    const sv=document.getElementById('stock-view');
+    if(sv && sv.style.display!=='none'){
+      skBuildRows();
+      skLoadLogo();
+      const tbody=document.getElementById('sk-table-body');
+      if(tbody) tbody.addEventListener('input',skCalcQty);
+      observer.disconnect();
+    }
+  });
+  observer.observe(document.body,{attributes:true,subtree:true,attributeFilter:['style']});
+
+  // Also check on DOMContentLoaded
+  document.addEventListener('DOMContentLoaded',function(){
+    const sv=document.getElementById('stock-view');
+    if(sv && sv.style.display!=='none'){ skBuildRows(); skLoadLogo(); }
+  });
+})();
 </script>
 </body>
 </html>
