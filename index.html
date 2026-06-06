@@ -468,10 +468,10 @@
         /* ===================== PRINT STYLES ===================== */
         @media print {
             @page { size: A4; margin: 0; }
-            body { background: none; }
+            body { background: #ffffff !important; }
             .sidebar, .topbar, .invoice-topbar, .delivery-topbar, .no-print { display: none !important; }
             #rf-cloud-ind, #cloud-spinner, #cloud-status-msg { display: none !important; }
-            .main-content { margin-left: 0; }
+            .main-content { margin-left: 0; background: #ffffff !important; }
 
             /* Invoice print */
             .inv-a4-page { margin: 0; border: none; height: 297mm; width: 210mm; padding: 10mm; page-break-inside: avoid; }
@@ -503,8 +503,8 @@
             .page-view.active { display: block !important; padding: 0; }
             #invoice-view { display: none !important; }
             #invoice-view.active { display: block !important; }
-            #delivery-view { display: none !important; }
-            #delivery-view.active { display: block !important; }
+            #delivery-view { display: none !important; background: #ffffff !important; }
+            #delivery-view.active { display: block !important; background: #ffffff !important; }
 
             /* ── PRINT DARK MODE OVERRIDE ──
                Dark mode / Full dark mode যাই হোক, print সবসময় সাদা পটভূমি ও কালো লেখা */
@@ -1610,7 +1610,7 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
         <li><a onclick="showSubPage('hc')" id="menu-hc"><span class="icon">😊</span> Happy Customer</a></li>
         <li><a onclick="showSubPage('ss')" id="menu-ss"><span class="icon">💼</span> Salary Sheet</a></li>
     </ul>
-    <div class="sidebar-footer">Rahman Furniture &copy; 2025</div>
+    <div class="sidebar-footer">Created By Masum Billah &copy; 2026</div>
 </div>
 
 <!-- ===================== MAIN CONTENT ===================== -->
@@ -5721,25 +5721,35 @@ window.toggleReasonCol = function() {
   }
 
   // Print
+  // একটি guard যেন double window না খোলে
+  let _skPrinting = false;
+
   window.printStockPage = function(){
+    if(_skPrinting) return;
+    _skPrinting = true;
+    setTimeout(()=>{ _skPrinting = false; }, 2000);
+
     const a4=document.getElementById('stock-a4');
     if(!a4) return;
     const clone=a4.cloneNode(true);
-    // Remove buttons from clone
     clone.querySelectorAll('.no-print-sk, button').forEach(el=>el.remove());
+    // background ও shadow সরিয়ে clean করা
+    clone.style.cssText='width:100%;box-shadow:none;border-radius:0;margin:0;padding:8mm 12mm;box-sizing:border-box;background:#fff;font-family:Segoe UI,Arial,sans-serif;';
+
     const w=window.open('','_blank','width=900,height=700');
     w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Stock & Inventory</title>
     <style>
-    @page{size:A4;margin:8mm 12mm}
+    @page{size:A4;margin:0}
     *{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    body{font-family:'Segoe UI',Arial,sans-serif;background:#fff}
+    html,body{background:#fff!important;font-family:'Segoe UI',Arial,sans-serif;}
     .np{display:flex;gap:10px;padding:10px;background:#f5f5f5;border-bottom:1px solid #ddd;}
     .np button{padding:9px 20px;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:700}
     .bp{background:#28a745;color:#fff}.bc{background:#eee;color:#555}
-    @media print{.np{display:none!important}body{margin:0}}
+    @media print{.np{display:none!important}}
     table{width:100%;border-collapse:collapse;}
-    th,td{border:1px solid #000;padding:2px 5px;font-size:12px;}
-    th{background:#eaedf0!important;font-weight:bold;color:#003366;text-align:center;}
+    th,td{border:1px solid #000;padding:2px 5px;font-size:12px;color:#000;}
+    th{background:#eaedf0!important;font-weight:bold;color:#003366!important;text-align:center;}
+    [contenteditable]{outline:none;}
     </style></head><body>
     <div class="np">
     <button class="bp" onclick="window.print()">🖨️ Print</button>
@@ -5748,8 +5758,20 @@ window.toggleReasonCol = function() {
     ${clone.outerHTML}
     </body></html>`);
     w.document.close();
-    setTimeout(()=>w.print(),600);
+    setTimeout(()=>w.print(), 600);
   };
+
+  // Ctrl+P চাপলে — Stock page active থাকলে printStockPage() call, browser print বন্ধ
+  window.addEventListener('keydown', function(e){
+    if((e.ctrlKey||e.metaKey) && e.key==='p'){
+      const sv=document.getElementById('stock-view');
+      if(sv && sv.style.display!=='none'){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        window.printStockPage();
+      }
+    }
+  }, true); // capture phase — সবার আগে fire হবে
 
   // Init when stock page becomes visible
   const observer=new MutationObserver(()=>{
