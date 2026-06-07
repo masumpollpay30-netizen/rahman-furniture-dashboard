@@ -468,10 +468,10 @@
         /* ===================== PRINT STYLES ===================== */
         @media print {
             @page { size: A4; margin: 0; }
-            body { background: #ffffff !important; }
+            body { background: none; }
             .sidebar, .topbar, .invoice-topbar, .delivery-topbar, .no-print { display: none !important; }
             #rf-cloud-ind, #cloud-spinner, #cloud-status-msg { display: none !important; }
-            .main-content { margin-left: 0; background: #ffffff !important; }
+            .main-content { margin-left: 0; }
 
             /* Invoice print */
             .inv-a4-page { margin: 0; border: none; height: 297mm; width: 210mm; padding: 10mm; page-break-inside: avoid; }
@@ -503,8 +503,8 @@
             .page-view.active { display: block !important; padding: 0; }
             #invoice-view { display: none !important; }
             #invoice-view.active { display: block !important; }
-            #delivery-view { display: none !important; background: #ffffff !important; }
-            #delivery-view.active { display: block !important; background: #ffffff !important; }
+            #delivery-view { display: none !important; }
+            #delivery-view.active { display: block !important; }
 
             /* ── PRINT DARK MODE OVERRIDE ──
                Dark mode / Full dark mode যাই হোক, print সবসময় সাদা পটভূমি ও কালো লেখা */
@@ -1610,7 +1610,7 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
         <li><a onclick="showSubPage('hc')" id="menu-hc"><span class="icon">😊</span> Happy Customer</a></li>
         <li><a onclick="showSubPage('ss')" id="menu-ss"><span class="icon">💼</span> Salary Sheet</a></li>
     </ul>
-    <div class="sidebar-footer">Created By Masum Billah &copy; 2026</div>
+    <div class="sidebar-footer">Rahman Furniture &copy; 2025</div>
 </div>
 
 <!-- ===================== MAIN CONTENT ===================== -->
@@ -2395,6 +2395,107 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
 <!-- ===================== SCRIPTS ===================== -->
 <script>
 // ========================================================
+// 🗄️ INDEXEDDB — Unlimited Photo Storage (localStorage replace)
+// ========================================================
+const IDB_NAME = 'RahmanFurnitureDB';
+const IDB_VER  = 2;
+const IDB_STORE = 'invoices';
+let _idb = null;
+
+function openIDB() {
+    return new Promise((resolve, reject) => {
+        if (_idb) { resolve(_idb); return; }
+        const req = indexedDB.open(IDB_NAME, IDB_VER);
+        req.onupgradeneeded = e => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(IDB_STORE)) {
+                const store = db.createObjectStore(IDB_STORE, { keyPath: 'invoiceNo' });
+                store.createIndex('date', 'date', { unique: false });
+            }
+        };
+        req.onsuccess = e => { _idb = e.target.result; resolve(_idb); };
+        req.onerror   = e => { console.error('IDB open error', e); reject(e); };
+    });
+}
+
+async function idbSaveInvoice(inv) {
+    const db = await openIDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        tx.objectStore(IDB_STORE).put(inv);
+        tx.oncomplete = resolve;
+        tx.onerror    = reject;
+    });
+}
+
+async function idbGetInvoice(invoiceNo) {
+    const db = await openIDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, 'readonly');
+        const req = tx.objectStore(IDB_STORE).get(invoiceNo);
+        req.onsuccess = e => resolve(e.target.result || null);
+        req.onerror   = reject;
+    });
+}
+
+async function idbGetAll() {
+    const db = await openIDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, 'readonly');
+        const req = tx.objectStore(IDB_STORE).getAll();
+        req.onsuccess = e => resolve(e.target.result || []);
+        req.onerror   = reject;
+    });
+}
+
+async function idbDelete(invoiceNo) {
+    const db = await openIDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        tx.objectStore(IDB_STORE).delete(invoiceNo);
+        tx.oncomplete = resolve;
+        tx.onerror    = reject;
+    });
+}
+
+async function idbClear() {
+    const db = await openIDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        tx.objectStore(IDB_STORE).clear();
+        tx.oncomplete = resolve;
+        tx.onerror    = reject;
+    });
+}
+
+// Migrate old localStorage invoices → IndexedDB (runs once)
+async function migrateFromLocalStorage() {
+    try {
+        const old = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
+        if (old.length === 0) return;
+        const db  = await openIDB();
+        const existing = await idbGetAll();
+        if (existing.length >= old.length) { localStorage.removeItem('invoiceHistory'); return; }
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        const store = tx.objectStore(IDB_STORE);
+        old.forEach(inv => store.put(inv));
+        tx.oncomplete = () => {
+            localStorage.removeItem('invoiceHistory');
+            console.log('✅ Migrated', old.length, 'invoices to IndexedDB');
+        };
+    } catch(e) { console.log('Migration skipped:', e); }
+}
+
+// Helper: get all invoices (IDB-first)
+async function getAllInvoices() {
+    try {
+        return await idbGetAll();
+    } catch(e) {
+        return JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
+    }
+}
+
+// ========================================================
 // ☁️ GOOGLE SHEETS CLOUD SYNC + 📱 WHATSAPP TRACKING
 // ========================================================
 
@@ -2452,15 +2553,18 @@ async function saveCloudData() {
     const url = getScriptUrl();
     if (!url) return;
 
-    const history     = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
+    const history     = await getAllInvoices();
     const invNum      = localStorage.getItem('invNum') || '2572';
     const commissions = JSON.parse(localStorage.getItem('salesCommissions') || '[]');
+
+    // Cloud sync-এ photos পাঠাবো না (too large) — শুধু metadata
+    const historyNoPhotos = history.map(inv => Object.assign({}, inv, { photos: [] }));
 
     const payload = {
         action: 'saveData',
         data: {
             invoiceCounter: invNum,
-            allInvoices:    JSON.stringify(history),
+            allInvoices:    JSON.stringify(historyNoPhotos),
             salesCommissions: JSON.stringify(commissions),
             companyName:  localStorage.getItem('companyName') || '',
             compAddress:  localStorage.getItem('compAddress') || '',
@@ -2469,7 +2573,6 @@ async function saveCloudData() {
     };
 
     try {
-        // ✅ no Content-Type header = simple request = no CORS preflight = works!
         await fetch(url, {
             method: 'POST',
             mode:   'no-cors',
@@ -2522,13 +2625,14 @@ async function loadCloudData() {
     const url = getScriptUrl();
     if (!url) return false;
     try {
-        // GET request — Google Apps Script CORS-friendly
         const response = await fetch(url + '?action=loadData', { method: 'GET' });
         const result   = await response.json();
         if (result.status === 'success' && result.data) {
             const d = result.data;
             if (d.invoiceCounter) {
-                const latest = Math.max(parseInt(d.invoiceCounter), parseInt(localStorage.getItem('invNum') || '2572'));
+                const localInv  = parseInt(localStorage.getItem('invNum') || '2572');
+                const cloudInv  = parseInt(d.invoiceCounter);
+                const latest    = Math.max(cloudInv, localInv);
                 localStorage.setItem('invNum', latest.toString());
                 const el = document.getElementById('inv-no');
                 if (el) el.innerText = latest;
@@ -2536,10 +2640,15 @@ async function loadCloudData() {
             if (d.allInvoices) {
                 try {
                     const cloudH = JSON.parse(d.allInvoices);
-                    const localH = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
+                    const localH = await getAllInvoices();
                     const merged = [...cloudH];
                     localH.forEach(li => { if (!merged.find(ci => ci.invoiceNo === li.invoiceNo)) merged.push(li); });
-                    localStorage.setItem('invoiceHistory', JSON.stringify(merged));
+                    // Save merged back to IDB (preserving local photos)
+                    for (const inv of merged) {
+                        const existing = await idbGetInvoice(inv.invoiceNo);
+                        if (!existing) await idbSaveInvoice(inv);
+                        // If local already has it (with photos), keep local version
+                    }
                 } catch(e) {}
             }
             if (d.salesCommissions) {
@@ -2552,8 +2661,8 @@ async function loadCloudData() {
     return false;
 }
 
-function forceSyncToCloud() {
-    const history = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
+async function forceSyncToCloud() {
+    const history = await getAllInvoices();
     if (history.length === 0) {
         setCloudStatus('⚠️ কোনো invoice নেই। একটি invoice তৈরি করুন আগে।', '#e67e22');
         return;
@@ -2970,14 +3079,14 @@ function showPage(page) {
 // ========================================================
 // DASHBOARD
 // ========================================================
-function renderDashboard() {
-    const history = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
+async function renderDashboard() {
+    const history = await getAllInvoices();
     const tbody = document.getElementById('dashboard-tbody');
     tbody.innerHTML = '';
 
     let totalSales = 0, totalCollected = 0, totalDue = 0, pending = 0, cancelled = 0;
 
-    const sorted = [...history].reverse();
+    const sorted = [...history].sort((a,b) => parseInt(b.invoiceNo||0) - parseInt(a.invoiceNo||0));
     sorted.forEach((inv, idx) => {
         const grand = parseFloat(inv.grandTotal) || 0;
         const paid = parseFloat(inv.paid) || 0;
@@ -3029,7 +3138,7 @@ function renderDashboard() {
 // ========================================================
 // 🔍 DASHBOARD SEARCH — Invoice No / Customer Phone
 // ========================================================
-function handleDashSearch(query) {
+async function handleDashSearch(query) {
     const clearBtn = document.getElementById('searchClearBtn');
     const infoEl   = document.getElementById('searchResultInfo');
     const q = query.trim().replace(/^#/, '').toLowerCase();
@@ -3042,7 +3151,7 @@ function handleDashSearch(query) {
     }
 
     clearBtn.style.display = 'block';
-    const history = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
+    const history = await getAllInvoices();
     const results = history.filter(inv => {
         const invNo  = String(inv.invoiceNo  || '').toLowerCase();
         const phone  = String(inv.customerPhone || '').replace(/\D/g, '');
@@ -3063,7 +3172,8 @@ function handleDashSearch(query) {
         return;
     }
 
-    results.forEach((inv, idx) => {
+    const sorted = [...results].sort((a,b) => parseInt(b.invoiceNo||0) - parseInt(a.invoiceNo||0));
+    sorted.forEach((inv, idx) => {
         const grand = parseFloat(inv.grandTotal) || 0;
         const paid  = parseFloat(inv.paid) || 0;
         const cls   = statusMap[inv.deliveryStatus] || 'processing';
@@ -3133,23 +3243,21 @@ function updateThemeBtns(mode) {
 function toggleDarkMode() { setTheme(document.body.classList.contains('dark-mode') ? 'light' : 'dark'); }
 function updateDarkModeBtn() { updateThemeBtns(localStorage.getItem('rfTheme') || 'light'); }
 
-function updateDeliveryStatus(invoiceNo, selectEl) {
+async function updateDeliveryStatus(invoiceNo, selectEl) {
     const newStatus = selectEl.value;
-    let history = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
-    const inv = history.find(i => i.invoiceNo === invoiceNo);
+    const inv = await idbGetInvoice(invoiceNo);
     if (inv) {
         inv.deliveryStatus = newStatus;
-        try { localStorage.setItem('invoiceHistory', JSON.stringify(history)); } catch(e){}
-        saveCloudData(); // ☁️ sync status change
+        await idbSaveInvoice(inv);
+        saveCloudData();
     }
     const statusMap = { 'Processing':'processing','On Delivery':'ondelivery','Delivered':'delivered','Cancelled':'cancelled' };
     selectEl.className = 'status-select ' + (statusMap[newStatus] || 'processing');
     renderDashboard();
 }
 
-function showDeliveryDetail(invoiceNo) {
-    const history = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
-    const inv = history.find(i => i.invoiceNo === invoiceNo);
+async function showDeliveryDetail(invoiceNo) {
+    const inv = await idbGetInvoice(invoiceNo);
     if (!inv) return;
 
     const deliveries = JSON.parse(localStorage.getItem('deliverySettlements') || '[]');
@@ -3410,19 +3518,16 @@ function collectInvoiceData() {
     };
 }
 
-function saveInvoiceToHistory(invoiceData) {
-    let history = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
-    const existingIndex = history.findIndex(inv => inv.invoiceNo === invoiceData.invoiceNo);
-    if(existingIndex >= 0) {
-        invoiceData.deliveryStatus = history[existingIndex].deliveryStatus;
-        invoiceData.commissionStatus = history[existingIndex].commissionStatus;
-        invoiceData.savedDate = history[existingIndex].savedDate;
-        // পুরনো token রাখো — নতুন token দিলে পুরনো WhatsApp link কাজ করবে না
-        invoiceData.trackToken = history[existingIndex].trackToken || invoiceData.trackToken;
-        history[existingIndex] = invoiceData;
-    } else { history.push(invoiceData); }
-    try { localStorage.setItem('invoiceHistory', JSON.stringify(history)); }
-    catch(e) { alert("⚠️ Browser storage full! Print will work but history not saved. Clear old history to free space."); }
+async function saveInvoiceToHistory(invoiceData) {
+    // ✅ IndexedDB তে save — photos সহ unlimited storage
+    const existing = await idbGetInvoice(invoiceData.invoiceNo);
+    if (existing) {
+        invoiceData.deliveryStatus   = existing.deliveryStatus   || invoiceData.deliveryStatus;
+        invoiceData.commissionStatus = existing.commissionStatus || invoiceData.commissionStatus;
+        invoiceData.savedDate        = existing.savedDate        || invoiceData.savedDate;
+        invoiceData.trackToken       = existing.trackToken       || invoiceData.trackToken;
+    }
+    await idbSaveInvoice(invoiceData);
 }
 
 function saveCommission(invoiceData) {
@@ -3444,11 +3549,11 @@ function saveCommission(invoiceData) {
     try { localStorage.setItem('salesCommissions', JSON.stringify(commissions)); } catch(e){}
 }
 
-function invSaveAndPrint() {
+async function invSaveAndPrint() {
     const noteValue = document.getElementById('invoice-note-field').value;
     document.getElementById('note-output').innerText = noteValue;
     const invoiceData = collectInvoiceData();
-    saveInvoiceToHistory(invoiceData);
+    await saveInvoiceToHistory(invoiceData);
     saveCommission(invoiceData);
     // ☁️ Cloud sync
     saveCloudData();
@@ -3460,10 +3565,10 @@ function invSaveAndPrint() {
     setTimeout(() => window.print(), 300);
 }
 
-function invPrepareNext() {
+async function invPrepareNext() {
     if(confirm('Save current invoice and move to next?')) {
         const invoiceData = collectInvoiceData();
-        saveInvoiceToHistory(invoiceData);
+        await saveInvoiceToHistory(invoiceData);
         saveCommission(invoiceData);
         let currentInv = parseInt(document.getElementById('inv-no').innerText);
         let nextInv = (isNaN(currentInv) ? 2572 : currentInv) + 1;
@@ -3509,9 +3614,8 @@ function loadInvoicePage() {
     calc();
 }
 
-function reEditInvoice(invoiceNo) {
-    const history = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
-    const invoice = history.find(inv => inv.invoiceNo === invoiceNo);
+async function reEditInvoice(invoiceNo) {
+    const invoice = await idbGetInvoice(invoiceNo);
     if(!invoice) return;
     closeModal('invoiceHistoryModal');
     document.getElementById('inv-no').innerText = invoice.invoiceNo;
@@ -3534,10 +3638,15 @@ function reEditInvoice(invoiceNo) {
         const newRow = tbody.insertRow();
         newRow.innerHTML = `<td class="sl-no">${idx+1}.</td><td class="desc-col"><input type="text" value="${item.desc}" placeholder="Item name..." onkeydown="handleRowKeys(event, this)"></td><td><input type="number" class="qty" value="${item.qty}" oninput="calc()"></td><td><input type="number" class="rate" value="${item.rate}" oninput="calc()"></td><td class="row-total">${fmtBD(parseNum(item.total))}</td>`;
     });
+    // ✅ Photos সহ restore — IndexedDB থেকে পাওয়া data
+    const photoBoxes = document.querySelectorAll('.photo-box');
+    photoBoxes.forEach(box => {
+        box.innerHTML = '<span>+ Add Photo</span><input type="file" hidden accept="image/*" onchange="preview(this)">';
+        box.classList.remove('has-img');
+    });
     if(invoice.photos && invoice.photos.length > 0) {
-        const photoBoxes = document.querySelectorAll('.photo-box');
         invoice.photos.forEach((photoData, idx) => {
-            if(idx < photoBoxes.length) {
+            if(idx < photoBoxes.length && photoData) {
                 const box = photoBoxes[idx];
                 box.innerHTML = `<img src="${photoData}"><button class="remove-btn" onclick="removeImg(this)">✕</button>`;
                 box.classList.add('has-img');
@@ -3555,22 +3664,23 @@ function downloadInvoicePDF(invoiceNo) {
 // ========================================================
 // INVOICE HISTORY MODAL
 // ========================================================
-function showInvoiceHistory() {
-    const history = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
+async function showInvoiceHistory() {
+    const history = await getAllInvoices();
+    const sorted = [...history].sort((a,b) => parseInt(b.invoiceNo||0) - parseInt(a.invoiceNo||0));
     let html = `<table class="history-table"><thead><tr>
         <th>SL</th><th>Date</th><th>Customer</th><th>Phone</th><th>Address</th>
         <th>Total</th><th>Salesman</th><th>Delivery</th><th>Commission</th><th>Actions</th>
     </tr></thead><tbody>`;
-    if(history.length === 0) {
+    if(sorted.length === 0) {
         html += '<tr><td colspan="10" style="text-align:center; padding:20px;">No invoice history found</td></tr>';
     } else {
-        [...history].reverse().forEach((inv, idx) => {
+        sorted.forEach((inv, idx) => {
             const statusClass = inv.deliveryStatus === 'Delivered' ? 'color:green' : 'color:red';
             const statusText = inv.deliveryStatus || 'Processing';
             const commStatus = inv.commissionStatus || 'Active';
             const commStyle = commStatus === 'Cancelled' ? 'color:#6c757d; text-decoration:line-through' : 'color:green';
             html += `<tr>
-                <td>${history.length - idx}</td>
+                <td>${idx + 1}</td>
                 <td>${inv.date}</td>
                 <td>${inv.customerName}</td>
                 <td>${inv.customerPhone}</td>
@@ -3594,31 +3704,30 @@ function showInvoiceHistory() {
     document.getElementById('invoiceHistoryModal').style.display = 'block';
 }
 
-function clearAllHistory() {
+async function clearAllHistory() {
     if(confirm("আপনি কি নিশ্চিত যে আপনি সমস্ত ইনভয়েস হিস্টোরি মুছে ফেলতে চান?")) {
+        await idbClear();
         localStorage.removeItem('invoiceHistory');
         showInvoiceHistory();
         alert("হিস্টোরি সফলভাবে মুছে ফেলা হয়েছে!");
     }
 }
 
-function changeDeliveryStatus(invoiceNo) {
-    let history = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
-    const invoice = history.find(inv => inv.invoiceNo === invoiceNo);
-    if(invoice && invoice.deliveryStatus !== 'Delivered') {
+async function changeDeliveryStatus(invoiceNo) {
+    const inv = await idbGetInvoice(invoiceNo);
+    if(inv && inv.deliveryStatus !== 'Delivered') {
         if(confirm('Change status to Delivered?')) {
-            invoice.deliveryStatus = 'Delivered';
-            try { localStorage.setItem('invoiceHistory', JSON.stringify(history)); } catch(e){}
+            inv.deliveryStatus = 'Delivered';
+            await idbSaveInvoice(inv);
             showInvoiceHistory();
         }
     }
 }
 
-function cancelCommission(invoiceNo) {
+async function cancelCommission(invoiceNo) {
     if(confirm('Cancel commission for Invoice ' + invoiceNo + '?')) {
-        let history = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
-        const invoice = history.find(inv => inv.invoiceNo === invoiceNo);
-        if(invoice) { invoice.commissionStatus = 'Cancelled'; try { localStorage.setItem('invoiceHistory', JSON.stringify(history)); } catch(e){} }
+        const inv = await idbGetInvoice(invoiceNo);
+        if(inv) { inv.commissionStatus = 'Cancelled'; await idbSaveInvoice(inv); }
         let commissions = JSON.parse(localStorage.getItem('salesCommissions') || '[]');
         const commission = commissions.find(c => c.invoiceNo === invoiceNo);
         if(commission) { commission.status = 'Cancelled'; try { localStorage.setItem('salesCommissions', JSON.stringify(commissions)); } catch(e){} }
@@ -3632,7 +3741,7 @@ function cancelCommission(invoiceNo) {
 // ========================================================
 function showCommissionSystem() { updateCommissionReport(); document.getElementById('commissionModal').style.display = 'block'; }
 
-function updateCommissionReport() {
+async function updateCommissionReport() {
     const month = document.getElementById('commission-month').value;
     const startDate = document.getElementById('commission-start-date').value;
     const endDate = document.getElementById('commission-end-date').value;
@@ -3776,19 +3885,15 @@ function calcOil() {
     calcSettlement();
 }
 
-function autoFillDelRow(input) {
+async function autoFillDelRow(input) {
     const invNo = input.value.trim();
     const row = input.closest('tr');
     const salesInput = row.querySelector('.del-sales-name');
     const amtInput = row.querySelector('.set-amt');
     if (!invNo) return;
-    const history = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
-    // Match with or without "RF-" prefix
-    const inv = history.find(i =>
-        String(i.invoiceNo) === invNo ||
-        String(i.invoiceNo) === invNo.replace(/^RF-/i,'') ||
-        'RF-' + String(i.invoiceNo) === invNo
-    );
+    // IDB থেকে invoice খোঁজো
+    const cleanNo = invNo.replace(/^RF-/i,'');
+    const inv = await idbGetInvoice(cleanNo) || await idbGetInvoice(invNo);
     if (inv) {
         if (salesInput && !salesInput.value) salesInput.value = inv.salesman || '';
         if (amtInput && (!amtInput.value || amtInput.value === '0')) {
@@ -3935,6 +4040,11 @@ function delResetPage() {
 // WINDOW INIT
 // ========================================================
 window.onload = async function() {
+    // 🗄️ IndexedDB initialize করো
+    await openIDB();
+    // 🔄 পুরনো localStorage data migrate করো IndexedDB তে
+    await migrateFromLocalStorage();
+
     // 📦 Customer tracking page check
     const isTracking = await maybeShowTrackingPage();
     if (isTracking) return;
@@ -3977,7 +4087,7 @@ window.onload = async function() {
     }
 
     // Auto-sync: local-এ data থাকলে cloud-এ পাঠিয়ে দাও
-    const localHistory = JSON.parse(localStorage.getItem('invoiceHistory') || '[]');
+    const localHistory = await getAllInvoices();
     if (localHistory.length > 0) {
         saveCloudData();
     }
@@ -5721,35 +5831,25 @@ window.toggleReasonCol = function() {
   }
 
   // Print
-  // একটি guard যেন double window না খোলে
-  let _skPrinting = false;
-
   window.printStockPage = function(){
-    if(_skPrinting) return;
-    _skPrinting = true;
-    setTimeout(()=>{ _skPrinting = false; }, 2000);
-
     const a4=document.getElementById('stock-a4');
     if(!a4) return;
     const clone=a4.cloneNode(true);
+    // Remove buttons from clone
     clone.querySelectorAll('.no-print-sk, button').forEach(el=>el.remove());
-    // background ও shadow সরিয়ে clean করা
-    clone.style.cssText='width:100%;box-shadow:none;border-radius:0;margin:0;padding:8mm 12mm;box-sizing:border-box;background:#fff;font-family:Segoe UI,Arial,sans-serif;';
-
     const w=window.open('','_blank','width=900,height=700');
     w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Stock & Inventory</title>
     <style>
-    @page{size:A4;margin:0}
+    @page{size:A4;margin:8mm 12mm}
     *{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    html,body{background:#fff!important;font-family:'Segoe UI',Arial,sans-serif;}
+    body{font-family:'Segoe UI',Arial,sans-serif;background:#fff}
     .np{display:flex;gap:10px;padding:10px;background:#f5f5f5;border-bottom:1px solid #ddd;}
     .np button{padding:9px 20px;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:700}
     .bp{background:#28a745;color:#fff}.bc{background:#eee;color:#555}
-    @media print{.np{display:none!important}}
+    @media print{.np{display:none!important}body{margin:0}}
     table{width:100%;border-collapse:collapse;}
-    th,td{border:1px solid #000;padding:2px 5px;font-size:12px;color:#000;}
-    th{background:#eaedf0!important;font-weight:bold;color:#003366!important;text-align:center;}
-    [contenteditable]{outline:none;}
+    th,td{border:1px solid #000;padding:2px 5px;font-size:12px;}
+    th{background:#eaedf0!important;font-weight:bold;color:#003366;text-align:center;}
     </style></head><body>
     <div class="np">
     <button class="bp" onclick="window.print()">🖨️ Print</button>
@@ -5758,20 +5858,8 @@ window.toggleReasonCol = function() {
     ${clone.outerHTML}
     </body></html>`);
     w.document.close();
-    setTimeout(()=>w.print(), 600);
+    setTimeout(()=>w.print(),600);
   };
-
-  // Ctrl+P চাপলে — Stock page active থাকলে printStockPage() call, browser print বন্ধ
-  window.addEventListener('keydown', function(e){
-    if((e.ctrlKey||e.metaKey) && e.key==='p'){
-      const sv=document.getElementById('stock-view');
-      if(sv && sv.style.display!=='none'){
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        window.printStockPage();
-      }
-    }
-  }, true); // capture phase — সবার আগে fire হবে
 
   // Init when stock page becomes visible
   const observer=new MutationObserver(()=>{
