@@ -2584,7 +2584,27 @@ async function saveCloudData() {
 // ============================================================
 // 😊 AUTO HAPPY CUSTOMER SYNC — নতুন invoice সেভ হলে স্বয়ংক্রিয়ভাবে Google Sheets-এ যাবে
 // Happy Customer form এর মতো একই format (action=addRow, GET) — same sheet-এ যাবে
+// ✅ DUPLICATE FIX: একটি invoice number একবারই Google Sheets-এ যাবে
 // ============================================================
+
+function getSheetSyncedInvoices() {
+    try { return JSON.parse(localStorage.getItem('rf_sheet_synced') || '[]'); } catch(e) { return []; }
+}
+function markInvoiceSynced(invoiceNo) {
+    try {
+        const synced = getSheetSyncedInvoices();
+        if (!synced.includes(String(invoiceNo))) {
+            synced.push(String(invoiceNo));
+            // সর্বোচ্চ ৫০০ রাখো, পুরনো মুছো
+            if (synced.length > 500) synced.splice(0, synced.length - 500);
+            localStorage.setItem('rf_sheet_synced', JSON.stringify(synced));
+        }
+    } catch(e) {}
+}
+function isInvoiceAlreadySynced(invoiceNo) {
+    return getSheetSyncedInvoices().includes(String(invoiceNo));
+}
+
 async function syncInvoiceAsHappyCustomer(invoiceData) {
     const url = getScriptUrl();
     if (!url) return;
@@ -2592,13 +2612,17 @@ async function syncInvoiceAsHappyCustomer(invoiceData) {
     // Customer name বা phone না থাকলে skip
     if (!invoiceData.customerName && !invoiceData.customerPhone) return;
 
+    // ✅ DUPLICATE PREVENTION: এই invoice আগে পাঠানো হয়েছে কিনা চেক করো
+    if (isInvoiceAlreadySynced(invoiceData.invoiceNo)) {
+        console.log('⏭️ Invoice #' + invoiceData.invoiceNo + ' already synced — skipping duplicate.');
+        return;
+    }
+
     // HC page এর মতো SL number তৈরি করো
     const hcRecs = JSON.parse(localStorage.getItem('rf3_recs') || '[]');
     const slNum = 'SL-' + String(hcRecs.length + 1).padStart(2, '0');
 
     const now = new Date();
-    const timestamp = now.toLocaleDateString('en-GB', {day:'2-digit',month:'2-digit',year:'numeric'})
-                    + ', ' + now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
 
     // HC page এর মতো exactly same format — action=addRow, GET request
     const params = new URLSearchParams({
@@ -2615,6 +2639,8 @@ async function syncInvoiceAsHappyCustomer(invoiceData) {
 
     try {
         fetch(url + '?' + params.toString(), { method: 'GET', mode: 'no-cors' });
+        // ✅ সফল হলে এই invoice কে synced হিসেবে mark করো
+        markInvoiceSynced(invoiceData.invoiceNo);
         console.log('✅ Invoice Happy Customer synced to Google Sheets — Invoice #' + invoiceData.invoiceNo + ' | ' + slNum);
     } catch(e) {
         console.log('Happy Customer sync failed:', e);
