@@ -1610,7 +1610,7 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
         <li><a onclick="showSubPage('hc')" id="menu-hc"><span class="icon">😊</span> Happy Customer</a></li>
         <li><a onclick="showSubPage('ss')" id="menu-ss"><span class="icon">💼</span> Salary Sheet</a></li>
     </ul>
-    <div class="sidebar-footer">Rahman Furniture &copy; 2025</div>
+    <div class="sidebar-footer">Created By Masum Billah 2026</div>
 </div>
 
 <!-- ===================== MAIN CONTENT ===================== -->
@@ -3579,12 +3579,15 @@ async function invSaveAndPrint() {
     const noteValue = document.getElementById('invoice-note-field').value;
     document.getElementById('note-output').innerText = noteValue;
     const invoiceData = collectInvoiceData();
+    const isNew = !(await idbGetInvoice(invoiceData.invoiceNo));
     await saveInvoiceToHistory(invoiceData);
     saveCommission(invoiceData);
     // ☁️ Cloud sync
     saveCloudData();
-    // 😊 Happy Customer auto-sync to Google Sheets
-    syncInvoiceAsHappyCustomer(invoiceData);
+    // 😊 Happy Customer auto-sync — শুধুমাত্র নতুন invoice হলে একবারই যাবে
+    if (isNew) {
+        syncInvoiceAsHappyCustomer(invoiceData);
+    }
     const authName = document.getElementById('inv-admin-name').value || 'Invoice';
     const invoiceNo = document.getElementById('inv-no').innerText;
     document.title = `${authName.replace(/\s+/g,'')}_Invoice_${invoiceNo}`;
@@ -3594,6 +3597,7 @@ async function invSaveAndPrint() {
 async function invPrepareNext() {
     if(confirm('Save current invoice and move to next?')) {
         const invoiceData = collectInvoiceData();
+        const isNew = !(await idbGetInvoice(invoiceData.invoiceNo));
         await saveInvoiceToHistory(invoiceData);
         saveCommission(invoiceData);
         let currentInv = parseInt(document.getElementById('inv-no').innerText);
@@ -3601,8 +3605,10 @@ async function invPrepareNext() {
         try { localStorage.setItem('invNum', nextInv); } catch(e){}
         // ☁️ Cloud sync
         saveCloudData();
-        // 😊 Happy Customer auto-sync to Google Sheets
-        syncInvoiceAsHappyCustomer(invoiceData);
+        // 😊 Happy Customer auto-sync — শুধুমাত্র নতুন invoice হলে একবারই যাবে
+        if (isNew) {
+            syncInvoiceAsHappyCustomer(invoiceData);
+        }
         loadInvoicePage();
     }
 }
