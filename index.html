@@ -337,6 +337,89 @@
         .stat-card.yellow { border-color: var(--yellow); }
         .stat-card.grey { border-color: #888; }
 
+        /* ===================== MONTHLY REPORT PANEL (collapsible) ===================== */
+        .monthly-report-panel { background: #fff; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 24px; overflow: hidden; transition: box-shadow 0.25s ease; }
+        .monthly-report-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 16px 20px; cursor: pointer; user-select: none; }
+        .monthly-report-head h3 { font-size: 15px; color: #222; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .mr-toggle-btn {
+            width: 34px; height: 34px; border-radius: 50%; border: none; background: var(--light-navy);
+            font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: transform 0.3s cubic-bezier(.34,1.56,.64,1), background 0.2s; flex-shrink: 0;
+        }
+        .mr-toggle-btn:hover { background: #dce8ee; transform: scale(1.08); }
+        .monthly-report-panel.open .mr-toggle-btn { transform: rotate(180deg); background: var(--teal); color: #fff; }
+        .mr-panel-body {
+            max-height: 0; opacity: 0; overflow: hidden; padding: 0 20px;
+            transition: max-height 0.38s cubic-bezier(.4,0,.2,1), opacity 0.3s ease, padding 0.3s ease;
+        }
+        .monthly-report-panel.open .mr-panel-body { max-height: 600px; opacity: 1; padding: 0 20px 20px; }
+        .monthly-report-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 0; }
+        .mr-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+        .mr-controls input[type="month"] {
+            border: 1.5px solid #ddd; border-radius: 8px; padding: 8px 12px; font-size: 13px;
+            font-family: inherit; outline: none; background: #fafafa; color: #333; cursor: pointer;
+        }
+        .mr-controls input[type="month"]:focus { border-color: var(--teal); background: #fff; }
+        .mr-range-box {
+            display: flex; align-items: center; gap: 8px; background: #fafafa;
+            border: 1.5px solid #ddd; border-radius: 8px; padding: 4px 10px;
+        }
+        .mr-range-box:focus-within { border-color: var(--teal); background: #fff; }
+        .mr-range-box input[type="date"] {
+            border: none; background: transparent; outline: none; font-size: 13px;
+            font-family: inherit; color: #333; cursor: pointer; padding: 4px 2px; min-width: 0;
+        }
+        .mr-range-arrow { color: var(--teal); font-weight: 700; font-size: 13px; flex-shrink: 0; }
+        .mr-range-label { font-size: 12.5px; color: #667; font-weight: 600; margin: -4px 0 14px; }
+        .mr-print-btn {
+            padding: 9px 18px; border: none; border-radius: 8px; background: var(--teal); color: #fff;
+            font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;
+        }
+        .mr-print-btn:hover { background: var(--teal-dark); }
+        .mr-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+        .mr-box { background: var(--light-navy); border-radius: 10px; padding: 14px 16px; border-left: 4px solid var(--teal); }
+        .mr-box.mr-due { border-color: var(--red); }
+        .mr-box.mr-collected { border-color: var(--green); }
+        .mr-box.mr-orders { border-color: var(--yellow); }
+        .mr-box p { font-size: 12px; color: #667; font-weight: 600; margin-bottom: 4px; }
+        .mr-box h4 { font-size: 21px; color: #1a1a2e; font-weight: 800; }
+        body.dark-mode .monthly-report-panel, body.dark-full .monthly-report-panel { background: #1e2130; box-shadow: 0 4px 18px rgba(0,0,0,0.3); }
+        body.dark-mode .monthly-report-head h3, body.dark-full .monthly-report-head h3 { color: #e0e0e0; }
+        body.dark-mode .mr-toggle-btn, body.dark-full .mr-toggle-btn { background: #23273a; color: #e0e0e0; }
+        body.dark-mode .mr-controls input[type="month"], body.dark-full .mr-controls input[type="month"] { background: #23273a; border-color: #3a3d4a; color: #e0e0e0; }
+        body.dark-mode .mr-range-box, body.dark-full .mr-range-box { background: #23273a; border-color: #3a3d4a; }
+        body.dark-mode .mr-range-box input[type="date"], body.dark-full .mr-range-box input[type="date"] { color: #e0e0e0; }
+        body.dark-mode .mr-range-label, body.dark-full .mr-range-label { color: #889; }
+        body.dark-mode .mr-box, body.dark-full .mr-box { background: #23273a; }
+        body.dark-mode .mr-box p, body.dark-full .mr-box p { color: #889; }
+        body.dark-mode .mr-box h4, body.dark-full .mr-box h4 { color: #e5e5e5; }
+
+        /* ===================== MONTHLY REPORT A4 PRINT PAGE ===================== */
+        .mr-a4-page {
+            width: 210mm; min-height: 296mm; padding: 12mm 14mm; margin: 0 auto;
+            background: #fff; font-family: 'Times New Roman', 'Tiro Bangla', serif; color: #000;
+        }
+        .mr-a4-head { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2.5px solid #001f3f; padding-bottom: 10px; margin-bottom: 14px; }
+        .mr-a4-head h1 { font-size: 24px; color: #001f3f; margin: 0; text-transform: uppercase; }
+        .mr-a4-head p { font-size: 12px; margin: 2px 0; font-weight: bold; }
+        .mr-a4-period { text-align: right; }
+        .mr-a4-period span { display: block; font-size: 13px; font-weight: bold; }
+        .mr-a4-period .mr-a4-month { font-size: 18px; color: #008080; font-weight: 800; }
+        .mr-a4-title { text-align: center; text-decoration: underline; color: #336699; font-size: 19px; font-weight: bold; margin: 6px 0 14px; }
+        .mr-a4-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+        .mr-a4-summary div { border: 1.5px solid #001f3f; border-radius: 6px; padding: 8px 10px; text-align: center; }
+        .mr-a4-summary div span { display: block; font-size: 10.5px; font-weight: bold; color: #555; margin-bottom: 3px; }
+        .mr-a4-summary div b { font-size: 15px; color: #001f3f; }
+        .mr-a4-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+        .mr-a4-table th { background: #001f3f; color: #fff; padding: 6px 5px; border: 1px solid #001f3f; }
+        .mr-a4-table td { border: 1px solid #888; padding: 5px; text-align: center; }
+        .mr-a4-table td.mr-cancelled-row { color: #c0392b; text-decoration: line-through; opacity: 0.75; }
+        .mr-a4-table tfoot td { font-weight: bold; background: #f0f4f8; border-top: 2px solid #001f3f; }
+        .mr-a4-footer-total { margin-top: 18px; border: 2px solid #001f3f; border-radius: 8px; padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; background: #f0f4f8; }
+        .mr-a4-footer-total .mr-ft-label { font-size: 15px; font-weight: 800; color: #001f3f; }
+        .mr-a4-footer-total .mr-ft-value { font-size: 22px; font-weight: 900; color: #008080; }
+        .mr-a4-credit { text-align: center; margin-top: 26px; font-size: 11px; color: #777; font-style: italic; }
+
         .table-container { background: #fff; padding: 22px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .table-container h3 { font-size: 16px; margin-bottom: 16px; color: #222; font-weight: 700; }
         table.dash-table { width: 100%; border-collapse: collapse; }
@@ -1663,6 +1746,42 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
                 <div class="icon-wrap">❌</div>
                 <h3 id="db-cancelled">0</h3>
                 <p>Cancelled Orders</p>
+            </div>
+        </div>
+
+        <div class="monthly-report-panel" id="mr-panel">
+            <div class="monthly-report-head" onclick="toggleMrPanel()">
+                <h3>📅 Sales Report (Date Range)</h3>
+                <button class="mr-toggle-btn" id="mr-toggle-btn" title="Open Sales Report" onclick="event.stopPropagation(); toggleMrPanel();">📅</button>
+            </div>
+            <div class="mr-panel-body" id="mr-panel-body">
+                <div class="mr-controls">
+                    <div class="mr-range-box">
+                        <input type="date" id="mr-from-date" onchange="handleMrRangeChange()">
+                        <span class="mr-range-arrow">→</span>
+                        <input type="date" id="mr-to-date" onchange="handleMrRangeChange()">
+                    </div>
+                    <button class="mr-print-btn" onclick="printMonthlyReport()">🖨️ Print A4 Report</button>
+                </div>
+                <div class="mr-range-label" id="mr-range-label"></div>
+                <div class="mr-grid">
+                    <div class="mr-box">
+                        <p>Total Sales</p>
+                        <h4 id="mr-total-sales">0 ৳</h4>
+                    </div>
+                    <div class="mr-box mr-collected">
+                        <p>Total Collected</p>
+                        <h4 id="mr-total-collected">0 ৳</h4>
+                    </div>
+                    <div class="mr-box mr-due">
+                        <p>Total Due</p>
+                        <h4 id="mr-total-due">0 ৳</h4>
+                    </div>
+                    <div class="mr-box mr-orders">
+                        <p>Total Orders</p>
+                        <h4 id="mr-total-orders">0</h4>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -3117,11 +3236,15 @@ async function renderDashboard() {
         const grand = parseFloat(inv.grandTotal) || 0;
         const paid = parseFloat(inv.paid) || 0;
         const due = parseFloat(inv.due) || 0;
-        totalSales += grand;
-        totalCollected += paid;
-        totalDue += due;
+        const isCancelled = inv.deliveryStatus === 'Cancelled';
+        // Cancelled orders should NOT count towards Total Sales / Collected / Due
+        if (!isCancelled) {
+            totalSales += grand;
+            totalCollected += paid;
+            totalDue += due;
+        }
         if (inv.deliveryStatus !== 'Delivered' && inv.deliveryStatus !== 'Cancelled') pending++;
-        if (inv.deliveryStatus === 'Cancelled') cancelled++;
+        if (isCancelled) cancelled++;
 
         const statusMap = {
             'Processing': 'processing',
@@ -3159,6 +3282,219 @@ async function renderDashboard() {
     document.getElementById('db-total-due').innerText = totalDue.toLocaleString() + ' ৳';
     document.getElementById('db-pending').innerText = pending;
     document.getElementById('db-cancelled').innerText = cancelled;
+
+    // Date-range report: default to "this month so far" on first load, otherwise keep user's picked range
+    const fromInput = document.getElementById('mr-from-date');
+    const toInput = document.getElementById('mr-to-date');
+    if (fromInput && toInput) {
+        if (!fromInput.value || !toInput.value) {
+            const now = new Date();
+            const firstOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+            const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            fromInput.value = firstOfMonth;
+            toInput.value = todayStr;
+        }
+        renderMonthlyReport(fromInput.value, toInput.value);
+    }
+}
+
+function toggleMrPanel() {
+    const panel = document.getElementById('mr-panel');
+    if (!panel) return;
+    panel.classList.toggle('open');
+    const btn = document.getElementById('mr-toggle-btn');
+    if (btn) btn.title = panel.classList.contains('open') ? 'Close Sales Report' : 'Open Sales Report';
+}
+
+function handleMrRangeChange() {
+    const fromInput = document.getElementById('mr-from-date');
+    const toInput = document.getElementById('mr-to-date');
+    if (!fromInput || !toInput || !fromInput.value || !toInput.value) return;
+    renderMonthlyReport(fromInput.value, toInput.value);
+}
+
+// ========================================================
+// 📅 SALES REPORT BY DATE RANGE (excludes Cancelled)
+// ========================================================
+function getInvoicesInRange(history, fromDate, toDate) {
+    // fromDate / toDate format: "YYYY-MM-DD"
+    return history.filter(inv => {
+        const d = String(inv.date || '').slice(0, 10);
+        return d && d >= fromDate && d <= toDate;
+    });
+}
+
+function formatDateCompact(isoDate) {
+    // "2026-06-05" -> "05 June 2026"
+    if (!isoDate) return '';
+    const [y, m, d] = isoDate.split('-').map(Number);
+    const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    return `${String(d).padStart(2, '0')} ${months[m - 1]} ${y}`;
+}
+
+function formatRangeLabel(fromDate, toDate) {
+    if (!fromDate || !toDate) return '';
+    if (fromDate === toDate) return formatDateCompact(fromDate);
+    return `${formatDateCompact(fromDate)} to ${formatDateCompact(toDate)}`;
+}
+
+async function renderMonthlyReport(fromDate, toDate) {
+    if (!fromDate || !toDate) return;
+    const history = await getAllInvoices();
+    const rangeInvoices = getInvoicesInRange(history, fromDate, toDate);
+
+    let totalSales = 0, totalCollected = 0, totalDue = 0, totalOrders = 0;
+
+    rangeInvoices.forEach(inv => {
+        if (inv.deliveryStatus === 'Cancelled') return; // cancelled excluded from totals
+        totalSales += parseFloat(inv.grandTotal) || 0;
+        totalCollected += parseFloat(inv.paid) || 0;
+        totalDue += parseFloat(inv.due) || 0;
+        totalOrders++;
+    });
+
+    const setText = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+    setText('mr-total-sales', totalSales.toLocaleString() + ' ৳');
+    setText('mr-total-collected', totalCollected.toLocaleString() + ' ৳');
+    setText('mr-total-due', totalDue.toLocaleString() + ' ৳');
+    setText('mr-total-orders', totalOrders);
+    setText('mr-range-label', formatRangeLabel(fromDate, toDate));
+}
+
+async function printMonthlyReport() {
+    const fromInput = document.getElementById('mr-from-date');
+    const toInput = document.getElementById('mr-to-date');
+    const fromDate = fromInput ? fromInput.value : '';
+    const toDate = toInput ? toInput.value : '';
+    if (!fromDate || !toDate) { alert('দয়া করে শুরু ও শেষ তারিখ নির্বাচন করুন।'); return; }
+    if (fromDate > toDate) { alert('শুরুর তারিখ শেষের তারিখের পরে হতে পারবে না।'); return; }
+
+    const history = await getAllInvoices();
+    const rangeInvoices = getInvoicesInRange(history, fromDate, toDate)
+        .sort((a, b) => new Date(a.date) - new Date(b.date) || (parseInt(a.invoiceNo||0) - parseInt(b.invoiceNo||0)));
+
+    let totalSales = 0, totalCollected = 0, totalDue = 0, totalOrders = 0, cancelledCount = 0;
+
+    const rowsHtml = rangeInvoices.map((inv, idx) => {
+        const isCancelled = inv.deliveryStatus === 'Cancelled';
+        const grand = parseFloat(inv.grandTotal) || 0;
+        const paid = parseFloat(inv.paid) || 0;
+        const due = parseFloat(inv.due) || 0;
+        if (isCancelled) {
+            cancelledCount++;
+        } else {
+            totalSales += grand;
+            totalCollected += paid;
+            totalDue += due;
+            totalOrders++;
+        }
+        const rowCls = isCancelled ? 'mr-cancelled-row' : '';
+        return `<tr>
+            <td>${idx + 1}</td>
+            <td class="${rowCls}">${inv.date || '—'}</td>
+            <td class="${rowCls}">#${inv.invoiceNo || '—'}</td>
+            <td class="${rowCls}">${inv.customerName || '—'}</td>
+            <td class="${rowCls}">${grand.toLocaleString()} ৳</td>
+            <td class="${rowCls}">${paid.toLocaleString()} ৳</td>
+            <td class="${rowCls}">${due.toLocaleString()} ৳</td>
+            <td class="${rowCls}">${isCancelled ? 'Cancelled' : (inv.deliveryStatus || 'Processing')}</td>
+        </tr>`;
+    }).join('');
+
+    const shopName = localStorage.getItem('companyName') || 'RAHMAN FURNITURE';
+    const now = new Date();
+    const printedOn = `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}/${now.getFullYear()}`;
+    const rangeLabel = formatRangeLabel(fromDate, toDate);
+
+    const reportHtml = `
+    <div class="mr-a4-page">
+        <div class="mr-a4-head">
+            <div>
+                <h1>${shopName}</h1>
+                <p>Madaninagar, Gol Chattar 2nd Goli, Chittagong Road</p>
+                <p>Siddhirganj, Narayanganj</p>
+                <p>Phone: 01794-526688</p>
+            </div>
+            <div class="mr-a4-period">
+                <span class="mr-a4-month">${rangeLabel}</span>
+                <span>Printed on: ${printedOn}</span>
+            </div>
+        </div>
+        <div class="mr-a4-title">Sales &amp; Order Report</div>
+
+        <div class="mr-a4-summary">
+            <div><span>Total Sales</span><b>${totalSales.toLocaleString()} ৳</b></div>
+            <div><span>Total Collected</span><b>${totalCollected.toLocaleString()} ৳</b></div>
+            <div><span>Total Due</span><b>${totalDue.toLocaleString()} ৳</b></div>
+            <div><span>Total Orders</span><b>${totalOrders}</b></div>
+        </div>
+
+        <table class="mr-a4-table">
+            <thead>
+                <tr>
+                    <th>SL#</th>
+                    <th>Date</th>
+                    <th>Invoice No</th>
+                    <th>Customer Name</th>
+                    <th>Total Amount</th>
+                    <th>Collected</th>
+                    <th>Due</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${rowsHtml || `<tr><td colspan="8" style="padding:20px;color:#888;">এই সময়সীমায় কোনো ইনভয়েস পাওয়া যায়নি।</td></tr>`}
+            </tbody>
+        </table>
+
+        <div class="mr-a4-footer-total">
+            <span class="mr-ft-label">Grand Total Amount (${rangeLabel}, excluding ${cancelledCount} cancelled)</span>
+            <span class="mr-ft-value">${totalSales.toLocaleString()} ৳</span>
+        </div>
+
+        <div class="mr-a4-credit">Created By Masum Billah 2026</div>
+    </div>`;
+
+    const w = window.open('', '_blank', 'width=900,height=700');
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Sales Report - ${rangeLabel}</title>
+    <style>
+    @page { size: A4; margin: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #fff; }
+    .mr-print-toolbar { display: flex; gap: 10px; padding: 10px; background: #f5f5f5; border-bottom: 1px solid #ddd; }
+    .mr-print-toolbar button { padding: 9px 20px; border: none; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 700; }
+    .mr-print-toolbar .bp { background: #28a745; color: #fff; }
+    .mr-print-toolbar .bc { background: #eee; color: #555; }
+    @media print { .mr-print-toolbar { display: none !important; } body { margin: 0; } }
+    .mr-a4-page { width: 210mm; min-height: 296mm; padding: 12mm 14mm; margin: 0 auto; background: #fff; font-family: 'Times New Roman', 'Tiro Bangla', serif; color: #000; }
+    .mr-a4-head { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2.5px solid #001f3f; padding-bottom: 10px; margin-bottom: 14px; }
+    .mr-a4-head h1 { font-size: 24px; color: #001f3f; margin: 0; text-transform: uppercase; }
+    .mr-a4-head p { font-size: 12px; margin: 2px 0; font-weight: bold; }
+    .mr-a4-period { text-align: right; }
+    .mr-a4-period span { display: block; font-size: 13px; font-weight: bold; }
+    .mr-a4-period .mr-a4-month { font-size: 17px; color: #008080; font-weight: 800; }
+    .mr-a4-title { text-align: center; text-decoration: underline; color: #336699; font-size: 19px; font-weight: bold; margin: 6px 0 14px; }
+    .mr-a4-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+    .mr-a4-summary div { border: 1.5px solid #001f3f; border-radius: 6px; padding: 8px 10px; text-align: center; }
+    .mr-a4-summary div span { display: block; font-size: 10.5px; font-weight: bold; color: #555; margin-bottom: 3px; }
+    .mr-a4-summary div b { font-size: 15px; color: #001f3f; }
+    .mr-a4-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+    .mr-a4-table th { background: #001f3f; color: #fff; padding: 6px 5px; border: 1px solid #001f3f; }
+    .mr-a4-table td { border: 1px solid #888; padding: 5px; text-align: center; }
+    .mr-a4-table td.mr-cancelled-row { color: #c0392b; text-decoration: line-through; opacity: 0.75; }
+    .mr-a4-footer-total { margin-top: 18px; border: 2px solid #001f3f; border-radius: 8px; padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; background: #f0f4f8; }
+    .mr-a4-footer-total .mr-ft-label { font-size: 15px; font-weight: 800; color: #001f3f; }
+    .mr-a4-footer-total .mr-ft-value { font-size: 22px; font-weight: 900; color: #008080; }
+    .mr-a4-credit { text-align: center; margin-top: 26px; font-size: 11px; color: #777; font-style: italic; }
+    </style></head><body>
+    <div class="mr-print-toolbar">
+        <button class="bp" onclick="window.print()">🖨️ Print</button>
+        <button class="bc" onclick="window.close()">✕ Close</button>
+    </div>
+    ${reportHtml}
+    </body></html>`);
+    w.document.close();
+    setTimeout(() => w.print(), 600);
 }
 
 // ========================================================
