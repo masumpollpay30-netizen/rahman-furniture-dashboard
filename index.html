@@ -81,9 +81,74 @@
             --red: #dc3545;
             --yellow: #ffc107;
             --sidebar-w: 230px;
+
+            /* ── Liquid Glass tokens ── */
+            --glass-bg: rgba(255,255,255,0.55);
+            --glass-bg-strong: rgba(255,255,255,0.72);
+            --glass-border: rgba(255,255,255,0.6);
+            --glass-highlight: rgba(255,255,255,0.85);
+            --glass-shadow: 0 8px 32px rgba(31,38,135,0.10), 0 1px 1px rgba(255,255,255,0.6) inset, 0 -1px 1px rgba(0,0,0,0.04) inset;
+            --glass-pill-shadow: 0 4px 18px rgba(0,0,0,0.10), 0 1px 0 rgba(255,255,255,0.7) inset;
+            --glass-blur: blur(20px) saturate(180%);
+        }
+
+        /* ═══════════════════════════════════════
+           LIQUID GLASS (Apple-style glassmorphism)
+        ═══════════════════════════════════════ */
+        .lg-glass {
+            background: var(--glass-bg);
+            -webkit-backdrop-filter: var(--glass-blur);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+        .sidebar.lg-glass, .topbar.lg-glass {
+            position: relative;
+            isolation: isolate;
+        }
+        .sidebar.lg-glass::after, .topbar.lg-glass::after {
+            content: "";
+            position: absolute; inset: 0; pointer-events: none; z-index: -1;
+            background: linear-gradient(135deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0) 35%, rgba(255,255,255,0) 70%, rgba(255,255,255,0.18) 100%);
+        }
+        body.dark-mode .lg-glass, body.dark-full .lg-glass {
+            --glass-bg: rgba(28,32,46,0.55);
+            --glass-bg-strong: rgba(28,32,46,0.72);
+            --glass-border: rgba(255,255,255,0.08);
+            --glass-shadow: 0 8px 32px rgba(0,0,0,0.45), 0 1px 1px rgba(255,255,255,0.06) inset;
+            --glass-pill-shadow: 0 4px 18px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.05) inset;
+        }
+
+        /* Floating glass pill — like the WhatsApp "Chats" active tab */
+        .lg-pill {
+            border-radius: 999px;
+            background: var(--glass-bg-strong);
+            -webkit-backdrop-filter: var(--glass-blur);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-pill-shadow);
         }
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust: exact; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; transition: background 0.3s, color 0.3s; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #eef1f6;
+            background-image:
+                radial-gradient(circle at 8% 10%, rgba(0,150,150,0.30) 0%, transparent 40%),
+                radial-gradient(circle at 90% 5%, rgba(255,180,0,0.22) 0%, transparent 38%),
+                radial-gradient(circle at 30% 70%, rgba(0,31,90,0.16) 0%, transparent 45%),
+                radial-gradient(circle at 95% 85%, rgba(40,167,69,0.20) 0%, transparent 40%),
+                radial-gradient(circle at 60% 100%, rgba(220,53,69,0.12) 0%, transparent 35%);
+            background-attachment: fixed;
+            transition: background 0.3s, color 0.3s;
+        }
+        body.dark-mode, body.dark-full {
+            background-image:
+                radial-gradient(circle at 8% 10%, rgba(78,205,196,0.18) 0%, transparent 40%),
+                radial-gradient(circle at 90% 5%, rgba(93,232,223,0.14) 0%, transparent 38%),
+                radial-gradient(circle at 30% 70%, rgba(0,80,80,0.16) 0%, transparent 45%),
+                radial-gradient(circle at 95% 85%, rgba(40,120,69,0.14) 0%, transparent 40%),
+                radial-gradient(circle at 60% 100%, rgba(120,40,69,0.10) 0%, transparent 35%);
+        }
 
         /* ===================== THEME TRANSITION ===================== */
         *, *::before, *::after { transition: background-color 0.3s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease !important; }
@@ -194,16 +259,19 @@
         body.dark-mode .search-result-info, body.dark-full .search-result-info { background: rgba(30,33,48,0.85); border-color: #2a2d3a; color: #778; }
 
         /* ═══════════════════════════════════════
-           3-OPTION THEME SWITCHER (pill group)
+           3-OPTION THEME SWITCHER (pill group) — Liquid Glass
         ═══════════════════════════════════════ */
         .theme-switcher {
             display: flex; align-items: center;
-            background: #f0f2f5; border: 1.5px solid #e0e0e0;
+            background: var(--glass-bg); border: 1px solid var(--glass-border);
+            -webkit-backdrop-filter: var(--glass-blur);
+            backdrop-filter: var(--glass-blur);
             border-radius: 50px; padding: 3px; gap: 2px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            box-shadow: var(--glass-shadow);
         }
-        body.dark-mode .theme-switcher { background: #1a1d27; border-color: #2a2d3a; }
-        body.dark-full .theme-switcher  { background: #10131c; border-color: #1e2130; }
+        body.dark-mode .theme-switcher, body.dark-full .theme-switcher {
+            background: var(--glass-bg); border-color: var(--glass-border);
+        }
 
         .theme-btn {
             display: flex; align-items: center; gap: 5px;
@@ -213,15 +281,17 @@
         }
         .theme-btn:hover { color: #008080; background: rgba(0,128,128,0.08); transform: none !important; }
         .theme-btn.active {
-            background: #fff; color: #008080;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.08);
+            background: var(--glass-bg-strong); color: #008080;
+            -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-pill-shadow);
         }
         body.dark-mode .theme-btn { color: #667; }
         body.dark-mode .theme-btn:hover { color: #4ecdc4; background: rgba(78,205,196,0.1); }
-        body.dark-mode .theme-btn.active { background: #252838; color: #4ecdc4; box-shadow: 0 2px 10px rgba(0,0,0,0.4); }
+        body.dark-mode .theme-btn.active { color: #4ecdc4; }
         body.dark-full .theme-btn  { color: #556; }
         body.dark-full .theme-btn:hover  { color: #5de8df; background: rgba(93,232,223,0.1); }
-        body.dark-full .theme-btn.active { background: #1a1f2e; color: #5de8df; box-shadow: 0 2px 10px rgba(0,0,0,0.6); }
+        body.dark-full .theme-btn.active { color: #5de8df; }
 
         /* ═══════════════════════════════════════
            GLASS SEARCH BAR
@@ -276,14 +346,19 @@
 
         /* ===================== SIDEBAR ===================== */
         .sidebar {
-            width: var(--sidebar-w); background: #fff; height: 100vh;
-            position: fixed; left: 0; top: 0; border-right: 1px solid #ddd;
+            width: var(--sidebar-w); background: var(--glass-bg); height: 100vh;
+            position: fixed; left: 0; top: 0; border-right: 1px solid var(--glass-border);
             padding: 0; overflow-y: auto; z-index: 100;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.06);
+            box-shadow: var(--glass-shadow);
+            -webkit-backdrop-filter: var(--glass-blur);
+            backdrop-filter: var(--glass-blur);
             display: flex; flex-direction: column;
         }
         .sidebar-brand {
-            background: var(--navy); color: white; padding: 18px 20px;
+            background: rgba(0,31,63,0.65);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            color: white; padding: 18px 20px;
             font-family: 'Playfair Display', serif; font-size: 18px;
             letter-spacing: 0.5px; line-height: 1.3;
         }
@@ -292,22 +367,38 @@
         .sidebar-menu { list-style: none; padding: 0 8px; }
         .sidebar-menu li a {
             display: flex; align-items: center; gap: 10px; padding: 10px 12px;
-            text-decoration: none; color: #555; border-radius: 8px; font-size: 14px;
-            font-weight: 500; transition: all 0.2s; cursor: pointer; margin-bottom: 2px;
+            text-decoration: none; color: #555; border-radius: 999px; font-size: 14px;
+            font-weight: 500; transition: all 0.25s cubic-bezier(.34,1.56,.64,1); cursor: pointer; margin-bottom: 2px;
+            position: relative;
         }
-        .sidebar-menu li a:hover { background: #f0f4f8; color: var(--teal); }
-        .sidebar-menu li a.active { background: #e8f4f4; color: var(--teal); font-weight: 700; }
+        .sidebar-menu li a:hover {
+            background: rgba(255,255,255,0.55);
+            -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+            border: 1px solid rgba(255,255,255,0.5);
+            color: var(--teal);
+            box-shadow: 0 3px 12px rgba(0,0,0,0.06), 0 1px 0 rgba(255,255,255,0.6) inset;
+            transform: translateY(-1px);
+        }
+        .sidebar-menu li a.active {
+            background: var(--glass-bg-strong);
+            -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            color: var(--teal); font-weight: 700;
+            box-shadow: var(--glass-pill-shadow);
+        }
         .sidebar-menu li a .icon { width: 20px; text-align: center; font-size: 15px; }
-        .sidebar-footer { margin-top: auto; padding: 16px; border-top: 1px solid #eee; font-size: 12px; color: #aaa; text-align: center; }
+        .sidebar-footer { margin-top: auto; padding: 16px; border-top: 1px solid rgba(0,0,0,0.06); font-size: 12px; color: #aaa; text-align: center; }
 
         /* ===================== MAIN CONTENT ===================== */
         .main-content { margin-left: var(--sidebar-w); min-height: 100vh; }
 
         /* ===================== TOPBAR ===================== */
         .topbar {
-            background: white; border-bottom: 1px solid #eee; padding: 14px 28px;
+            background: var(--glass-bg); border-bottom: 1px solid var(--glass-border); padding: 14px 28px;
+            -webkit-backdrop-filter: var(--glass-blur);
+            backdrop-filter: var(--glass-blur);
             display: flex; align-items: center; justify-content: space-between;
-            position: sticky; top: 0; z-index: 90; box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+            position: sticky; top: 0; z-index: 90; box-shadow: var(--glass-shadow);
         }
         .topbar h2 { font-size: 20px; color: #222; font-weight: 700; }
         .topbar-actions { display: flex; gap: 10px; align-items: center; }
@@ -326,8 +417,10 @@
         /* ===================== DASHBOARD ===================== */
         .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 28px; }
         .stat-card {
-            background: #fff; padding: 22px 20px; border-radius: 12px;
-            border-bottom: 4px solid var(--teal); box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            background: var(--glass-bg-strong); padding: 22px 20px; border-radius: 16px;
+            -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-bottom: 4px solid var(--teal); box-shadow: var(--glass-shadow);
         }
         .stat-card .icon-wrap { font-size: 26px; margin-bottom: 8px; }
         .stat-card h3 { font-size: 26px; color: #333; font-weight: 700; margin-bottom: 4px; }
@@ -338,7 +431,7 @@
         .stat-card.grey { border-color: #888; }
 
         /* ===================== MONTHLY REPORT PANEL (collapsible) ===================== */
-        .monthly-report-panel { background: #fff; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 24px; overflow: hidden; transition: box-shadow 0.25s ease; }
+        .monthly-report-panel { background: var(--glass-bg-strong); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); border: 1px solid var(--glass-border); border-radius: 16px; box-shadow: var(--glass-shadow); margin-bottom: 24px; overflow: hidden; transition: box-shadow 0.25s ease; }
         .monthly-report-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 16px 20px; cursor: pointer; user-select: none; }
         .monthly-report-head h3 { font-size: 15px; color: #222; font-weight: 700; display: flex; align-items: center; gap: 8px; }
         .mr-toggle-btn {
@@ -420,7 +513,7 @@
         .mr-a4-footer-total .mr-ft-value { font-size: 22px; font-weight: 900; color: #008080; }
         .mr-a4-credit { text-align: center; margin-top: 26px; font-size: 11px; color: #777; font-style: italic; }
 
-        .table-container { background: #fff; padding: 22px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .table-container { background: var(--glass-bg-strong); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); border: 1px solid var(--glass-border); padding: 22px; border-radius: 16px; box-shadow: var(--glass-shadow); }
         .table-container h3 { font-size: 16px; margin-bottom: 16px; color: #222; font-weight: 700; }
         table.dash-table { width: 100%; border-collapse: collapse; }
         table.dash-table th { background: var(--teal); color: white; padding: 12px 14px; text-align: left; font-size: 13px; font-weight: 600; }
@@ -669,7 +762,6 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{
   font-family:'DM Sans',sans-serif;
-  background: #e8edf5;
   min-height:100vh;
 }
 
@@ -3316,34 +3408,10 @@ function handleMrRangeChange() {
 // ========================================================
 // 📅 SALES REPORT BY DATE RANGE (excludes Cancelled)
 // ========================================================
-function invoiceToISODate(inv) {
-    // Invoices store `date` as a display string like "20 Jun 26" (en-GB short),
-    // not an ISO date. Prefer the reliable `savedDate` ISO timestamp; fall back
-    // to parsing the display string if savedDate is missing (older invoices).
-    if (inv.savedDate) {
-        const d = String(inv.savedDate).slice(0, 10);
-        if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
-    }
-    const raw = String(inv.date || '').trim();
-    // Already ISO?
-    if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
-    // Try "DD Mon YY" or "DD Mon YYYY" (e.g. "20 Jun 26", "20 Jun 2026")
-    const months = { jan:1, feb:2, mar:3, apr:4, may:5, jun:6, jul:7, aug:8, sep:9, oct:10, nov:11, dec:12 };
-    const m = raw.match(/^(\d{1,2})\s+([A-Za-z]{3,})\s+(\d{2,4})$/);
-    if (m) {
-        const day = parseInt(m[1], 10);
-        const mon = months[m[2].toLowerCase().slice(0,3)];
-        let yr = parseInt(m[3], 10);
-        if (yr < 100) yr += 2000;
-        if (mon) return `${yr}-${String(mon).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-    }
-    return '';
-}
-
 function getInvoicesInRange(history, fromDate, toDate) {
     // fromDate / toDate format: "YYYY-MM-DD"
     return history.filter(inv => {
-        const d = invoiceToISODate(inv);
+        const d = String(inv.date || '').slice(0, 10);
         return d && d >= fromDate && d <= toDate;
     });
 }
@@ -3395,7 +3463,7 @@ async function printMonthlyReport() {
 
     const history = await getAllInvoices();
     const rangeInvoices = getInvoicesInRange(history, fromDate, toDate)
-        .sort((a, b) => invoiceToISODate(a).localeCompare(invoiceToISODate(b)) || (parseInt(a.invoiceNo||0) - parseInt(b.invoiceNo||0)));
+        .sort((a, b) => new Date(a.date) - new Date(b.date) || (parseInt(a.invoiceNo||0) - parseInt(b.invoiceNo||0)));
 
     let totalSales = 0, totalCollected = 0, totalDue = 0, totalOrders = 0, cancelledCount = 0;
 
