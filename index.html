@@ -3408,10 +3408,34 @@ function handleMrRangeChange() {
 // ========================================================
 // 📅 SALES REPORT BY DATE RANGE (excludes Cancelled)
 // ========================================================
+function invoiceToISODate(inv) {
+    // Invoices store `date` as a display string like "20 Jun 26" (en-GB short),
+    // not an ISO date. Prefer the reliable `savedDate` ISO timestamp; fall back
+    // to parsing the display string if savedDate is missing (older invoices).
+    if (inv.savedDate) {
+        const d = String(inv.savedDate).slice(0, 10);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+    }
+    const raw = String(inv.date || '').trim();
+    // Already ISO?
+    if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
+    // Try "DD Mon YY" or "DD Mon YYYY" (e.g. "20 Jun 26", "20 Jun 2026")
+    const months = { jan:1, feb:2, mar:3, apr:4, may:5, jun:6, jul:7, aug:8, sep:9, oct:10, nov:11, dec:12 };
+    const m = raw.match(/^(\d{1,2})\s+([A-Za-z]{3,})\s+(\d{2,4})$/);
+    if (m) {
+        const day = parseInt(m[1], 10);
+        const mon = months[m[2].toLowerCase().slice(0,3)];
+        let yr = parseInt(m[3], 10);
+        if (yr < 100) yr += 2000;
+        if (mon) return `${yr}-${String(mon).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    }
+    return '';
+}
+
 function getInvoicesInRange(history, fromDate, toDate) {
     // fromDate / toDate format: "YYYY-MM-DD"
     return history.filter(inv => {
-        const d = String(inv.date || '').slice(0, 10);
+        const d = invoiceToISODate(inv);
         return d && d >= fromDate && d <= toDate;
     });
 }
@@ -3463,7 +3487,7 @@ async function printMonthlyReport() {
 
     const history = await getAllInvoices();
     const rangeInvoices = getInvoicesInRange(history, fromDate, toDate)
-        .sort((a, b) => new Date(a.date) - new Date(b.date) || (parseInt(a.invoiceNo||0) - parseInt(b.invoiceNo||0)));
+        .sort((a, b) => invoiceToISODate(a).localeCompare(invoiceToISODate(b)) || (parseInt(a.invoiceNo||0) - parseInt(b.invoiceNo||0)));
 
     let totalSales = 0, totalCollected = 0, totalDue = 0, totalOrders = 0, cancelledCount = 0;
 
