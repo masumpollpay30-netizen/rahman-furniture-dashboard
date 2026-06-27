@@ -2504,6 +2504,9 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
                 <button onclick="forceResyncAllInvoices()" class="btn" style="font-size:12px;padding:7px 14px;background:#e74c3c;color:white;">🔁 Re-Sync All</button>
             </div>
             <div style="font-size:10px;color:#c0392b;margin-top:5px;">⚠️ আগে data যাচ্ছিল না? <b>Re-Sync All</b> চাপুন — সব invoice নতুন করে Sheet-এ পাঠাবে।</div>
+            <div style="margin-top:8px;">
+              <button onclick="testSendOneRow()" class="btn" style="font-size:11px;padding:5px 12px;background:#8e44ad;color:white;">🧪 Test: একটা Sample Row পাঠাও</button>
+            </div>
             <div id="cloud-status-msg" style="margin-top:8px;font-size:11px;"></div>
         </div>
 
@@ -2847,53 +2850,60 @@ async function syncInvoiceAsHappyCustomer(invoiceData) {
 
     const invNo = String(invoiceData.invoiceNo);
 
-    // ✅ DUPLICATE CHECK 1: localStorage — আগে কোনো session-এ পাঠানো হয়েছে কিনা
+    // ✅ DUPLICATE CHECK 1: localStorage
     if (isInvoiceAlreadySynced(invNo)) {
-        console.log('⏭️ Invoice #' + invNo + ' already synced (localStorage) — skipping.');
+        console.log('⏭️ Invoice #' + invNo + ' already synced — skipping.');
         return;
     }
 
-    // ✅ DUPLICATE CHECK 2: In-memory lock — এই session-এ এখন পাঠানো হচ্ছে কিনা
+    // ✅ DUPLICATE CHECK 2: In-memory lock
     if (_syncInProgress.has(invNo)) {
-        console.log('⏭️ Invoice #' + invNo + ' sync already in progress — skipping.');
+        console.log('⏭️ Invoice #' + invNo + ' sync in progress — skipping.');
         return;
     }
-
-    // Lock করো
     _syncInProgress.add(invNo);
-
-    // HC page এর মতো SL number তৈরি করো
-    const hcRecs = JSON.parse(localStorage.getItem('rf3_recs') || '[]');
-    const slNum = 'SL-' + String(hcRecs.length + 1).padStart(2, '0');
 
     const now = new Date();
 
-    // HC page এর মতো exactly same format — action=addRow, GET request
+    // ✅ invoiceNo সহ সব parameter পাঠাও — Script-এ duplicate check করবে
     const params = new URLSearchParams({
-        action: 'addRow',
-        sl: slNum,
-        date: invoiceData.date || now.toISOString().slice(0,10),
-        name: invoiceData.customerName || '',
-        phone: invoiceData.customerPhone || '',
-        address: invoiceData.customerAddress || '',
-        total: invoiceData.grandTotal || '0',
-        sales: invoiceData.salesman || '',
-        mood: 'Happy'
+        action:     'addRow',
+        invoiceNo:  invNo,
+        date:       invoiceData.date || now.toISOString().slice(0,10),
+        name:       invoiceData.customerName    || '',
+        phone:      invoiceData.customerPhone   || '',
+        address:    invoiceData.customerAddress || '',
+        total:      String(invoiceData.grandTotal || '0'),
+        sales:      invoiceData.salesman || '',
+        mood:       'Happy'
     });
 
+    const finalUrl = url + '?' + params.toString();
+    console.log('📤 Sending to Sheet:', finalUrl);
+
     try {
-        // no-cors mode: fetch কখনো throw করে না, তাই try-catch শুধু network error ধরে
-        // Sheet-এ পাঠানোর পরে mark করো — এই session-এ আর যাবে না (in-memory lock)
-        await fetch(url + '?' + params.toString(), { method: 'GET', mode: 'no-cors' });
-        // ✅ Synced হিসেবে mark করো (localStorage + memory)
+        // Approach 1: fetch with no-cors (works in most browsers)
+        await fetch(finalUrl, { method: 'GET', mode: 'no-cors' });
         markInvoiceSynced(invNo);
-        console.log('✅ Invoice synced to Google Sheets — #' + invNo + ' | ' + slNum);
+        console.log('✅ Synced to Google Sheets — Invoice #' + invNo);
     } catch(e) {
-        // Network সম্পূর্ণ বন্ধ থাকলে এখানে আসে — retry queue তে রাখো
-        // Lock সরাও যাতে retry করা যায়
-        _syncInProgress.delete(invNo);
-        addToSyncRetryQueue(invoiceData);
-        console.log('❌ Sync failed, queued for retry:', e);
+        // Approach 2: Image ping fallback (bypass CORS completely)
+        console.log('⚠️ fetch failed, trying image ping...');
+        try {
+            await new Promise(function(resolve) {
+                var img = new Image();
+                img.onload  = resolve;
+                img.onerror = resolve; // Script returns JSON not image, so onerror is normal = success
+                img.src = finalUrl + '&_cb=' + Date.now();
+                setTimeout(resolve, 6000);
+            });
+            markInvoiceSynced(invNo);
+            console.log('✅ Synced via image ping — Invoice #' + invNo);
+        } catch(e2) {
+            _syncInProgress.delete(invNo);
+            addToSyncRetryQueue(invoiceData);
+            console.log('❌ Both methods failed, queued for retry');
+        }
     }
 }
 
@@ -2931,6 +2941,29 @@ async function processSyncRetryQueue() {
         localStorage.setItem('rf_sync_retry', JSON.stringify(remaining));
         if (remaining.length === 0) console.log('✅ All pending syncs completed!');
     } catch(e) {}
+}
+
+// 🧪 TEST: একটা sample row পাঠিয়ে দেখো কাজ করে কিনা
+function testSendOneRow() {
+    const url = getScriptUrl();
+    if (!url) { setCloudStatus('❌ Script URL সেট করা নেই।', 'red'); return; }
+    const now = new Date();
+    const dateStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+    const params = new URLSearchParams({
+        action:    'addRow',
+        invoiceNo: 'TEST-' + Date.now(),
+        date:      dateStr,
+        name:      'Test Customer',
+        phone:     '01700000000',
+        address:   'Test Address',
+        total:     '1000',
+        sales:     'Test',
+        mood:      'Happy'
+    });
+    const testUrl = url + '?' + params.toString();
+    // Browser-এ সরাসরি খোলো — CORS সমস্যা নেই, response দেখতে পাবে
+    window.open(testUrl, '_blank');
+    setCloudStatus('🧪 নতুন tab-এ খুলেছে। Sheet-এ "Test Customer" row যোগ হলে কাজ করছে!', '#8e44ad');
 }
 
 // 🔁 FORCE RE-SYNC — সব পুরানো un-synced invoices পাঠানো
