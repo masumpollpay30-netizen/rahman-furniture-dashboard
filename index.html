@@ -2501,7 +2501,9 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
                 <button onclick="forceSyncToCloud()" class="btn btn-warning" style="font-size:12px;padding:7px 14px;color:#333;">⬆️ Force Sync</button>
                 <button onclick="forceLoadFromCloud()" class="btn" style="font-size:12px;padding:7px 14px;background:#17a2b8;color:white;">⬇️ Load Cloud</button>
                 <button onclick="testDataInCloud()" class="btn" style="font-size:12px;padding:7px 14px;background:#6f42c1;color:white;">✅ Check Data</button>
+                <button onclick="forceResyncAllInvoices()" class="btn" style="font-size:12px;padding:7px 14px;background:#e74c3c;color:white;">🔁 Re-Sync All</button>
             </div>
+            <div style="font-size:10px;color:#c0392b;margin-top:5px;">⚠️ আগে data যাচ্ছিল না? <b>Re-Sync All</b> চাপুন — সব invoice নতুন করে Sheet-এ পাঠাবে।</div>
             <div id="cloud-status-msg" style="margin-top:8px;font-size:11px;"></div>
         </div>
 
@@ -2697,6 +2699,23 @@ async function migrateFromLocalStorage() {
     } catch(e) { console.log('Migration skipped:', e); }
 }
 
+// ✅ একবার চালালেই হবে — savedDate নেই এমন সব invoice patch করে দেয়
+async function patchMissingSavedDates() {
+    try {
+        const all = await idbGetAll();
+        const needsPatch = all.filter(inv => !inv.savedDate && inv.date);
+        if (needsPatch.length === 0) return;
+        for (const inv of needsPatch) {
+            const isoDate = invoiceToISODate(inv);
+            if (isoDate) {
+                inv.savedDate = isoDate + 'T00:00:00.000Z';
+                await idbSaveInvoice(inv);
+            }
+        }
+        console.log('✅ Patched savedDate for ' + needsPatch.length + ' invoices');
+    } catch(e) { console.log('patchMissingSavedDates skipped:', e); }
+}
+
 // Helper: get all invoices (IDB-first)
 async function getAllInvoices() {
     try {
@@ -2816,6 +2835,9 @@ function isInvoiceAlreadySynced(invoiceNo) {
     return getSheetSyncedInvoices().includes(String(invoiceNo));
 }
 
+// ✅ In-memory lock: একই session-এ একই invoice দুইবার পাঠাবে না
+const _syncInProgress = new Set();
+
 async function syncInvoiceAsHappyCustomer(invoiceData) {
     const url = getScriptUrl();
     if (!url) return;
@@ -2823,11 +2845,22 @@ async function syncInvoiceAsHappyCustomer(invoiceData) {
     // Customer name বা phone না থাকলে skip
     if (!invoiceData.customerName && !invoiceData.customerPhone) return;
 
-    // ✅ DUPLICATE PREVENTION: এই invoice আগে পাঠানো হয়েছে কিনা চেক করো
-    if (isInvoiceAlreadySynced(invoiceData.invoiceNo)) {
-        console.log('⏭️ Invoice #' + invoiceData.invoiceNo + ' already synced — skipping duplicate.');
+    const invNo = String(invoiceData.invoiceNo);
+
+    // ✅ DUPLICATE CHECK 1: localStorage — আগে কোনো session-এ পাঠানো হয়েছে কিনা
+    if (isInvoiceAlreadySynced(invNo)) {
+        console.log('⏭️ Invoice #' + invNo + ' already synced (localStorage) — skipping.');
         return;
     }
+
+    // ✅ DUPLICATE CHECK 2: In-memory lock — এই session-এ এখন পাঠানো হচ্ছে কিনা
+    if (_syncInProgress.has(invNo)) {
+        console.log('⏭️ Invoice #' + invNo + ' sync already in progress — skipping.');
+        return;
+    }
+
+    // Lock করো
+    _syncInProgress.add(invNo);
 
     // HC page এর মতো SL number তৈরি করো
     const hcRecs = JSON.parse(localStorage.getItem('rf3_recs') || '[]');
@@ -2849,13 +2882,77 @@ async function syncInvoiceAsHappyCustomer(invoiceData) {
     });
 
     try {
-        fetch(url + '?' + params.toString(), { method: 'GET', mode: 'no-cors' });
-        // ✅ সফল হলে এই invoice কে synced হিসেবে mark করো
-        markInvoiceSynced(invoiceData.invoiceNo);
-        console.log('✅ Invoice Happy Customer synced to Google Sheets — Invoice #' + invoiceData.invoiceNo + ' | ' + slNum);
+        // no-cors mode: fetch কখনো throw করে না, তাই try-catch শুধু network error ধরে
+        // Sheet-এ পাঠানোর পরে mark করো — এই session-এ আর যাবে না (in-memory lock)
+        await fetch(url + '?' + params.toString(), { method: 'GET', mode: 'no-cors' });
+        // ✅ Synced হিসেবে mark করো (localStorage + memory)
+        markInvoiceSynced(invNo);
+        console.log('✅ Invoice synced to Google Sheets — #' + invNo + ' | ' + slNum);
     } catch(e) {
-        console.log('Happy Customer sync failed:', e);
+        // Network সম্পূর্ণ বন্ধ থাকলে এখানে আসে — retry queue তে রাখো
+        // Lock সরাও যাতে retry করা যায়
+        _syncInProgress.delete(invNo);
+        addToSyncRetryQueue(invoiceData);
+        console.log('❌ Sync failed, queued for retry:', e);
     }
+}
+
+// 🔄 RETRY QUEUE — ব্যর্থ sync গুলো পরে retry করার জন্য
+function addToSyncRetryQueue(invoiceData) {
+    try {
+        const queue = JSON.parse(localStorage.getItem('rf_sync_retry') || '[]');
+        if (!queue.find(q => q.invoiceNo === invoiceData.invoiceNo)) {
+            queue.push({
+                invoiceNo: invoiceData.invoiceNo,
+                customerName: invoiceData.customerName || '',
+                customerPhone: invoiceData.customerPhone || '',
+                customerAddress: invoiceData.customerAddress || '',
+                grandTotal: invoiceData.grandTotal || '0',
+                salesman: invoiceData.salesman || '',
+                date: invoiceData.date || ''
+            });
+            localStorage.setItem('rf_sync_retry', JSON.stringify(queue));
+        }
+    } catch(e) {}
+}
+
+async function processSyncRetryQueue() {
+    try {
+        const queue = JSON.parse(localStorage.getItem('rf_sync_retry') || '[]');
+        if (queue.length === 0) return;
+        console.log('🔄 Retrying ' + queue.length + ' failed syncs...');
+        const remaining = [];
+        for (const inv of queue) {
+            if (!isInvoiceAlreadySynced(inv.invoiceNo)) {
+                await syncInvoiceAsHappyCustomer(inv);
+                if (!isInvoiceAlreadySynced(inv.invoiceNo)) remaining.push(inv);
+            }
+        }
+        localStorage.setItem('rf_sync_retry', JSON.stringify(remaining));
+        if (remaining.length === 0) console.log('✅ All pending syncs completed!');
+    } catch(e) {}
+}
+
+// 🔁 FORCE RE-SYNC — সব পুরানো un-synced invoices পাঠানো
+async function forceResyncAllInvoices() {
+    const url = getScriptUrl();
+    if (!url) { alert('Script URL সেট করা নেই।'); return; }
+    setCloudStatus('🔄 সব invoice re-sync করা হচ্ছে... অপেক্ষা করুন।', '#e67e22');
+    localStorage.removeItem('rf_sheet_synced');
+    const allInvoices = await getAllInvoices();
+    if (allInvoices.length === 0) {
+        setCloudStatus('⚠️ কোনো invoice নেই।', '#e67e22');
+        return;
+    }
+    let sent = 0;
+    for (const inv of allInvoices) {
+        if (inv.customerName || inv.customerPhone) {
+            await syncInvoiceAsHappyCustomer(inv);
+            sent++;
+            await new Promise(r => setTimeout(r, 300));
+        }
+    }
+    setCloudStatus('✅ ' + sent + 'টি invoice Google Sheets-এ পাঠানো হয়েছে!', 'green');
 }
 
 async function loadCloudData() {
@@ -2883,7 +2980,14 @@ async function loadCloudData() {
                     // Save merged back to IDB (preserving local photos)
                     for (const inv of merged) {
                         const existing = await idbGetInvoice(inv.invoiceNo);
-                        if (!existing) await idbSaveInvoice(inv);
+                        if (!existing) {
+                            // ✅ পুরানো invoice-এ savedDate না থাকলে date field থেকে বানিয়ে নাও
+                            if (!inv.savedDate && inv.date) {
+                                const isoDate = invoiceToISODate(inv);
+                                if (isoDate) inv.savedDate = isoDate + 'T00:00:00.000Z';
+                            }
+                            await idbSaveInvoice(inv);
+                        }
                         // If local already has it (with photos), keep local version
                     }
                 } catch(e) {}
@@ -3386,7 +3490,8 @@ async function renderDashboard() {
             fromInput.value = firstOfMonth;
             toInput.value = todayStr;
         }
-        renderMonthlyReport(fromInput.value, toInput.value);
+        // Ensure renderMonthlyReport is awaited
+        await renderMonthlyReport(fromInput.value, toInput.value);
     }
 }
 
@@ -3398,46 +3503,136 @@ function toggleMrPanel() {
     if (btn) btn.title = panel.classList.contains('open') ? 'Close Sales Report' : 'Open Sales Report';
 }
 
-function handleMrRangeChange() {
+async function handleMrRangeChange() {
     const fromInput = document.getElementById('mr-from-date');
     const toInput = document.getElementById('mr-to-date');
     if (!fromInput || !toInput || !fromInput.value || !toInput.value) return;
-    renderMonthlyReport(fromInput.value, toInput.value);
+    await renderMonthlyReport(fromInput.value, toInput.value);
 }
 
 // ========================================================
 // 📅 SALES REPORT BY DATE RANGE (excludes Cancelled)
 // ========================================================
+// BULLETPROOF DATE CONVERTER
+// Simple string-based parsing (no regex complications)
+// ========================================================
+
 function invoiceToISODate(inv) {
-    // Invoices store `date` as a display string like "20 Jun 26" (en-GB short),
-    // not an ISO date. Prefer the reliable `savedDate` ISO timestamp; fall back
-    // to parsing the display string if savedDate is missing (older invoices).
+    // STRATEGY 1: Try savedDate first (ISO format)
     if (inv.savedDate) {
-        const d = String(inv.savedDate).slice(0, 10);
-        if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+        const saved = String(inv.savedDate).trim();
+        // Extract YYYY-MM-DD from: "2026-06-20T14:30:00Z" or "2026-06-20"
+        if (saved.includes('-') && saved.match(/\d{4}-\d{2}-\d{2}/)) {
+            const isoDate = saved.substring(0, 10); // First 10 chars: "YYYY-MM-DD"
+            if (isoDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                console.log(`✅ Invoice #${inv.invoiceNo}: Using savedDate → ${isoDate}`);
+                return isoDate;
+            }
+        }
     }
-    const raw = String(inv.date || '').trim();
-    // Already ISO?
-    if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
-    // Try "DD Mon YY" or "DD Mon YYYY" (e.g. "20 Jun 26", "20 Jun 2026")
-    const months = { jan:1, feb:2, mar:3, apr:4, may:5, jun:6, jul:7, aug:8, sep:9, oct:10, nov:11, dec:12 };
-    const m = raw.match(/^(\d{1,2})\s+([A-Za-z]{3,})\s+(\d{2,4})$/);
-    if (m) {
-        const day = parseInt(m[1], 10);
-        const mon = months[m[2].toLowerCase().slice(0,3)];
-        let yr = parseInt(m[3], 10);
-        if (yr < 100) yr += 2000;
-        if (mon) return `${yr}-${String(mon).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    
+    // STRATEGY 2: Parse date field manually without regex
+    // Expected format: "26 Jun 26" or similar
+    if (inv.date) {
+        const dateStr = String(inv.date).trim();
+        const parts = dateStr.split(/\s+/); // Split by any whitespace
+        
+        if (parts.length >= 3) {
+            const dayStr = parts[0];
+            const monthStr = parts[1];
+            const yearStr = parts[2];
+            
+            // Parse day
+            const day = parseInt(dayStr, 10);
+            if (isNaN(day) || day < 1 || day > 31) {
+                console.warn(`⚠️ Invoice #${inv.invoiceNo}: Invalid day: ${dayStr}`);
+                return '';
+            }
+            
+            // Parse month name to number
+            const monthLower = monthStr.toLowerCase();
+            const monthMap = {
+                'jan': 1, 'january': 1,
+                'feb': 2, 'february': 2,
+                'mar': 3, 'march': 3,
+                'apr': 4, 'april': 4,
+                'may': 5,
+                'jun': 6, 'june': 6,
+                'jul': 7, 'july': 7,
+                'aug': 8, 'august': 8,
+                'sep': 9, 'september': 9,
+                'oct': 10, 'october': 10,
+                'nov': 11, 'november': 11,
+                'dec': 12, 'december': 12
+            };
+            
+            const month = monthMap[monthLower];
+            if (!month) {
+                console.warn(`⚠️ Invoice #${inv.invoiceNo}: Invalid month: ${monthStr}`);
+                return '';
+            }
+            
+            // Parse year
+            let year = parseInt(yearStr, 10);
+            if (isNaN(year)) {
+                console.warn(`⚠️ Invoice #${inv.invoiceNo}: Invalid year: ${yearStr}`);
+                return '';
+            }
+            
+            // Convert 2-digit year to 4-digit
+            if (year < 100) {
+                year += 2000;
+            }
+            
+            // Build ISO date
+            const isoDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            console.log(`✅ Invoice #${inv.invoiceNo}: Parsed "${dateStr}" → ${isoDate}`);
+            return isoDate;
+        }
     }
+    
+    console.warn(`❌ Invoice #${inv.invoiceNo}: Cannot parse date. Available: savedDate="${inv.savedDate}", date="${inv.date}"`);
     return '';
 }
 
 function getInvoicesInRange(history, fromDate, toDate) {
-    // fromDate / toDate format: "YYYY-MM-DD"
-    return history.filter(inv => {
-        const d = invoiceToISODate(inv);
-        return d && d >= fromDate && d <= toDate;
+    const from = String(fromDate).trim();
+    const to = String(toDate).trim();
+    
+    console.log(`\n═══════════════════════════════════════`);
+    console.log(`🔍 FILTERING INVOICES BY DATE RANGE`);
+    console.log(`📅 Range: ${from} TO ${to}`);
+    console.log(`📊 Total invoices: ${history.length}`);
+    console.log(`═══════════════════════════════════════\n`);
+    
+    const filtered = [];
+    let matched = 0;
+    let skipped = 0;
+    
+    history.forEach(inv => {
+        const invDate = invoiceToISODate(inv);
+        
+        if (!invDate) {
+            console.log(`❌ Invoice #${inv.invoiceNo}: Skipped (no valid date)`);
+            skipped++;
+            return;
+        }
+        
+        const inRange = invDate >= from && invDate <= to;
+        if (inRange) {
+            console.log(`   ✅ MATCH: Invoice #${inv.invoiceNo} (${invDate})`);
+            filtered.push(inv);
+            matched++;
+        } else {
+            console.log(`   ❌ OUT OF RANGE: Invoice #${inv.invoiceNo} (${invDate})`);
+        }
     });
+    
+    console.log(`\n═══════════════════════════════════════`);
+    console.log(`📈 RESULT: ${matched} invoices matched, ${skipped} skipped`);
+    console.log(`═══════════════════════════════════════\n`);
+    
+    return filtered;
 }
 
 function formatDateCompact(isoDate) {
@@ -3576,13 +3771,13 @@ async function printMonthlyReport() {
     <style>
     @page { size: A4; margin: 0; }
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; background: #fff; }
-    .mr-print-toolbar { display: flex; gap: 10px; padding: 10px; background: #f5f5f5; border-bottom: 1px solid #ddd; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 0; }
+    .mr-print-toolbar { display: flex; gap: 10px; padding: 10px; background: #f5f5f5; border-bottom: 1px solid #ddd; width: 100%; }
     .mr-print-toolbar button { padding: 9px 20px; border: none; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 700; }
     .mr-print-toolbar .bp { background: #28a745; color: #fff; }
     .mr-print-toolbar .bc { background: #eee; color: #555; }
-    @media print { .mr-print-toolbar { display: none !important; } body { margin: 0; } }
-    .mr-a4-page { width: 210mm; min-height: 296mm; padding: 12mm 14mm; margin: 0 auto; background: #fff; font-family: 'Times New Roman', 'Tiro Bangla', serif; color: #000; }
+    @media print { .mr-print-toolbar { display: none !important; } body { margin: 0; background: #fff; } }
+    .mr-a4-page { width: 210mm; min-height: 296mm; padding: 12mm 14mm; margin: 0; background: #fff; font-family: 'Times New Roman', 'Tiro Bangla', serif; color: #000; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
     .mr-a4-head { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2.5px solid #001f3f; padding-bottom: 10px; margin-bottom: 14px; }
     .mr-a4-head h1 { font-size: 24px; color: #001f3f; margin: 0; text-transform: uppercase; }
     .mr-a4-head p { font-size: 12px; margin: 2px 0; font-weight: bold; }
@@ -4120,7 +4315,8 @@ async function reEditInvoice(invoiceNo) {
     tbody.innerHTML = '';
     (invoice.items || []).forEach((item, idx) => {
         const newRow = tbody.insertRow();
-        newRow.innerHTML = `<td class="sl-no">${idx+1}.</td><td class="desc-col"><input type="text" value="${item.desc}" placeholder="Item name..." onkeydown="handleRowKeys(event, this)"></td><td><input type="number" class="qty" value="${item.qty}" oninput="calc()"></td><td><input type="number" class="rate" value="${item.rate}" oninput="calc()"></td><td class="row-total">${fmtBD(parseNum(item.total))}</td>`;
+        const safeDesc = (item.desc || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        newRow.innerHTML = `<td class="sl-no">${idx+1}.</td><td class="desc-col"><input type="text" value="${safeDesc}" placeholder="Item name..." onkeydown="handleRowKeys(event, this)"></td><td><input type="number" class="qty" value="${item.qty}" oninput="calc()"></td><td><input type="number" class="rate" value="${item.rate}" oninput="calc()"></td><td class="row-total">${fmtBD(parseNum(item.total))}</td>`;
     });
     // ✅ Photos সহ restore — IndexedDB থেকে পাওয়া data
     const photoBoxes = document.querySelectorAll('.photo-box');
@@ -4528,6 +4724,8 @@ window.onload = async function() {
     await openIDB();
     // 🔄 পুরনো localStorage data migrate করো IndexedDB তে
     await migrateFromLocalStorage();
+    // ✅ পুরানো invoices-এ savedDate না থাকলে একবার patch করে নাও (sales report fix)
+    await patchMissingSavedDates();
 
     // 📦 Customer tracking page check
     const isTracking = await maybeShowTrackingPage();
@@ -4575,6 +4773,9 @@ window.onload = async function() {
     if (localHistory.length > 0) {
         saveCloudData();
     }
+
+    // 🔄 ব্যর্থ sync retry করো (background-এ)
+    setTimeout(() => processSyncRetryQueue(), 3000);
 
     // Render dashboard
     renderDashboard();
