@@ -463,6 +463,13 @@
             font-family: inherit; color: #333; cursor: pointer; padding: 4px 2px; min-width: 0;
         }
         .mr-range-arrow { color: var(--teal); font-weight: 700; font-size: 13px; flex-shrink: 0; }
+        .mr-clear-btn {
+            background: none; border: none; cursor: pointer; color: #bbb;
+            font-size: 13px; padding: 2px 4px; line-height: 1; flex-shrink: 0;
+            display: none; border-radius: 50%; transition: all 0.2s !important;
+        }
+        .mr-clear-btn:hover { color: #fff !important; background: #dc3545; transform: rotate(90deg) scale(1.1); }
+        body.dark-mode .mr-clear-btn, body.dark-full .mr-clear-btn { color: #778; }
         .mr-range-label { font-size: 12.5px; color: #667; font-weight: 600; margin: -4px 0 14px; }
         .mr-print-btn {
             padding: 9px 18px; border: none; border-radius: 8px; background: var(--teal); color: #fff;
@@ -1849,9 +1856,10 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
             <div class="mr-panel-body" id="mr-panel-body">
                 <div class="mr-controls">
                     <div class="mr-range-box">
-                        <input type="date" id="mr-from-date" onchange="handleMrRangeChange()">
+                        <input type="date" id="mr-from-date" onchange="handleMrRangeChange()" oninput="toggleMrClearBtn()">
                         <span class="mr-range-arrow">→</span>
-                        <input type="date" id="mr-to-date" onchange="handleMrRangeChange()">
+                        <input type="date" id="mr-to-date" onchange="handleMrRangeChange()" oninput="toggleMrClearBtn()">
+                        <button class="mr-clear-btn" id="mrClearBtn" onclick="clearMrDateRange()" title="Clear">✕</button>
                     </div>
                     <button class="mr-print-btn" onclick="printMonthlyReport()">🖨️ Print A4 Report</button>
                 </div>
@@ -1885,7 +1893,7 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
                 <div class="search-glass" onclick="document.getElementById('dashSearchInput').focus()">
                     <span class="sg-icon">🔍</span>
                     <input type="text" id="dashSearchInput"
-                           placeholder="Invoice No বা Phone দিয়ে খুঁজুন… (#2573 / 01XXXXXXXXX)"
+                           placeholder="Invoice No, Phone বা Sales Person নাম দিয়ে খুঁজুন… (#2573 / 01XXXXXXXXX / Rakib)"
                            oninput="handleDashSearch(this.value)">
                     <button class="search-clear-btn" id="searchClearBtn" onclick="clearDashSearch()" title="Clear">✕</button>
                 </div>
@@ -1896,6 +1904,7 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
                     <tr>
                         <th>SL#</th>
                         <th>Date</th>
+                        <th>Sales Person</th>
                         <th>Invoice No</th>
                         <th>Customer Name</th>
                         <th>Payment</th>
@@ -3486,6 +3495,7 @@ async function renderDashboard() {
         tbody.innerHTML += `<tr>
             <td>${idx + 1}</td>
             <td>${inv.date || '—'}</td>
+            <td>${inv.salesman || '—'}</td>
             <td><a class="inv-link" onclick="reEditInvoice('${inv.invoiceNo}'); showPage('invoice');">#${inv.invoiceNo}</a></td>
             <td>${inv.customerName || '—'}</td>
             <td>${paid.toLocaleString()} ৳</td>
@@ -3503,7 +3513,7 @@ async function renderDashboard() {
     });
 
     if (history.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:30px; color:#aaa;">No invoices yet. Create one!</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:30px; color:#aaa;">No invoices yet. Create one!</td></tr>';
     }
 
     document.getElementById('db-total-sales').innerText = totalSales.toLocaleString() + ' ৳';
@@ -3525,6 +3535,7 @@ async function renderDashboard() {
         }
         // Ensure renderMonthlyReport is awaited
         await renderMonthlyReport(fromInput.value, toInput.value);
+        toggleMrClearBtn();
     }
 }
 
@@ -3539,8 +3550,32 @@ function toggleMrPanel() {
 async function handleMrRangeChange() {
     const fromInput = document.getElementById('mr-from-date');
     const toInput = document.getElementById('mr-to-date');
+    toggleMrClearBtn();
     if (!fromInput || !toInput || !fromInput.value || !toInput.value) return;
     await renderMonthlyReport(fromInput.value, toInput.value);
+}
+
+function toggleMrClearBtn() {
+    const fromInput = document.getElementById('mr-from-date');
+    const toInput = document.getElementById('mr-to-date');
+    const clearBtn = document.getElementById('mrClearBtn');
+    if (!clearBtn) return;
+    const hasValue = (fromInput && fromInput.value) || (toInput && toInput.value);
+    clearBtn.style.display = hasValue ? 'block' : 'none';
+}
+
+function clearMrDateRange() {
+    const fromInput = document.getElementById('mr-from-date');
+    const toInput = document.getElementById('mr-to-date');
+    if (fromInput) fromInput.value = '';
+    if (toInput) toInput.value = '';
+    toggleMrClearBtn();
+    const setText = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+    setText('mr-total-sales', '0 ৳');
+    setText('mr-total-collected', '0 ৳');
+    setText('mr-total-due', '0 ৳');
+    setText('mr-total-orders', '0');
+    setText('mr-range-label', '');
 }
 
 // ========================================================
@@ -3861,8 +3896,9 @@ async function handleDashSearch(query) {
     const results = history.filter(inv => {
         const invNo  = String(inv.invoiceNo  || '').toLowerCase();
         const phone  = String(inv.customerPhone || '').replace(/\D/g, '');
+        const salesperson = String(inv.salesman || '').toLowerCase();
         const qDigit = q.replace(/\D/g, '');
-        return invNo.includes(q) || (qDigit && phone.includes(qDigit));
+        return invNo.includes(q) || (qDigit && phone.includes(qDigit)) || salesperson.includes(q);
     });
 
     const tbody = document.getElementById('dashboard-tbody');
@@ -3871,7 +3907,7 @@ async function handleDashSearch(query) {
     const statusMap = { 'Processing':'processing','On Delivery':'ondelivery','Delivered':'delivered','Cancelled':'cancelled' };
 
     if (results.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:#aaa;">
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:30px;color:#aaa;">
             🔍 "<b>${query}</b>" — কোনো invoice পাওয়া যায়নি।</td></tr>`;
         infoEl.style.display = 'block';
         infoEl.innerHTML = `<span style="color:#dc3545;">❌ কোনো ফলাফল নেই</span>`;
@@ -3883,10 +3919,14 @@ async function handleDashSearch(query) {
         const grand = parseFloat(inv.grandTotal) || 0;
         const paid  = parseFloat(inv.paid) || 0;
         const cls   = statusMap[inv.deliveryStatus] || 'processing';
-        const invNoHighlight = String(inv.invoiceNo).replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'), '<mark style="background:#ffe066;border-radius:3px;padding:0 2px;">$1</mark>');
+        const escQ = q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+        const invNoHighlight = String(inv.invoiceNo).replace(new RegExp('('+escQ+')','gi'), '<mark style="background:#ffe066;border-radius:3px;padding:0 2px;">$1</mark>');
+        const salesmanText = inv.salesman || '—';
+        const salesmanHighlight = escQ ? salesmanText.replace(new RegExp('('+escQ+')','gi'), '<mark style="background:#ffe066;border-radius:3px;padding:0 2px;">$1</mark>') : salesmanText;
         tbody.innerHTML += `<tr>
             <td>${idx + 1}</td>
             <td>${inv.date || '—'}</td>
+            <td>${salesmanHighlight}</td>
             <td><a class="inv-link" onclick="reEditInvoice('${inv.invoiceNo}'); showPage('invoice');">#${invNoHighlight}</a></td>
             <td>${inv.customerName || '—'}</td>
             <td>${paid.toLocaleString()} ৳</td>
