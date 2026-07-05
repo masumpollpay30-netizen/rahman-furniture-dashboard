@@ -477,6 +477,16 @@
         }
         .mr-print-btn:hover { background: var(--teal-dark); }
         .mr-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+        .mr-sp-breakdown { margin-top: 16px; }
+        .mr-sp-breakdown h5 { font-size: 12.5px; color: #667; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .3px; }
+        .mr-sp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .mr-sp-table th { background: var(--light-navy); color: #001f3f; font-weight: 700; text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--teal); }
+        .mr-sp-table td { padding: 8px 12px; border-bottom: 1px solid #e6e9ee; color: #333; }
+        .mr-sp-table tr:last-child td { border-bottom: none; }
+        .mr-sp-table td.mr-sp-amt { font-weight: 700; color: #008080; }
+        body.dark-mode .mr-sp-breakdown h5, body.dark-full .mr-sp-breakdown h5 { color: #889; }
+        body.dark-mode .mr-sp-table th, body.dark-full .mr-sp-table th { background: #23273a; color: #e5e5e5; }
+        body.dark-mode .mr-sp-table td, body.dark-full .mr-sp-table td { color: #ccc; border-bottom-color: #333a4d; }
         .mr-box { background: var(--light-navy); border-radius: 10px; padding: 14px 16px; border-left: 4px solid var(--teal); }
         .mr-box.mr-due { border-color: var(--red); }
         .mr-box.mr-collected { border-color: var(--green); }
@@ -1882,6 +1892,7 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
                         <h4 id="mr-total-orders">0</h4>
                     </div>
                 </div>
+                <div class="mr-sp-breakdown" id="mr-sp-breakdown"></div>
             </div>
         </div>
 
@@ -3576,6 +3587,8 @@ function clearMrDateRange() {
     setText('mr-total-due', '0 ৳');
     setText('mr-total-orders', '0');
     setText('mr-range-label', '');
+    const spBox = document.getElementById('mr-sp-breakdown');
+    if (spBox) spBox.innerHTML = '';
 }
 
 // ========================================================
@@ -3723,13 +3736,20 @@ async function renderMonthlyReport(fromDate, toDate) {
     const rangeInvoices = getInvoicesInRange(history, fromDate, toDate);
 
     let totalSales = 0, totalCollected = 0, totalDue = 0, totalOrders = 0;
+    const spMap = {};
 
     rangeInvoices.forEach(inv => {
         if (inv.deliveryStatus === 'Cancelled') return; // cancelled excluded from totals
-        totalSales += parseFloat(inv.grandTotal) || 0;
+        const grand = parseFloat(inv.grandTotal) || 0;
+        totalSales += grand;
         totalCollected += parseFloat(inv.paid) || 0;
         totalDue += parseFloat(inv.due) || 0;
         totalOrders++;
+
+        const spName = inv.salesman || 'Unknown';
+        if (!spMap[spName]) spMap[spName] = { sales: 0, orders: 0 };
+        spMap[spName].sales += grand;
+        spMap[spName].orders++;
     });
 
     const setText = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
@@ -3738,6 +3758,25 @@ async function renderMonthlyReport(fromDate, toDate) {
     setText('mr-total-due', totalDue.toLocaleString() + ' ৳');
     setText('mr-total-orders', totalOrders);
     setText('mr-range-label', formatRangeLabel(fromDate, toDate));
+
+    const spBox = document.getElementById('mr-sp-breakdown');
+    if (spBox) {
+        const spNames = Object.keys(spMap).sort((a, b) => spMap[b].sales - spMap[a].sales);
+        if (spNames.length === 0) {
+            spBox.innerHTML = '';
+        } else {
+            const rows = spNames.map(name => `<tr>
+                <td>${name}</td>
+                <td>${spMap[name].orders}</td>
+                <td class="mr-sp-amt">${spMap[name].sales.toLocaleString()} ৳</td>
+            </tr>`).join('');
+            spBox.innerHTML = `<h5>👤 Sales Person অনুযায়ী বিক্রি</h5>
+            <table class="mr-sp-table">
+                <thead><tr><th>Sales Person</th><th>Orders</th><th>Total Sales</th></tr></thead>
+                <tbody>${rows}</tbody>
+            </table>`;
+        }
+    }
 }
 
 async function printMonthlyReport() {
@@ -3771,6 +3810,7 @@ async function printMonthlyReport() {
         return `<tr>
             <td>${idx + 1}</td>
             <td class="${rowCls}">${inv.date || '—'}</td>
+            <td class="${rowCls}">${inv.salesman || '—'}</td>
             <td class="${rowCls}">#${inv.invoiceNo || '—'}</td>
             <td class="${rowCls}">${inv.customerName || '—'}</td>
             <td class="${rowCls}">${grand.toLocaleString()} ৳</td>
@@ -3813,6 +3853,7 @@ async function printMonthlyReport() {
                 <tr>
                     <th>SL#</th>
                     <th>Date</th>
+                    <th>Sales Person</th>
                     <th>Invoice No</th>
                     <th>Customer Name</th>
                     <th>Total Amount</th>
@@ -3822,7 +3863,7 @@ async function printMonthlyReport() {
                 </tr>
             </thead>
             <tbody>
-                ${rowsHtml || `<tr><td colspan="8" style="padding:20px;color:#888;">এই সময়সীমায় কোনো ইনভয়েস পাওয়া যায়নি।</td></tr>`}
+                ${rowsHtml || `<tr><td colspan="9" style="padding:20px;color:#888;">এই সময়সীমায় কোনো ইনভয়েস পাওয়া যায়নি।</td></tr>`}
             </tbody>
         </table>
 
