@@ -445,7 +445,7 @@
             max-height: 0; opacity: 0; overflow: hidden; padding: 0 20px;
             transition: max-height 0.38s cubic-bezier(.4,0,.2,1), opacity 0.3s ease, padding 0.3s ease;
         }
-        .monthly-report-panel.open .mr-panel-body { max-height: 600px; opacity: 1; padding: 0 20px 20px; }
+        .monthly-report-panel.open .mr-panel-body { max-height: 820px; opacity: 1; padding: 0 20px 20px; }
         .monthly-report-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 0; }
         .mr-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
         .mr-controls input[type="month"] {
@@ -476,6 +476,53 @@
             font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;
         }
         .mr-print-btn:hover { background: var(--teal-dark); }
+
+        /* ── Sales Report: Status Filter ── */
+        .mr-status-filter { position: relative; }
+        .mr-status-btn {
+            display: flex; align-items: center; gap: 6px; padding: 8px 12px;
+            border: 1.5px solid #ddd; border-radius: 8px; background: #fafafa;
+            font-size: 13px; font-weight: 700; color: #333; cursor: pointer; font-family: inherit;
+        }
+        .mr-status-btn:hover { border-color: var(--teal); background: #fff; }
+        .mr-status-btn.active-filter { border-color: var(--teal); background: #e6f5f5; color: var(--teal-dark); }
+        .mr-status-caret { font-size: 10px; color: #999; margin-left: 2px; }
+        .mr-status-menu {
+            position: absolute; top: calc(100% + 6px); left: 0; background: #fff;
+            border: 1px solid #ddd; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.16);
+            overflow: hidden; min-width: 175px; z-index: 60; display: none;
+        }
+        .mr-status-menu.open { display: block; animation: fadeInUp 0.2s ease; }
+        .mr-status-item {
+            padding: 10px 14px; font-size: 13px; font-weight: 700; cursor: pointer;
+            display: flex; align-items: center; gap: 8px; transition: filter 0.15s;
+        }
+        .mr-status-item:hover { filter: brightness(0.94); }
+        .mr-status-item.mr-status-all { background: #f0f4f8; color: #333; }
+        .mr-status-item.processing { background: #fff3cd; color: #856404; }
+        .mr-status-item.ondelivery { background: #cfe2ff; color: #084298; }
+        .mr-status-item.delivered { background: #d1e7dd; color: #0a3622; }
+        .mr-status-item.cancelled { background: #f8d7da; color: #842029; }
+        body.dark-mode .mr-status-btn, body.dark-full .mr-status-btn { background: #23273a; border-color: #3a3d4a; color: #e0e0e0; }
+        body.dark-mode .mr-status-menu, body.dark-full .mr-status-menu { background: #23273a; border-color: #3a3d4a; }
+
+        /* ── Sales Report: Filtered Invoice List ── */
+        .mr-invoice-list { margin-top: 16px; max-height: 300px; overflow-y: auto; border-radius: 10px; border: 1px solid #e6e9ee; }
+        .mr-invoice-list table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+        .mr-invoice-list th { position: sticky; top: 0; background: var(--light-navy); color: #001f3f; font-weight: 700; text-align: left; padding: 8px 10px; border-bottom: 2px solid var(--teal); }
+        .mr-invoice-list td { padding: 7px 10px; border-bottom: 1px solid #eef0f4; color: #333; }
+        .mr-invoice-list tr:last-child td { border-bottom: none; }
+        .mr-il-badge { padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+        .mr-il-badge.processing { background: #fff3cd; color: #856404; }
+        .mr-il-badge.ondelivery { background: #cfe2ff; color: #084298; }
+        .mr-il-badge.delivered { background: #d1e7dd; color: #0a3622; }
+        .mr-il-badge.cancelled { background: #f8d7da; color: #842029; }
+        .mr-il-view { color: var(--teal); font-weight: 700; cursor: pointer; text-decoration: underline; }
+        .mr-il-view:hover { color: var(--teal-dark); }
+        body.dark-mode .mr-invoice-list, body.dark-full .mr-invoice-list { border-color: #333a4d; }
+        body.dark-mode .mr-invoice-list th, body.dark-full .mr-invoice-list th { background: #23273a; color: #e5e5e5; }
+        body.dark-mode .mr-invoice-list td, body.dark-full .mr-invoice-list td { color: #ccc; border-bottom-color: #333a4d; }
+
         .mr-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
         .mr-sp-breakdown { margin-top: 16px; }
         .mr-sp-breakdown h5 { font-size: 12.5px; color: #667; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .3px; }
@@ -1871,6 +1918,20 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
                         <input type="date" id="mr-to-date" onchange="handleMrRangeChange()" oninput="toggleMrClearBtn()">
                         <button class="mr-clear-btn" id="mrClearBtn" onclick="clearMrDateRange()" title="Clear">✕</button>
                     </div>
+                    <div class="mr-status-filter" id="mrStatusFilter">
+                        <button type="button" class="mr-status-btn" id="mrStatusBtn" onclick="event.stopPropagation(); toggleMrStatusMenu();" title="Status অনুযায়ী ফিল্টার করুন">
+                            <span id="mrStatusIcon">🔎</span>
+                            <span id="mrStatusLabel">All</span>
+                            <span class="mr-status-caret">▾</span>
+                        </button>
+                        <div class="mr-status-menu" id="mrStatusMenu">
+                            <div class="mr-status-item mr-status-all" onclick="selectMrStatus('All')"><span>🔎</span>All</div>
+                            <div class="mr-status-item processing" onclick="selectMrStatus('Processing')"><span>⏳</span>Processing</div>
+                            <div class="mr-status-item ondelivery" onclick="selectMrStatus('On Delivery')"><span>🚛</span>On Delivery</div>
+                            <div class="mr-status-item delivered" onclick="selectMrStatus('Delivered')"><span>✅</span>Delivered</div>
+                            <div class="mr-status-item cancelled" onclick="selectMrStatus('Cancelled')"><span>❌</span>Cancelled</div>
+                        </div>
+                    </div>
                     <button class="mr-print-btn" onclick="printMonthlyReport()">🖨️ Print A4 Report</button>
                 </div>
                 <div class="mr-range-label" id="mr-range-label"></div>
@@ -1893,6 +1954,7 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
                     </div>
                 </div>
                 <div class="mr-sp-breakdown" id="mr-sp-breakdown"></div>
+                <div class="mr-invoice-list" id="mr-invoice-list"></div>
             </div>
         </div>
 
@@ -1973,6 +2035,7 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
                     <div><b>Invoice No:</b> <span id="inv-no">2490</span></div>
                     <div><b>Date:</b> <span id="inv-date"></span></div>
                     <div><b>Time:</b> <span id="inv-clock" style="font-weight:bold;"></span></div>
+                    <div id="inv-date-now-btn" class="no-print" onclick="invUseCurrentDateTime()" style="display:none;cursor:pointer;margin-top:4px;font-size:11px;font-weight:700;color:#fff;background:#008080;padding:3px 9px;border-radius:12px;text-align:center;width:fit-content;">🔄 বর্তমান তারিখ/সময় ব্যবহার করুন</div>
                 </div>
             </div>
 
@@ -3558,6 +3621,83 @@ function toggleMrPanel() {
     if (btn) btn.title = panel.classList.contains('open') ? 'Close Sales Report' : 'Open Sales Report';
 }
 
+// ========================================================
+// 🔎 SALES REPORT — STATUS FILTER (All / Processing / On Delivery / Delivered / Cancelled)
+// ========================================================
+let mrStatusFilter = 'All';
+const MR_STATUS_META = {
+    'All':         { icon: '🔎', label: 'All' },
+    'Processing':  { icon: '⏳', label: 'Processing' },
+    'On Delivery': { icon: '🚛', label: 'On Delivery' },
+    'Delivered':   { icon: '✅', label: 'Delivered' },
+    'Cancelled':   { icon: '❌', label: 'Cancelled' }
+};
+
+function toggleMrStatusMenu() {
+    const menu = document.getElementById('mrStatusMenu');
+    if (menu) menu.classList.toggle('open');
+}
+
+document.addEventListener('click', function(e) {
+    const wrap = document.getElementById('mrStatusFilter');
+    const menu = document.getElementById('mrStatusMenu');
+    if (wrap && menu && menu.classList.contains('open') && !wrap.contains(e.target)) {
+        menu.classList.remove('open');
+    }
+});
+
+async function selectMrStatus(status) {
+    mrStatusFilter = status;
+    const meta = MR_STATUS_META[status] || MR_STATUS_META['All'];
+    const iconEl = document.getElementById('mrStatusIcon');
+    const labelEl = document.getElementById('mrStatusLabel');
+    const btnEl = document.getElementById('mrStatusBtn');
+    if (iconEl) iconEl.textContent = meta.icon;
+    if (labelEl) labelEl.textContent = meta.label;
+    if (btnEl) btnEl.classList.toggle('active-filter', status !== 'All');
+
+    const menu = document.getElementById('mrStatusMenu');
+    if (menu) menu.classList.remove('open');
+
+    const fromInput = document.getElementById('mr-from-date');
+    const toInput = document.getElementById('mr-to-date');
+    if (fromInput && toInput && fromInput.value && toInput.value) {
+        await renderMonthlyReport(fromInput.value, toInput.value);
+    }
+}
+
+function filterInvoicesByStatus(invoices, status) {
+    if (!status || status === 'All') return invoices;
+    return invoices.filter(inv => (inv.deliveryStatus || 'Processing') === status);
+}
+
+function renderMrInvoiceList(invoices) {
+    const box = document.getElementById('mr-invoice-list');
+    if (!box) return;
+    if (!invoices || !invoices.length) {
+        box.innerHTML = '<p style="text-align:center;color:#999;font-size:12.5px;padding:16px;margin:0;">এই তারিখ/স্ট্যাটাসে কোনো ইনভয়েস পাওয়া যায়নি।</p>';
+        return;
+    }
+    const statusMap = { 'Processing':'processing', 'On Delivery':'ondelivery', 'Delivered':'delivered', 'Cancelled':'cancelled' };
+    const rows = invoices.map(inv => {
+        const st = inv.deliveryStatus || 'Processing';
+        const cls = statusMap[st] || 'processing';
+        const grand = parseFloat(inv.grandTotal) || 0;
+        return `<tr>
+            <td>${inv.date || '—'}</td>
+            <td><a class="inv-link" onclick="reEditInvoice('${inv.invoiceNo}'); showPage('invoice');">#${inv.invoiceNo}</a></td>
+            <td>${inv.customerName || '—'}</td>
+            <td>${grand.toLocaleString()} ৳</td>
+            <td><span class="mr-il-badge ${cls}">${st}</span></td>
+            <td><span class="mr-il-view" onclick="showDeliveryDetail('${inv.invoiceNo}')">Details</span></td>
+        </tr>`;
+    }).join('');
+    box.innerHTML = `<table>
+        <thead><tr><th>Date</th><th>Invoice</th><th>Customer</th><th>Amount</th><th>Status</th><th>Details</th></tr></thead>
+        <tbody>${rows}</tbody>
+    </table>`;
+}
+
 async function handleMrRangeChange() {
     const fromInput = document.getElementById('mr-from-date');
     const toInput = document.getElementById('mr-to-date');
@@ -3589,6 +3729,8 @@ function clearMrDateRange() {
     setText('mr-range-label', '');
     const spBox = document.getElementById('mr-sp-breakdown');
     if (spBox) spBox.innerHTML = '';
+    const listBox = document.getElementById('mr-invoice-list');
+    if (listBox) listBox.innerHTML = '';
 }
 
 // ========================================================
@@ -3733,13 +3875,15 @@ function formatRangeLabel(fromDate, toDate) {
 async function renderMonthlyReport(fromDate, toDate) {
     if (!fromDate || !toDate) return;
     const history = await getAllInvoices();
-    const rangeInvoices = getInvoicesInRange(history, fromDate, toDate);
+    const rangeInvoicesAll = getInvoicesInRange(history, fromDate, toDate);
+    const rangeInvoices = filterInvoicesByStatus(rangeInvoicesAll, mrStatusFilter);
 
     let totalSales = 0, totalCollected = 0, totalDue = 0, totalOrders = 0;
     const spMap = {};
 
     rangeInvoices.forEach(inv => {
-        if (inv.deliveryStatus === 'Cancelled') return; // cancelled excluded from totals
+        // Cancelled orders are excluded from totals, unless the user is specifically viewing "Cancelled"
+        if (inv.deliveryStatus === 'Cancelled' && mrStatusFilter !== 'Cancelled') return;
         const grand = parseFloat(inv.grandTotal) || 0;
         totalSales += grand;
         totalCollected += parseFloat(inv.paid) || 0;
@@ -3757,7 +3901,9 @@ async function renderMonthlyReport(fromDate, toDate) {
     setText('mr-total-collected', totalCollected.toLocaleString() + ' ৳');
     setText('mr-total-due', totalDue.toLocaleString() + ' ৳');
     setText('mr-total-orders', totalOrders);
-    setText('mr-range-label', formatRangeLabel(fromDate, toDate));
+    const statusMeta = MR_STATUS_META[mrStatusFilter] || MR_STATUS_META['All'];
+    const rangeLabelText = formatRangeLabel(fromDate, toDate) + (mrStatusFilter !== 'All' ? ` • ${statusMeta.icon} ${statusMeta.label}` : '');
+    setText('mr-range-label', rangeLabelText);
 
     const spBox = document.getElementById('mr-sp-breakdown');
     if (spBox) {
@@ -3777,6 +3923,11 @@ async function renderMonthlyReport(fromDate, toDate) {
             </table>`;
         }
     }
+
+    const listSorted = [...rangeInvoices].sort((a, b) =>
+        invoiceToISODate(b).localeCompare(invoiceToISODate(a)) || (parseInt(b.invoiceNo||0) - parseInt(a.invoiceNo||0))
+    );
+    renderMrInvoiceList(listSorted);
 }
 
 async function printMonthlyReport() {
@@ -3788,8 +3939,9 @@ async function printMonthlyReport() {
     if (fromDate > toDate) { alert('শুরুর তারিখ শেষের তারিখের পরে হতে পারবে না।'); return; }
 
     const history = await getAllInvoices();
-    const rangeInvoices = getInvoicesInRange(history, fromDate, toDate)
+    const rangeInvoicesAll = getInvoicesInRange(history, fromDate, toDate)
         .sort((a, b) => invoiceToISODate(a).localeCompare(invoiceToISODate(b)) || (parseInt(a.invoiceNo||0) - parseInt(b.invoiceNo||0)));
+    const rangeInvoices = filterInvoicesByStatus(rangeInvoicesAll, mrStatusFilter);
 
     let totalSales = 0, totalCollected = 0, totalDue = 0, totalOrders = 0, cancelledCount = 0;
 
@@ -3798,7 +3950,7 @@ async function printMonthlyReport() {
         const grand = parseFloat(inv.grandTotal) || 0;
         const paid = parseFloat(inv.paid) || 0;
         const due = parseFloat(inv.due) || 0;
-        if (isCancelled) {
+        if (isCancelled && mrStatusFilter !== 'Cancelled') {
             cancelledCount++;
         } else {
             totalSales += grand;
@@ -3823,7 +3975,8 @@ async function printMonthlyReport() {
     const shopName = localStorage.getItem('companyName') || 'RAHMAN FURNITURE';
     const now = new Date();
     const printedOn = `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}/${now.getFullYear()}`;
-    const rangeLabel = formatRangeLabel(fromDate, toDate);
+    const statusMeta = MR_STATUS_META[mrStatusFilter] || MR_STATUS_META['All'];
+    const rangeLabel = formatRangeLabel(fromDate, toDate) + (mrStatusFilter !== 'All' ? ` • ${statusMeta.icon} ${statusMeta.label}` : '');
 
     const reportHtml = `
     <div class="mr-a4-page">
@@ -3868,7 +4021,7 @@ async function printMonthlyReport() {
         </table>
 
         <div class="mr-a4-footer-total">
-            <span class="mr-ft-label">Grand Total Amount (${rangeLabel}, excluding ${cancelledCount} cancelled)</span>
+            <span class="mr-ft-label">Grand Total Amount (${rangeLabel}${mrStatusFilter === 'All' ? `, excluding ${cancelledCount} cancelled` : ''})</span>
             <span class="mr-ft-value">${totalSales.toLocaleString()} ৳</span>
         </div>
 
@@ -4164,7 +4317,9 @@ ${content}
 // ========================================================
 // INVOICE FUNCTIONS (100% same logic as original)
 // ========================================================
+let invUsingLiveClock = true; // false when viewing/editing an old invoice, so its saved date/time isn't overwritten
 function invUpdateClock() {
+    if (!invUsingLiveClock) return; // old invoice loaded — keep its original date/time, don't tick
     const now = new Date();
     const dateEl = document.getElementById('inv-date');
     const clockEl = document.getElementById('inv-clock');
@@ -4173,6 +4328,14 @@ function invUpdateClock() {
 }
 setInterval(invUpdateClock, 1000);
 invUpdateClock();
+
+function invUseCurrentDateTime() {
+    // User explicitly wants the current date/time on an old invoice
+    invUsingLiveClock = true;
+    invUpdateClock();
+    const nowBtn = document.getElementById('inv-date-now-btn');
+    if (nowBtn) nowBtn.style.display = 'none';
+}
 
 function invUploadLogo(input) {
     const reader = new FileReader();
@@ -4404,6 +4567,11 @@ function loadInvoicePage() {
     // Load inv number
     let inv = localStorage.getItem('invNum') || "2490";
     document.getElementById('inv-no').innerText = inv;
+    // ✅ Fresh invoice → use live current date/time again
+    invUsingLiveClock = true;
+    const nowBtn = document.getElementById('inv-date-now-btn');
+    if (nowBtn) nowBtn.style.display = 'none';
+    invUpdateClock();
     calc();
 }
 
@@ -4411,6 +4579,14 @@ async function reEditInvoice(invoiceNo) {
     const invoice = await idbGetInvoice(invoiceNo);
     if(!invoice) return;
     closeModal('invoiceHistoryModal');
+    // ✅ Old invoice → freeze the clock and restore its original saved date/time
+    invUsingLiveClock = false;
+    const dateEl = document.getElementById('inv-date');
+    const clockEl = document.getElementById('inv-clock');
+    if (dateEl) dateEl.innerText = invoice.date || '—';
+    if (clockEl) clockEl.innerText = invoice.time || '—';
+    const nowBtn = document.getElementById('inv-date-now-btn');
+    if (nowBtn) nowBtn.style.display = 'block';
     document.getElementById('inv-no').innerText = invoice.invoiceNo;
     document.getElementById('c-name').value = invoice.customerName;
     document.getElementById('c-phone').value = invoice.customerPhone;
