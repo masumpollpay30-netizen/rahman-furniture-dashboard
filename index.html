@@ -7,6 +7,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -1822,107 +1824,142 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
 /* ══════════════════════════════════════════ */
 
 /* ═══════════════════════════════════════
-   🔐 LOGIN GATE — "Workshop Door" entrance
+   🔐 LOGIN GATE — Sliding Login / Register Panel
+   (all rules namespaced under #rf-login-gate so nothing
+    leaks into / clashes with the rest of the app)
 ═══════════════════════════════════════ */
-@keyframes rfDrift1 { 0%,100%{ transform: translate(0,0) scale(1);} 50%{ transform: translate(4%,6%) scale(1.08);} }
-@keyframes rfDrift2 { 0%,100%{ transform: translate(0,0) scale(1);} 50%{ transform: translate(-5%,-4%) scale(1.1);} }
-@keyframes rfDrift3 { 0%,100%{ transform: translate(0,0) scale(1);} 50%{ transform: translate(3%,-5%) scale(1.05);} }
-@keyframes rfMote {
-    0%   { transform: translateY(0) translateX(0); opacity:0; }
-    8%   { opacity: .55; }
-    92%  { opacity: .35; }
-    100% { transform: translateY(-92vh) translateX(var(--rf-drift,20px)); opacity:0; }
-}
-@keyframes rfCardIn {
-    0%   { opacity:0; transform: translateY(26px) scale(.96); }
-    100% { opacity:1; transform: translateY(0) scale(1); }
-}
-@keyframes rfMarkDraw {
-    to { stroke-dashoffset: 0; }
-}
-@keyframes rfGlowPulse {
-    0%,100% { opacity:.45; } 50% { opacity:.9; }
-}
+@keyframes rfSlideFadeIn { from { opacity:0; transform: scale(0.98); } to { opacity:1; transform: scale(1); } }
+@keyframes rfSlideShow { 0%,49.99% { opacity:0; z-index:1; } 50%,100% { opacity:1; z-index:5; } }
+
 #rf-login-gate {
     position: fixed; inset: 0; z-index: 99999;
     display:flex; align-items:center; justify-content:center;
-    background:
-        radial-gradient(circle at 15% 20%, rgba(0,150,150,0.35) 0%, transparent 42%),
-        radial-gradient(circle at 88% 12%, rgba(255,193,7,0.22) 0%, transparent 40%),
-        radial-gradient(circle at 25% 88%, rgba(0,128,128,0.20) 0%, transparent 45%),
-        radial-gradient(circle at 92% 90%, rgba(0,31,63,0.5) 0%, transparent 50%),
-        linear-gradient(160deg, #001529 0%, #001f3f 48%, #012b2b 100%);
-    overflow: hidden;
+    background:#ffffff;
+    overflow:hidden;
     transition: opacity .8s ease;
 }
 #rf-login-gate.rf-gate-open { opacity: 0; pointer-events:none; }
 #rf-login-gate.rf-gate-hidden { display:none; }
-.rf-blob { position:absolute; border-radius:50%; filter: blur(60px); pointer-events:none; }
-.rf-blob-1 { width:38vw; height:38vw; left:-8%; top:-6%; background:radial-gradient(circle,rgba(0,168,168,.35),transparent 70%); animation: rfDrift1 16s ease-in-out infinite; }
-.rf-blob-2 { width:30vw; height:30vw; right:-6%; top:8%; background:radial-gradient(circle,rgba(255,193,7,.25),transparent 70%); animation: rfDrift2 19s ease-in-out infinite; }
-.rf-blob-3 { width:34vw; height:34vw; left:20%; bottom:-12%; background:radial-gradient(circle,rgba(0,90,90,.35),transparent 70%); animation: rfDrift3 21s ease-in-out infinite; }
-.rf-motes { position:absolute; inset:0; pointer-events:none; }
-.rf-mote { position:absolute; bottom:-10px; width:4px; height:4px; border-radius:50%; background:rgba(255,214,120,.75); box-shadow:0 0 6px 1px rgba(255,214,120,.5); animation: rfMote linear infinite; }
-.rf-gate-card {
-    position:relative; z-index:2; width:min(390px,88vw); padding:44px 34px 34px;
-    border-radius:24px; text-align:center;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.16);
-    -webkit-backdrop-filter: blur(22px) saturate(160%);
-    backdrop-filter: blur(22px) saturate(160%);
-    box-shadow: 0 30px 80px rgba(0,0,0,0.45), 0 1px 0 rgba(255,255,255,0.15) inset;
-    animation: rfCardIn .7s cubic-bezier(.22,1,.36,1) both;
-}
-.rf-gate-mark { width:64px; height:64px; margin:0 auto 14px; display:block; }
-.rf-gate-mark path {
-    fill:none; stroke:#ffd166; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round;
-    stroke-dasharray: 260; stroke-dashoffset: 260;
-    animation: rfMarkDraw 1.6s ease forwards .25s;
-}
-.rf-gate-brand { font-family:'Playfair Display',serif; font-weight:900; font-size:26px; color:#fff; letter-spacing:.3px; margin-bottom:2px; }
-.rf-gate-sub { font-family:'Tiro Bangla',serif; font-size:13.5px; color:rgba(255,255,255,.62); margin-bottom:26px; }
-.rf-gate-divider { width:34px; height:2px; margin:0 auto 26px; background:linear-gradient(90deg,#ffd166,#008080); border-radius:2px; box-shadow:0 0 10px rgba(255,209,102,.6); animation: rfGlowPulse 2.4s ease-in-out infinite; }
-.rf-google-btn {
-    width:100%; display:flex; align-items:center; justify-content:center; gap:10px;
-    padding:13px 18px; border-radius:13px; border:none; cursor:pointer;
-    background:#fff; color:#1f2430; font-family:'DM Sans',sans-serif; font-weight:700; font-size:14.5px;
-    box-shadow:0 8px 22px rgba(0,0,0,.28);
-    transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .22s ease;
-}
-.rf-google-btn:hover { transform: translateY(-2px) scale(1.015); box-shadow:0 12px 28px rgba(0,0,0,.35); }
-.rf-google-btn:active { transform: scale(.98); }
-.rf-google-btn:disabled { opacity:.65; cursor:default; transform:none; }
-.rf-gate-error { display:none; margin-top:14px; font-size:12px; color:#ffb4b4; font-family:'DM Sans',sans-serif; }
-.rf-gate-footnote { margin-top:22px; font-size:11px; color:rgba(255,255,255,.4); font-family:'DM Sans',sans-serif; letter-spacing:.2px; }
 
-.rf-tabs { position:relative; display:flex; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); border-radius:12px; padding:4px; margin-bottom:20px; }
-.rf-tab-btn { flex:1; position:relative; z-index:2; border:none; background:transparent; padding:9px 0; font-family:'DM Sans',sans-serif; font-weight:700; font-size:13px; color:rgba(255,255,255,.6); cursor:pointer; border-radius:9px; transition: color .3s ease; }
-.rf-tab-btn.rf-tab-active { color:#1f2430; }
-.rf-tab-indicator { position:absolute; top:4px; left:4px; width:calc(50% - 4px); height:calc(100% - 8px); background:#ffd166; border-radius:9px; box-shadow:0 4px 14px rgba(255,209,102,.35); transition: transform .32s cubic-bezier(.65,0,.35,1); }
-.rf-tab-btn#rf-tab-signup.rf-tab-active ~ .rf-tab-indicator,
-.rf-tabs.rf-tab-signup-mode .rf-tab-indicator { transform: translateX(100%); }
+#rf-login-gate, #rf-login-gate * { box-sizing: border-box; font-family:'Poppins', sans-serif; }
 
-.rf-forms-wrap { position:relative; overflow:hidden; }
-.rf-form { display:flex; flex-direction:column; gap:11px; opacity:0; max-height:0; pointer-events:none; transform:translateY(8px); transition: opacity .32s ease, transform .32s ease; }
-.rf-form.rf-form-active { opacity:1; max-height:260px; pointer-events:auto; transform:translateY(0); margin-bottom:4px; }
-.rf-input {
-    width:100%; padding:12px 14px; border-radius:11px; border:1px solid rgba(255,255,255,.18);
-    background:rgba(255,255,255,.07); color:#fff; font-family:'DM Sans',sans-serif; font-size:13.5px;
-    outline:none; transition: border-color .2s ease, background .2s ease;
+#rf-login-gate .rf-slide-container {
+    background-color:#fff; position:relative; overflow:hidden;
+    width:100%; height:100%;
+    animation: rfSlideFadeIn 1s ease-in-out;
 }
-.rf-input::placeholder { color:rgba(255,255,255,.42); }
-.rf-input:focus { border-color:#ffd166; background:rgba(255,255,255,.11); }
-.rf-primary-btn {
-    width:100%; padding:12px 18px; border:none; border-radius:11px; cursor:pointer; margin-top:2px;
-    background:linear-gradient(120deg,#ffd166,#f5b942); color:#1f2430; font-family:'DM Sans',sans-serif; font-weight:800; font-size:14px;
-    box-shadow:0 8px 20px rgba(255,209,102,.28); transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .22s ease;
+
+#rf-login-gate .rf-slide-form-container {
+    position:absolute; top:0; height:100%;
+    transition: all 0.6s ease-in-out;
+    display:flex; align-items:center; justify-content:center;
 }
-.rf-primary-btn:hover { transform: translateY(-2px) scale(1.015); box-shadow:0 12px 26px rgba(255,209,102,.4); }
-.rf-primary-btn:active { transform: scale(.98); }
-.rf-primary-btn:disabled { opacity:.6; cursor:default; transform:none; }
-.rf-or-row { display:flex; align-items:center; gap:10px; margin:18px 0 14px; }
-.rf-or-row span { flex:1; height:1px; background:rgba(255,255,255,.16); }
-.rf-or-row em { font-style:normal; font-size:11px; color:rgba(255,255,255,.45); font-family:'DM Sans',sans-serif; }
+#rf-login-gate .rf-slide-signin { left:0; width:50%; z-index:2; }
+#rf-login-gate.rf-right-panel-active .rf-slide-signin { transform: translateX(100%); }
+#rf-login-gate .rf-slide-signup { left:0; width:50%; opacity:0; z-index:1; }
+#rf-login-gate.rf-right-panel-active .rf-slide-signup {
+    transform: translateX(100%); opacity:1; z-index:5; animation: rfSlideShow 0.6s;
+}
+
+#rf-login-gate .rf-slide-form-container form {
+    background-color:#ffffff; display:flex; align-items:center; justify-content:center;
+    flex-direction:column; padding:0 80px; width:100%; max-width:500px; text-align:center; margin:0;
+}
+#rf-login-gate .rf-slide-form-container form h1 { font-weight:700; margin-bottom:30px; color:#333; font-size:38px; }
+
+#rf-login-gate .rf-slide-input-group { position:relative; width:100%; margin-bottom:20px; }
+#rf-login-gate .rf-slide-input-group i {
+    position:absolute; left:15px; top:50%; transform:translateY(-50%);
+    color:#aaa; transition:0.3s; font-size:18px;
+}
+#rf-login-gate .rf-slide-input-group input {
+    width:100%; background-color:#f4f8f9; border:1px solid transparent;
+    padding:16px 16px 16px 45px; border-radius:12px; font-size:15px; color:#333; outline:none; transition:0.3s; margin:0;
+}
+#rf-login-gate .rf-slide-input-group input:focus { border:1px solid #6b8cce; background-color:#fff; }
+#rf-login-gate .rf-slide-input-group input:focus ~ i { color:#6b8cce; }
+
+#rf-login-gate .rf-slide-forgot {
+    color:#333; font-size:13px; text-decoration:none; margin:2px 0 16px; align-self:flex-end; font-weight:500;
+}
+
+#rf-login-gate .rf-slide-form-container button {
+    border-radius:25px; border:1px solid #6b8cce; background-color:#6b8cce; color:#FFFFFF;
+    font-size:15px; font-weight:bold; padding:15px 45px; letter-spacing:1px; text-transform:uppercase;
+    transition: transform 80ms ease-in, box-shadow 0.3s, opacity .2s ease;
+    cursor:pointer; width:100%; box-shadow: 0 5px 15px rgba(107, 140, 206, 0.4);
+}
+#rf-login-gate .rf-slide-form-container button:active { transform: scale(0.95); }
+#rf-login-gate .rf-slide-form-container button:disabled { opacity:.6; cursor:default; transform:none; }
+
+#rf-login-gate .rf-slide-overlay-container button.rf-slide-ghost {
+    background-color:transparent; border:1px solid #FFFFFF; color:#fff; box-shadow:none;
+    width:auto; min-width:200px; border-radius:25px; font-size:15px; font-weight:bold;
+    padding:15px 45px; letter-spacing:1px; text-transform:uppercase; cursor:pointer;
+    transition: transform 80ms ease-in;
+}
+#rf-login-gate .rf-slide-overlay-container button.rf-slide-ghost:active { transform: scale(0.95); }
+
+#rf-login-gate .rf-slide-social-text { margin-top:22px; font-size:13px; color:#777; }
+#rf-login-gate .rf-slide-social-container { margin-top:14px; display:flex; gap:14px; }
+#rf-login-gate .rf-slide-social-container a,
+#rf-login-gate .rf-slide-social-container button {
+    border:1px solid #ddd; border-radius:50%; display:inline-flex; justify-content:center; align-items:center;
+    height:44px; width:44px; color:#333; text-decoration:none; font-size:17px; transition:0.3s;
+    background:#fff; cursor:pointer; padding:0; box-shadow:none;
+}
+#rf-login-gate .rf-slide-social-container a:hover,
+#rf-login-gate .rf-slide-social-container button:hover:not(:disabled) { background-color:#6b8cce; color:#fff; border-color:#6b8cce; }
+#rf-login-gate .rf-slide-social-container button:disabled { opacity:.55; cursor:default; }
+
+#rf-login-gate .rf-slide-overlay-container {
+    position:absolute; top:0; left:50%; width:50%; height:100%; overflow:hidden;
+    transition: transform 0.6s ease-in-out, border-radius 0.6s ease-in-out;
+    z-index:100; border-radius:200px 0 0 200px;
+}
+#rf-login-gate.rf-right-panel-active .rf-slide-overlay-container {
+    transform: translateX(-100%); border-radius:0 200px 200px 0;
+}
+
+#rf-login-gate .rf-slide-clock { position:absolute; top:12%; left:0; width:100%; text-align:center; color:#fff; z-index:10; }
+#rf-login-gate .rf-slide-clock-time { font-size:40px; font-weight:700; letter-spacing:2px; text-shadow:2px 2px 5px rgba(0,0,0,0.2); }
+#rf-login-gate .rf-slide-clock-date { font-size:15px; font-weight:400; opacity:0.9; margin-top:5px; letter-spacing:1px; }
+
+#rf-login-gate .rf-slide-overlay {
+    background: linear-gradient(to right, #8da9eb, #5579c6); color:#FFFFFF;
+    position:absolute; top:0; left:-100%; height:100%; width:200%;
+    transform: translateX(0); transition: transform 0.6s ease-in-out; z-index:1;
+}
+#rf-login-gate.rf-right-panel-active .rf-slide-overlay { transform: translateX(50%); }
+
+#rf-login-gate .rf-slide-overlay-panel {
+    position:absolute; display:flex; align-items:center; justify-content:center; flex-direction:column;
+    padding:0 60px; text-align:center; top:0; height:100%; width:50%;
+    transform: translateX(0); transition: transform 0.6s ease-in-out; z-index:5; margin-top:20px;
+}
+#rf-login-gate .rf-slide-overlay-panel h1 { font-size:42px; font-weight:700; margin-bottom:15px; }
+#rf-login-gate .rf-slide-overlay-panel p { font-size:16px; font-weight:300; margin-bottom:30px; line-height:1.5; }
+#rf-login-gate .rf-slide-overlay-left { transform: translateX(-20%); }
+#rf-login-gate.rf-right-panel-active .rf-slide-overlay-left { transform: translateX(0); }
+#rf-login-gate .rf-slide-overlay-right { right:0; transform: translateX(0); }
+#rf-login-gate.rf-right-panel-active .rf-slide-overlay-right { transform: translateX(20%); }
+
+#rf-login-gate .rf-gate-error {
+    display:none; margin:10px 0 0; font-size:12.5px; color:#c0392b; font-weight:600;
+    background:#fdecea; border:1px solid #f5c6c2; padding:8px 14px; border-radius:10px;
+    position:absolute; top:18px; left:50%; transform:translateX(-50%); z-index:200; max-width:90%; text-align:center;
+}
+
+#rf-login-gate .rf-slide-mobile-toggle { display:none; }
+
+@media (max-width: 768px) {
+    #rf-login-gate .rf-slide-overlay-container { display:none; }
+    #rf-login-gate .rf-slide-signin, #rf-login-gate .rf-slide-signup { width:100%; position:relative; opacity:1; left:0; transform:none; padding:40px 20px; }
+    #rf-login-gate.rf-right-panel-active .rf-slide-signin { display:none; }
+    #rf-login-gate:not(.rf-right-panel-active) .rf-slide-signup { display:none; }
+    #rf-login-gate .rf-slide-mobile-toggle { display:block; margin-top:20px; color:#6b8cce; text-decoration:underline; cursor:pointer; font-size:14px; }
+    #rf-login-gate .rf-slide-form-container form { padding:0 20px; }
+}
 
 /* Logged-in user chip — now inside sidebar, click opens animated popover */
 #rf-user-chip {
@@ -1969,58 +2006,83 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
 </head>
 <body>
 
-<!-- ===================== 🔐 LOGIN GATE ===================== -->
+<!-- ===================== 🔐 LOGIN GATE (Sliding Login / Register) ===================== -->
 <div id="rf-login-gate">
-    <div class="rf-blob rf-blob-1"></div>
-    <div class="rf-blob rf-blob-2"></div>
-    <div class="rf-blob rf-blob-3"></div>
-    <div class="rf-motes" id="rf-motes"></div>
-    <div class="rf-gate-card">
-        <svg class="rf-gate-mark" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-            <path d="M14 40 V26 a6 6 0 0 1 6-6 h24 a6 6 0 0 1 6 6 v14 M14 40 v8 M50 40 v8 M18 40 h28 M20 20 v-4 M44 20 v-4"></path>
-        </svg>
-        <div class="rf-gate-brand">Rahman Furniture</div>
-        <div class="rf-gate-sub">Management System — নিরাপদ প্রবেশ</div>
 
-        <div class="rf-tabs">
-            <button type="button" class="rf-tab-btn rf-tab-active" id="rf-tab-login">লগইন</button>
-            <button type="button" class="rf-tab-btn" id="rf-tab-signup">নতুন অ্যাকাউন্ট</button>
-            <div class="rf-tab-indicator" id="rf-tab-indicator"></div>
-        </div>
+    <div class="rf-gate-error" id="rf-login-error"></div>
 
-        <div class="rf-forms-wrap">
-            <!-- LOGIN FORM -->
-            <form class="rf-form rf-form-active" id="rf-login-form">
-                <input class="rf-input" type="email" id="rf-login-email" placeholder="ইমেইল" autocomplete="email" required>
-                <input class="rf-input" type="password" id="rf-login-pass" placeholder="পাসওয়ার্ড" autocomplete="current-password" required>
-                <div style="text-align:right;margin:-6px 2px 4px;">
-                    <a href="#" id="rf-forgot-link" style="font-size:12.5px;color:#008080;font-weight:600;text-decoration:none;">পাসওয়ার্ড ভুলে গেছেন?</a>
+    <div class="rf-slide-container" id="rf-slide-container">
+
+        <!-- SIGNUP FORM -->
+        <div class="rf-slide-form-container rf-slide-signup">
+            <form id="rf-signup-form">
+                <h1>Registration</h1>
+                <div class="rf-slide-input-group">
+                    <i class="fa-solid fa-user"></i>
+                    <input type="text" id="rf-signup-name" placeholder="Full Name" autocomplete="name" required/>
                 </div>
-                <button type="submit" class="rf-primary-btn" id="rf-login-submit">
-                    <span class="rf-btn-text">লগইন করুন</span>
-                </button>
-            </form>
-
-            <!-- SIGNUP FORM -->
-            <form class="rf-form" id="rf-signup-form">
-                <input class="rf-input" type="text" id="rf-signup-name" placeholder="আপনার নাম" autocomplete="name" required>
-                <input class="rf-input" type="email" id="rf-signup-email" placeholder="ইমেইল" autocomplete="email" required>
-                <input class="rf-input" type="password" id="rf-signup-pass" placeholder="পাসওয়ার্ড (কমপক্ষে ৬ ডিজিট)" autocomplete="new-password" required>
-                <input class="rf-input" type="password" id="rf-signup-pass2" placeholder="পাসওয়ার্ড আবার লিখুন" autocomplete="new-password" required>
-                <button type="submit" class="rf-primary-btn" id="rf-signup-submit">
-                    <span class="rf-btn-text">অ্যাকাউন্ট তৈরি করুন</span>
-                </button>
+                <div class="rf-slide-input-group">
+                    <i class="fa-solid fa-envelope"></i>
+                    <input type="email" id="rf-signup-email" placeholder="Email Address" autocomplete="email" required/>
+                </div>
+                <div class="rf-slide-input-group">
+                    <i class="fa-solid fa-lock"></i>
+                    <input type="password" id="rf-signup-pass" placeholder="Password (min 6 characters)" autocomplete="new-password" required/>
+                </div>
+                <div class="rf-slide-input-group">
+                    <i class="fa-solid fa-lock"></i>
+                    <input type="password" id="rf-signup-pass2" placeholder="Confirm Password" autocomplete="new-password" required/>
+                </div>
+                <button type="submit" id="rf-signup-submit">Register</button>
+                <div class="rf-slide-mobile-toggle" id="rf-mobile-login">Already have an account? Login</div>
             </form>
         </div>
 
-        <div class="rf-or-row"><span></span><em>অথবা</em><span></span></div>
+        <!-- LOGIN FORM -->
+        <div class="rf-slide-form-container rf-slide-signin">
+            <form id="rf-login-form">
+                <h1>Login</h1>
+                <div class="rf-slide-input-group">
+                    <i class="fa-solid fa-user"></i>
+                    <input type="email" id="rf-login-email" placeholder="Email / Username" autocomplete="email" required/>
+                </div>
+                <div class="rf-slide-input-group">
+                    <i class="fa-solid fa-lock"></i>
+                    <input type="password" id="rf-login-pass" placeholder="Password" autocomplete="current-password" required/>
+                </div>
+                <a href="#" class="rf-slide-forgot" id="rf-forgot-link">Forgot password?</a>
+                <button type="submit" id="rf-login-submit">Login</button>
 
-        <button class="rf-google-btn" id="rf-google-login-btn" type="button">
-            <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.96v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.17.28-1.7V4.97H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.03l2.99-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.46 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.97l2.99 2.33C4.66 5.17 6.65 3.58 9 3.58z"/></svg>
-            <span class="rf-btn-text">Google দিয়ে চালিয়ে যান</span>
-        </button>
+                <p class="rf-slide-social-text">or login with social platforms</p>
+                <div class="rf-slide-social-container">
+                    <button type="button" id="rf-google-login-btn" title="Login with Google"><i class="fab fa-google"></i></button>
+                    <a href="#" id="rf-social-facebook" title="Coming soon"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" id="rf-social-github" title="Coming soon"><i class="fab fa-github"></i></a>
+                    <a href="#" id="rf-social-linkedin" title="Coming soon"><i class="fab fa-linkedin-in"></i></a>
+                </div>
+                <div class="rf-slide-mobile-toggle" id="rf-mobile-reg">Don't have an account? Register</div>
+            </form>
+        </div>
 
-        <div class="rf-gate-error" id="rf-login-error"></div>
+        <div class="rf-slide-overlay-container">
+            <div class="rf-slide-clock">
+                <div id="time" class="rf-slide-clock-time">12:00:00 <span style="font-size:18px;">PM</span></div>
+                <div id="date-day" class="rf-slide-clock-date">রবিবার / Sunday • 12 Jul, 2026</div>
+            </div>
+
+            <div class="rf-slide-overlay">
+                <div class="rf-slide-overlay-panel rf-slide-overlay-left">
+                    <h1>Welcome Back!</h1>
+                    <p>Welcome back to Rahman Furniture Management System — please login with your details</p>
+                    <button type="button" class="rf-slide-ghost" id="rf-signIn-toggle">Login</button>
+                </div>
+                <div class="rf-slide-overlay-panel rf-slide-overlay-right">
+                    <h1>Hello, Welcome!</h1>
+                    <p>Don't have an account? Register to start your journey</p>
+                    <button type="button" class="rf-slide-ghost" id="rf-signUp-toggle">Register</button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -7177,7 +7239,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import {
     getAuth, GoogleAuthProvider, signInWithPopup, signOut,
     createUserWithEmailAndPassword, signInWithEmailAndPassword,
-    onAuthStateChanged, setPersistence, browserLocalPersistence, sendPasswordResetEmail, updateProfile
+    onAuthStateChanged, setPersistence, browserSessionPersistence, sendPasswordResetEmail, updateProfile
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
     getFirestore, doc, setDoc, getDoc, deleteDoc, collection, getDocs
@@ -7201,31 +7263,12 @@ const auth     = getAuth(fbApp);
 const db       = getFirestore(fbApp);
 const provider = new GoogleAuthProvider();
 
-// ---------- Floating dust motes (ambient animation) ----------
-(function buildMotes(){
-    const wrap = document.getElementById('rf-motes');
-    if (!wrap) return;
-    for (let i = 0; i < 16; i++) {
-        const m = document.createElement('div');
-        m.className = 'rf-mote';
-        m.style.left = (Math.random()*100) + 'vw';
-        m.style.setProperty('--rf-drift', (Math.random()*60-30) + 'px');
-        m.style.animationDuration = (9 + Math.random()*9) + 's';
-        m.style.animationDelay = (Math.random()*9) + 's';
-        wrap.appendChild(m);
-    }
-})();
-
 // ---------- Gate helpers ----------
 const gate       = document.getElementById('rf-login-gate');
 const gateError  = document.getElementById('rf-login-error');
 const googleBtn  = document.getElementById('rf-google-login-btn');
-const googleText = googleBtn.querySelector('.rf-btn-text');
 const userChip   = document.getElementById('rf-user-chip');
 
-const tabLogin   = document.getElementById('rf-tab-login');
-const tabSignup  = document.getElementById('rf-tab-signup');
-const tabsWrap   = tabLogin.parentElement;
 const loginForm  = document.getElementById('rf-login-form');
 const signupForm = document.getElementById('rf-signup-form');
 
@@ -7236,39 +7279,43 @@ function hideGate(){
     setTimeout(() => gate.classList.add('rf-gate-hidden'), 850);
 }
 
-function switchTab(mode) {
-    gateError.style.display = 'none';
-    if (mode === 'signup') {
-        tabsWrap.classList.add('rf-tab-signup-mode');
-        tabLogin.classList.remove('rf-tab-active');
-        tabSignup.classList.add('rf-tab-active');
-        loginForm.classList.remove('rf-form-active');
-        signupForm.classList.add('rf-form-active');
-    } else {
-        tabsWrap.classList.remove('rf-tab-signup-mode');
-        tabSignup.classList.remove('rf-tab-active');
-        tabLogin.classList.add('rf-tab-active');
-        signupForm.classList.remove('rf-form-active');
-        loginForm.classList.add('rf-form-active');
-    }
-}
-tabLogin.addEventListener('click', () => switchTab('login'));
-tabSignup.addEventListener('click', () => switchTab('signup'));
+// ---------- Sliding login/register panel toggle ----------
+const slideSignInBtn = document.getElementById('rf-signIn-toggle');
+const slideSignUpBtn = document.getElementById('rf-signUp-toggle');
+const slideMobileLogin = document.getElementById('rf-mobile-login');
+const slideMobileReg   = document.getElementById('rf-mobile-reg');
+
+function goToRegister(){ gate.classList.add('rf-right-panel-active'); gateError.style.display = 'none'; }
+function goToLogin(){ gate.classList.remove('rf-right-panel-active'); gateError.style.display = 'none'; }
+
+slideSignUpBtn.addEventListener('click', goToRegister);
+slideMobileReg.addEventListener('click', goToRegister);
+slideSignInBtn.addEventListener('click', goToLogin);
+slideMobileLogin.addEventListener('click', goToLogin);
+
+// ---------- Social placeholders (not wired to a provider yet) ----------
+['rf-social-facebook','rf-social-github','rf-social-linkedin'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        showError('This login method will be added soon. Please use Email/Password or Google for now.');
+    });
+});
 
 // ---------- Friendly Bengali error messages ----------
 function friendlyAuthError(e) {
     const code = e && e.code || '';
     const map = {
-        'auth/email-already-in-use': 'এই ইমেইলে আগে থেকেই একটা অ্যাকাউন্ট আছে — লগইন ট্যাবে যান।',
-        'auth/invalid-email': 'সঠিক ইমেইল দিন।',
-        'auth/weak-password': 'পাসওয়ার্ড কমপক্ষে ৬ ডিজিট হতে হবে।',
-        'auth/user-not-found': 'এই ইমেইলে কোনো অ্যাকাউন্ট পাওয়া যায়নি — নতুন অ্যাকাউন্ট ট্যাবে যান।',
-        'auth/wrong-password': 'পাসওয়ার্ড ভুল হয়েছে।',
-        'auth/invalid-credential': 'ইমেইল বা পাসওয়ার্ড ভুল।',
-        'auth/too-many-requests': 'অনেকবার চেষ্টা হয়েছে, একটু পর আবার চেষ্টা করুন।',
-        'auth/popup-closed-by-user': 'পপ-আপ বন্ধ হয়ে গিয়েছিল, আবার চেষ্টা করুন।'
+        'auth/email-already-in-use': 'An account already exists with this email — please go to the Login tab.',
+        'auth/invalid-email': 'Please enter a valid email address.',
+        'auth/weak-password': 'Password must be at least 6 characters.',
+        'auth/user-not-found': 'No account found with this email — please go to the Register tab.',
+        'auth/wrong-password': 'Incorrect password.',
+        'auth/invalid-credential': 'Incorrect email or password.',
+        'auth/too-many-requests': 'Too many attempts. Please try again in a bit.',
+        'auth/popup-closed-by-user': 'The popup was closed. Please try again.'
     };
-    return map[code] || 'কিছু একটা সমস্যা হয়েছে, আবার চেষ্টা করুন।';
+    return map[code] || 'Something went wrong. Please try again.';
 }
 function showError(msg) { gateError.textContent = msg; gateError.style.display = 'block'; }
 
@@ -7280,11 +7327,11 @@ signupForm.addEventListener('submit', async (ev) => {
     const pass  = document.getElementById('rf-signup-pass').value;
     const pass2 = document.getElementById('rf-signup-pass2').value;
     gateError.style.display = 'none';
-    if (pass !== pass2) { showError('দুটো পাসওয়ার্ড মিলছে না।'); return; }
+    if (pass !== pass2) { showError('Passwords do not match.'); return; }
     const btn = document.getElementById('rf-signup-submit');
     btn.disabled = true;
     try {
-        await setPersistence(auth, browserLocalPersistence);
+        await setPersistence(auth, browserSessionPersistence);
         const cred = await createUserWithEmailAndPassword(auth, email, pass);
         if (name) await updateProfile(cred.user, { displayName: name });
     } catch (e) {
@@ -7302,7 +7349,7 @@ loginForm.addEventListener('submit', async (ev) => {
     const btn = document.getElementById('rf-login-submit');
     btn.disabled = true;
     try {
-        await setPersistence(auth, browserLocalPersistence);
+        await setPersistence(auth, browserSessionPersistence);
         await signInWithEmailAndPassword(auth, email, pass);
     } catch (e) {
         showError(friendlyAuthError(e));
@@ -7315,11 +7362,11 @@ document.getElementById('rf-forgot-link').addEventListener('click', async (ev) =
     ev.preventDefault();
     gateError.style.display = 'none';
     const email = document.getElementById('rf-login-email').value.trim();
-    if (!email) { showError('আগে উপরে আপনার ইমেইল লিখুন, তারপর "পাসওয়ার্ড ভুলে গেছেন?"-এ ক্লিক করুন।'); return; }
+    if (!email) { showError('Please enter your email above first, then click "Forgot password?".'); return; }
     try {
         await sendPasswordResetEmail(auth, email);
         gateError.style.color = '#008080';
-        showError('একটি পাসওয়ার্ড রিসেট লিংক ' + email + ' ঠিকানায় পাঠানো হয়েছে। ইমেইল চেক করুন (Spam/Junk ফোল্ডারও দেখুন)।');
+        showError('A password reset link has been sent to ' + email + '. Please check your email (also check Spam/Junk folder).');
     } catch (e) {
         gateError.style.color = '';
         showError(friendlyAuthError(e));
@@ -7327,19 +7374,43 @@ document.getElementById('rf-forgot-link').addEventListener('click', async (ev) =
 });
 
 
-googleBtn.addEventListener('click', async () => {
+googleBtn.addEventListener('click', async (ev) => {
+    ev.preventDefault();
+    if (googleBtn.disabled) return;
     googleBtn.disabled = true;
-    googleText.textContent = 'সংযোগ হচ্ছে...';
+    googleBtn.style.opacity = '0.55';
     gateError.style.display = 'none';
     try {
-        await setPersistence(auth, browserLocalPersistence);
+        await setPersistence(auth, browserSessionPersistence);
         await signInWithPopup(auth, provider);
     } catch (e) {
         showError(friendlyAuthError(e));
+    } finally {
         googleBtn.disabled = false;
-        googleText.textContent = 'Google দিয়ে চালিয়ে যান';
+        googleBtn.style.opacity = '1';
     }
 });
+
+// ---------- Live clock inside the overlay panel ----------
+(function rfSlideClock(){
+    const timeEl = document.getElementById('time');
+    const dateEl = document.getElementById('date-day');
+    if (!timeEl || !dateEl) return;
+    const banglaDays = ["রবিবার","সোমবার","মঙ্গলবার","বুধবার","বৃহস্পতিবার","শুক্রবার","শনিবার"];
+    const englishDays = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+    const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    function update(){
+        const now = new Date();
+        let h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12; h = h ? h : 12;
+        const pad = n => n < 10 ? '0' + n : n;
+        timeEl.innerHTML = `${pad(h)}:${pad(m)}:${pad(s)} <span style="font-size:18px;">${ampm}</span>`;
+        dateEl.innerHTML = `${banglaDays[now.getDay()]} / ${englishDays[now.getDay()]} &bull; ${now.getDate()} ${months[now.getMonth()]}, ${now.getFullYear()}`;
+    }
+    update();
+    setInterval(update, 1000);
+})();
 
 window.rfLogout = function () {
     signOut(auth).then(() => location.reload());
