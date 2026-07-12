@@ -1972,6 +1972,9 @@ body.dark-mode #rf-user-name, body.dark-full #rf-user-name { color:#eee; }
             <form class="rf-form rf-form-active" id="rf-login-form">
                 <input class="rf-input" type="email" id="rf-login-email" placeholder="ইমেইল" autocomplete="email" required>
                 <input class="rf-input" type="password" id="rf-login-pass" placeholder="পাসওয়ার্ড" autocomplete="current-password" required>
+                <div style="text-align:right;margin:-6px 2px 4px;">
+                    <a href="#" id="rf-forgot-link" style="font-size:12.5px;color:#008080;font-weight:600;text-decoration:none;">পাসওয়ার্ড ভুলে গেছেন?</a>
+                </div>
                 <button type="submit" class="rf-primary-btn" id="rf-login-submit">
                     <span class="rf-btn-text">লগইন করুন</span>
                 </button>
@@ -1979,6 +1982,7 @@ body.dark-mode #rf-user-name, body.dark-full #rf-user-name { color:#eee; }
 
             <!-- SIGNUP FORM -->
             <form class="rf-form" id="rf-signup-form">
+                <input class="rf-input" type="text" id="rf-signup-name" placeholder="আপনার নাম" autocomplete="name" required>
                 <input class="rf-input" type="email" id="rf-signup-email" placeholder="ইমেইল" autocomplete="email" required>
                 <input class="rf-input" type="password" id="rf-signup-pass" placeholder="পাসওয়ার্ড (কমপক্ষে ৬ ডিজিট)" autocomplete="new-password" required>
                 <input class="rf-input" type="password" id="rf-signup-pass2" placeholder="পাসওয়ার্ড আবার লিখুন" autocomplete="new-password" required>
@@ -7047,7 +7051,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import {
     getAuth, GoogleAuthProvider, signInWithPopup, signOut,
     createUserWithEmailAndPassword, signInWithEmailAndPassword,
-    onAuthStateChanged, setPersistence, browserLocalPersistence
+    onAuthStateChanged, setPersistence, browserLocalPersistence, sendPasswordResetEmail, updateProfile
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
     getFirestore, doc, setDoc, getDoc, deleteDoc, collection, getDocs
@@ -7145,6 +7149,7 @@ function showError(msg) { gateError.textContent = msg; gateError.style.display =
 // ---------- Signup ----------
 signupForm.addEventListener('submit', async (ev) => {
     ev.preventDefault();
+    const name  = document.getElementById('rf-signup-name').value.trim();
     const email = document.getElementById('rf-signup-email').value.trim();
     const pass  = document.getElementById('rf-signup-pass').value;
     const pass2 = document.getElementById('rf-signup-pass2').value;
@@ -7154,7 +7159,8 @@ signupForm.addEventListener('submit', async (ev) => {
     btn.disabled = true;
     try {
         await setPersistence(auth, browserLocalPersistence);
-        await createUserWithEmailAndPassword(auth, email, pass);
+        const cred = await createUserWithEmailAndPassword(auth, email, pass);
+        if (name) await updateProfile(cred.user, { displayName: name });
     } catch (e) {
         showError(friendlyAuthError(e));
         btn.disabled = false;
@@ -7178,7 +7184,23 @@ loginForm.addEventListener('submit', async (ev) => {
     }
 });
 
-// ---------- Google (quick login, next to email/password) ----------
+// ---------- Forgot password ----------
+document.getElementById('rf-forgot-link').addEventListener('click', async (ev) => {
+    ev.preventDefault();
+    gateError.style.display = 'none';
+    const email = document.getElementById('rf-login-email').value.trim();
+    if (!email) { showError('আগে উপরে আপনার ইমেইল লিখুন, তারপর "পাসওয়ার্ড ভুলে গেছেন?"-এ ক্লিক করুন।'); return; }
+    try {
+        await sendPasswordResetEmail(auth, email);
+        gateError.style.color = '#008080';
+        showError('একটি পাসওয়ার্ড রিসেট লিংক ' + email + ' ঠিকানায় পাঠানো হয়েছে। ইমেইল চেক করুন (Spam/Junk ফোল্ডারও দেখুন)।');
+    } catch (e) {
+        gateError.style.color = '';
+        showError(friendlyAuthError(e));
+    }
+});
+
+
 googleBtn.addEventListener('click', async () => {
     googleBtn.disabled = true;
     googleText.textContent = 'সংযোগ হচ্ছে...';
