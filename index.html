@@ -1842,6 +1842,8 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
 #rf-login-gate.rf-gate-hidden { display:none; }
 
 #rf-login-gate, #rf-login-gate * { box-sizing: border-box; font-family:'Poppins', sans-serif; }
+#rf-login-gate i.fa-solid, #rf-login-gate i.fas { font-family:'Font Awesome 6 Free' !important; font-weight:900 !important; }
+#rf-login-gate i.fa-brands, #rf-login-gate i.fab { font-family:'Font Awesome 6 Brands' !important; font-weight:400 !important; }
 
 #rf-login-gate .rf-slide-container {
     background-color:#fff; position:relative; overflow:hidden;
@@ -1954,9 +1956,16 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
 
 @media (max-width: 768px) {
     #rf-login-gate .rf-slide-overlay-container { display:none; }
-    #rf-login-gate .rf-slide-signin, #rf-login-gate .rf-slide-signup { width:100%; position:relative; opacity:1; left:0; transform:none; padding:40px 20px; }
-    #rf-login-gate.rf-right-panel-active .rf-slide-signin { display:none; }
-    #rf-login-gate:not(.rf-right-panel-active) .rf-slide-signup { display:none; }
+    #rf-login-gate .rf-slide-signin, #rf-login-gate .rf-slide-signup {
+        width:100%; position:absolute; left:0; top:0; padding:40px 20px;
+        transition: transform 0.5s cubic-bezier(.4,0,.2,1), opacity 0.4s ease;
+        will-change: transform, opacity;
+        backface-visibility: hidden;
+    }
+    #rf-login-gate .rf-slide-signin { opacity:1; z-index:2; pointer-events:auto; transform:translateX(0); }
+    #rf-login-gate .rf-slide-signup { opacity:0; z-index:1; pointer-events:none; animation:none; transform:translateX(40px); }
+    #rf-login-gate.rf-right-panel-active .rf-slide-signin { opacity:0; z-index:1; pointer-events:none; transform:translateX(-40px); }
+    #rf-login-gate.rf-right-panel-active .rf-slide-signup { opacity:1; z-index:2; pointer-events:auto; animation:none; transform:translateX(0); }
     #rf-login-gate .rf-slide-mobile-toggle { display:block; margin-top:20px; color:#6b8cce; text-decoration:underline; cursor:pointer; font-size:14px; }
     #rf-login-gate .rf-slide-form-container form { padding:0 20px; }
 }
@@ -7263,6 +7272,13 @@ const auth     = getAuth(fbApp);
 const db       = getFirestore(fbApp);
 const provider = new GoogleAuthProvider();
 
+// 🔒 Force session-only persistence BEFORE Firebase gets a chance to
+// auto-restore any previously saved session. This is what actually stops
+// "logs in without clicking" — doing this only inside the login/signup
+// button handlers (as before) was too late, since the page had already
+// silently restored the old session by the time you clicked anything.
+await setPersistence(auth, browserSessionPersistence);
+
 // ---------- Gate helpers ----------
 const gate       = document.getElementById('rf-login-gate');
 const gateError  = document.getElementById('rf-login-error');
@@ -7285,8 +7301,16 @@ const slideSignUpBtn = document.getElementById('rf-signUp-toggle');
 const slideMobileLogin = document.getElementById('rf-mobile-login');
 const slideMobileReg   = document.getElementById('rf-mobile-reg');
 
-function goToRegister(){ gate.classList.add('rf-right-panel-active'); gateError.style.display = 'none'; }
-function goToLogin(){ gate.classList.remove('rf-right-panel-active'); gateError.style.display = 'none'; }
+function goToRegister(){
+    gateError.style.display = 'none';
+    void gate.offsetWidth; // force reflow so the transition always kicks in (fixes instant-snap on some mobile WebViews)
+    requestAnimationFrame(() => { gate.classList.add('rf-right-panel-active'); });
+}
+function goToLogin(){
+    gateError.style.display = 'none';
+    void gate.offsetWidth; // force reflow so the transition always kicks in (fixes instant-snap on some mobile WebViews)
+    requestAnimationFrame(() => { gate.classList.remove('rf-right-panel-active'); });
+}
 
 slideSignUpBtn.addEventListener('click', goToRegister);
 slideMobileReg.addEventListener('click', goToRegister);
