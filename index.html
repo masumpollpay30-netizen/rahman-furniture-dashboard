@@ -1820,9 +1820,191 @@ body.dark-mode .ai-result-box, body.dark-full .ai-result-box { background:rgba(0
 body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#23273a; color:#eee; }
 
 /* ══════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════
+   🔐 LOGIN GATE — "Workshop Door" entrance
+═══════════════════════════════════════ */
+@keyframes rfDrift1 { 0%,100%{ transform: translate(0,0) scale(1);} 50%{ transform: translate(4%,6%) scale(1.08);} }
+@keyframes rfDrift2 { 0%,100%{ transform: translate(0,0) scale(1);} 50%{ transform: translate(-5%,-4%) scale(1.1);} }
+@keyframes rfDrift3 { 0%,100%{ transform: translate(0,0) scale(1);} 50%{ transform: translate(3%,-5%) scale(1.05);} }
+@keyframes rfMote {
+    0%   { transform: translateY(0) translateX(0); opacity:0; }
+    8%   { opacity: .55; }
+    92%  { opacity: .35; }
+    100% { transform: translateY(-92vh) translateX(var(--rf-drift,20px)); opacity:0; }
+}
+@keyframes rfCardIn {
+    0%   { opacity:0; transform: translateY(26px) scale(.96); }
+    100% { opacity:1; transform: translateY(0) scale(1); }
+}
+@keyframes rfMarkDraw {
+    to { stroke-dashoffset: 0; }
+}
+@keyframes rfGlowPulse {
+    0%,100% { opacity:.45; } 50% { opacity:.9; }
+}
+#rf-login-gate {
+    position: fixed; inset: 0; z-index: 99999;
+    display:flex; align-items:center; justify-content:center;
+    background:
+        radial-gradient(circle at 15% 20%, rgba(0,150,150,0.35) 0%, transparent 42%),
+        radial-gradient(circle at 88% 12%, rgba(255,193,7,0.22) 0%, transparent 40%),
+        radial-gradient(circle at 25% 88%, rgba(0,128,128,0.20) 0%, transparent 45%),
+        radial-gradient(circle at 92% 90%, rgba(0,31,63,0.5) 0%, transparent 50%),
+        linear-gradient(160deg, #001529 0%, #001f3f 48%, #012b2b 100%);
+    overflow: hidden;
+    transition: opacity .8s ease;
+}
+#rf-login-gate.rf-gate-open { opacity: 0; pointer-events:none; }
+#rf-login-gate.rf-gate-hidden { display:none; }
+.rf-blob { position:absolute; border-radius:50%; filter: blur(60px); pointer-events:none; }
+.rf-blob-1 { width:38vw; height:38vw; left:-8%; top:-6%; background:radial-gradient(circle,rgba(0,168,168,.35),transparent 70%); animation: rfDrift1 16s ease-in-out infinite; }
+.rf-blob-2 { width:30vw; height:30vw; right:-6%; top:8%; background:radial-gradient(circle,rgba(255,193,7,.25),transparent 70%); animation: rfDrift2 19s ease-in-out infinite; }
+.rf-blob-3 { width:34vw; height:34vw; left:20%; bottom:-12%; background:radial-gradient(circle,rgba(0,90,90,.35),transparent 70%); animation: rfDrift3 21s ease-in-out infinite; }
+.rf-motes { position:absolute; inset:0; pointer-events:none; }
+.rf-mote { position:absolute; bottom:-10px; width:4px; height:4px; border-radius:50%; background:rgba(255,214,120,.75); box-shadow:0 0 6px 1px rgba(255,214,120,.5); animation: rfMote linear infinite; }
+.rf-gate-card {
+    position:relative; z-index:2; width:min(390px,88vw); padding:44px 34px 34px;
+    border-radius:24px; text-align:center;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.16);
+    -webkit-backdrop-filter: blur(22px) saturate(160%);
+    backdrop-filter: blur(22px) saturate(160%);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.45), 0 1px 0 rgba(255,255,255,0.15) inset;
+    animation: rfCardIn .7s cubic-bezier(.22,1,.36,1) both;
+}
+.rf-gate-mark { width:64px; height:64px; margin:0 auto 14px; display:block; }
+.rf-gate-mark path {
+    fill:none; stroke:#ffd166; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round;
+    stroke-dasharray: 260; stroke-dashoffset: 260;
+    animation: rfMarkDraw 1.6s ease forwards .25s;
+}
+.rf-gate-brand { font-family:'Playfair Display',serif; font-weight:900; font-size:26px; color:#fff; letter-spacing:.3px; margin-bottom:2px; }
+.rf-gate-sub { font-family:'Tiro Bangla',serif; font-size:13.5px; color:rgba(255,255,255,.62); margin-bottom:26px; }
+.rf-gate-divider { width:34px; height:2px; margin:0 auto 26px; background:linear-gradient(90deg,#ffd166,#008080); border-radius:2px; box-shadow:0 0 10px rgba(255,209,102,.6); animation: rfGlowPulse 2.4s ease-in-out infinite; }
+.rf-google-btn {
+    width:100%; display:flex; align-items:center; justify-content:center; gap:10px;
+    padding:13px 18px; border-radius:13px; border:none; cursor:pointer;
+    background:#fff; color:#1f2430; font-family:'DM Sans',sans-serif; font-weight:700; font-size:14.5px;
+    box-shadow:0 8px 22px rgba(0,0,0,.28);
+    transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .22s ease;
+}
+.rf-google-btn:hover { transform: translateY(-2px) scale(1.015); box-shadow:0 12px 28px rgba(0,0,0,.35); }
+.rf-google-btn:active { transform: scale(.98); }
+.rf-google-btn:disabled { opacity:.65; cursor:default; transform:none; }
+.rf-gate-error { display:none; margin-top:14px; font-size:12px; color:#ffb4b4; font-family:'DM Sans',sans-serif; }
+.rf-gate-footnote { margin-top:22px; font-size:11px; color:rgba(255,255,255,.4); font-family:'DM Sans',sans-serif; letter-spacing:.2px; }
+
+.rf-tabs { position:relative; display:flex; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); border-radius:12px; padding:4px; margin-bottom:20px; }
+.rf-tab-btn { flex:1; position:relative; z-index:2; border:none; background:transparent; padding:9px 0; font-family:'DM Sans',sans-serif; font-weight:700; font-size:13px; color:rgba(255,255,255,.6); cursor:pointer; border-radius:9px; transition: color .3s ease; }
+.rf-tab-btn.rf-tab-active { color:#1f2430; }
+.rf-tab-indicator { position:absolute; top:4px; left:4px; width:calc(50% - 4px); height:calc(100% - 8px); background:#ffd166; border-radius:9px; box-shadow:0 4px 14px rgba(255,209,102,.35); transition: transform .32s cubic-bezier(.65,0,.35,1); }
+.rf-tab-btn#rf-tab-signup.rf-tab-active ~ .rf-tab-indicator,
+.rf-tabs.rf-tab-signup-mode .rf-tab-indicator { transform: translateX(100%); }
+
+.rf-forms-wrap { position:relative; overflow:hidden; }
+.rf-form { display:flex; flex-direction:column; gap:11px; opacity:0; max-height:0; pointer-events:none; transform:translateY(8px); transition: opacity .32s ease, transform .32s ease; }
+.rf-form.rf-form-active { opacity:1; max-height:260px; pointer-events:auto; transform:translateY(0); margin-bottom:4px; }
+.rf-input {
+    width:100%; padding:12px 14px; border-radius:11px; border:1px solid rgba(255,255,255,.18);
+    background:rgba(255,255,255,.07); color:#fff; font-family:'DM Sans',sans-serif; font-size:13.5px;
+    outline:none; transition: border-color .2s ease, background .2s ease;
+}
+.rf-input::placeholder { color:rgba(255,255,255,.42); }
+.rf-input:focus { border-color:#ffd166; background:rgba(255,255,255,.11); }
+.rf-primary-btn {
+    width:100%; padding:12px 18px; border:none; border-radius:11px; cursor:pointer; margin-top:2px;
+    background:linear-gradient(120deg,#ffd166,#f5b942); color:#1f2430; font-family:'DM Sans',sans-serif; font-weight:800; font-size:14px;
+    box-shadow:0 8px 20px rgba(255,209,102,.28); transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .22s ease;
+}
+.rf-primary-btn:hover { transform: translateY(-2px) scale(1.015); box-shadow:0 12px 26px rgba(255,209,102,.4); }
+.rf-primary-btn:active { transform: scale(.98); }
+.rf-primary-btn:disabled { opacity:.6; cursor:default; transform:none; }
+.rf-or-row { display:flex; align-items:center; gap:10px; margin:18px 0 14px; }
+.rf-or-row span { flex:1; height:1px; background:rgba(255,255,255,.16); }
+.rf-or-row em { font-style:normal; font-size:11px; color:rgba(255,255,255,.45); font-family:'DM Sans',sans-serif; }
+
+/* Logged-in user chip */
+#rf-user-chip {
+    position:fixed; top:14px; right:18px; z-index:9998;
+    display:flex; align-items:center; gap:8px;
+    padding:6px 12px 6px 6px; border-radius:999px;
+    background: var(--glass-bg-strong); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+    border:1px solid var(--glass-border); box-shadow: var(--glass-pill-shadow);
+    font-family:'DM Sans',sans-serif;
+}
+#rf-user-photo { width:26px; height:26px; border-radius:50%; object-fit:cover; background:#ddd; }
+#rf-user-name { font-size:12px; font-weight:700; color:#333; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+body.dark-mode #rf-user-name, body.dark-full #rf-user-name { color:#eee; }
+#rf-logout-btn { border:none; background:transparent; cursor:pointer; font-size:14px; color:#c0392b; padding:2px 4px; line-height:1; }
+#rf-sync-badge {
+    position:fixed; bottom:16px; right:18px; z-index:9998;
+    font-family:'DM Sans',sans-serif; font-size:11.5px; font-weight:700; color:#006666;
+    background: var(--glass-bg-strong); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+    border:1px solid var(--glass-border); padding:6px 12px; border-radius:999px;
+    box-shadow: var(--glass-pill-shadow); opacity:0; transition: opacity .4s ease; pointer-events:none;
+}
     </style>
 </head>
 <body>
+
+<!-- ===================== 🔐 LOGIN GATE ===================== -->
+<div id="rf-login-gate">
+    <div class="rf-blob rf-blob-1"></div>
+    <div class="rf-blob rf-blob-2"></div>
+    <div class="rf-blob rf-blob-3"></div>
+    <div class="rf-motes" id="rf-motes"></div>
+    <div class="rf-gate-card">
+        <svg class="rf-gate-mark" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+            <path d="M14 40 V26 a6 6 0 0 1 6-6 h24 a6 6 0 0 1 6 6 v14 M14 40 v8 M50 40 v8 M18 40 h28 M20 20 v-4 M44 20 v-4"></path>
+        </svg>
+        <div class="rf-gate-brand">Rahman Furniture</div>
+        <div class="rf-gate-sub">Management System — নিরাপদ প্রবেশ</div>
+
+        <div class="rf-tabs">
+            <button type="button" class="rf-tab-btn rf-tab-active" id="rf-tab-login">লগইন</button>
+            <button type="button" class="rf-tab-btn" id="rf-tab-signup">নতুন অ্যাকাউন্ট</button>
+            <div class="rf-tab-indicator" id="rf-tab-indicator"></div>
+        </div>
+
+        <div class="rf-forms-wrap">
+            <!-- LOGIN FORM -->
+            <form class="rf-form rf-form-active" id="rf-login-form">
+                <input class="rf-input" type="email" id="rf-login-email" placeholder="ইমেইল" autocomplete="email" required>
+                <input class="rf-input" type="password" id="rf-login-pass" placeholder="পাসওয়ার্ড" autocomplete="current-password" required>
+                <button type="submit" class="rf-primary-btn" id="rf-login-submit">
+                    <span class="rf-btn-text">লগইন করুন</span>
+                </button>
+            </form>
+
+            <!-- SIGNUP FORM -->
+            <form class="rf-form" id="rf-signup-form">
+                <input class="rf-input" type="email" id="rf-signup-email" placeholder="ইমেইল" autocomplete="email" required>
+                <input class="rf-input" type="password" id="rf-signup-pass" placeholder="পাসওয়ার্ড (কমপক্ষে ৬ ডিজিট)" autocomplete="new-password" required>
+                <input class="rf-input" type="password" id="rf-signup-pass2" placeholder="পাসওয়ার্ড আবার লিখুন" autocomplete="new-password" required>
+                <button type="submit" class="rf-primary-btn" id="rf-signup-submit">
+                    <span class="rf-btn-text">অ্যাকাউন্ট তৈরি করুন</span>
+                </button>
+            </form>
+        </div>
+
+        <div class="rf-or-row"><span></span><em>অথবা</em><span></span></div>
+
+        <button class="rf-google-btn" id="rf-google-login-btn" type="button">
+            <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.96v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.17.28-1.7V4.97H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.03l2.99-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.46 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.97l2.99 2.33C4.66 5.17 6.65 3.58 9 3.58z"/></svg>
+            <span class="rf-btn-text">Google দিয়ে চালিয়ে যান</span>
+        </button>
+
+        <div class="rf-gate-error" id="rf-login-error"></div>
+    </div>
+</div>
+
+<div id="rf-user-chip" style="display:none;">
+    <img id="rf-user-photo" src="" alt="">
+    <span id="rf-user-name"></span>
+    <button id="rf-logout-btn" title="Logout" onclick="rfLogout()">⏻</button>
+</div>
+<div id="rf-sync-badge">✅ সংরক্ষিত</div>
 
 <!-- ===================== SIDEBAR ===================== -->
 <div class="sidebar">
@@ -5009,7 +5191,7 @@ function delResetPage() {
 // ========================================================
 // WINDOW INIT
 // ========================================================
-window.onload = async function() {
+async function initRahmanApp() {
     // 🗄️ IndexedDB initialize করো
     await openIDB();
     // 🔄 পুরনো localStorage data migrate করো IndexedDB তে
@@ -6855,6 +7037,287 @@ window.toggleReasonCol = function() {
     if(sv && sv.style.display!=='none'){ skBuildRows(); skLoadLogo(); }
   });
 })();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════
+     🔥 FIREBASE — LOGIN + LIFETIME MULTI-DEVICE CLOUD BACKUP
+═══════════════════════════════════════════════════════ -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+    getAuth, GoogleAuthProvider, signInWithPopup, signOut,
+    createUserWithEmailAndPassword, signInWithEmailAndPassword,
+    onAuthStateChanged, setPersistence, browserLocalPersistence
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+    getFirestore, doc, setDoc, getDoc, deleteDoc, collection, getDocs
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// ============================================================
+// 👉 এখানে আপনার Firebase Console → Project settings → Your apps
+//    থেকে পাওয়া config অবজেক্টটি বসান (নিচের PASTE_... মানগুলো বদলে দিন)
+// ============================================================
+const firebaseConfig = {
+    apiKey:            "AIzaSyCZp4eIXTNfaDiPDVoi4pc04WoPH8e7OFc",
+    authDomain:         "rahman-furniture-b8bdd.firebaseapp.com",
+    projectId:          "rahman-furniture-b8bdd",
+    storageBucket:       "rahman-furniture-b8bdd.firebasestorage.app",
+    messagingSenderId:  "404366983060",
+    appId:               "1:404366983060:web:8bf8c1677502f7f01c5981"
+};
+
+const fbApp    = initializeApp(firebaseConfig);
+const auth     = getAuth(fbApp);
+const db       = getFirestore(fbApp);
+const provider = new GoogleAuthProvider();
+
+// ---------- Floating dust motes (ambient animation) ----------
+(function buildMotes(){
+    const wrap = document.getElementById('rf-motes');
+    if (!wrap) return;
+    for (let i = 0; i < 16; i++) {
+        const m = document.createElement('div');
+        m.className = 'rf-mote';
+        m.style.left = (Math.random()*100) + 'vw';
+        m.style.setProperty('--rf-drift', (Math.random()*60-30) + 'px');
+        m.style.animationDuration = (9 + Math.random()*9) + 's';
+        m.style.animationDelay = (Math.random()*9) + 's';
+        wrap.appendChild(m);
+    }
+})();
+
+// ---------- Gate helpers ----------
+const gate       = document.getElementById('rf-login-gate');
+const gateError  = document.getElementById('rf-login-error');
+const googleBtn  = document.getElementById('rf-google-login-btn');
+const googleText = googleBtn.querySelector('.rf-btn-text');
+const userChip   = document.getElementById('rf-user-chip');
+
+const tabLogin   = document.getElementById('rf-tab-login');
+const tabSignup  = document.getElementById('rf-tab-signup');
+const tabsWrap   = tabLogin.parentElement;
+const loginForm  = document.getElementById('rf-login-form');
+const signupForm = document.getElementById('rf-signup-form');
+
+function showGate(){ gate.classList.remove('rf-gate-hidden','rf-gate-open'); document.body.style.overflow = 'hidden'; }
+function hideGate(){
+    gate.classList.add('rf-gate-open');
+    document.body.style.overflow = '';
+    setTimeout(() => gate.classList.add('rf-gate-hidden'), 850);
+}
+
+function switchTab(mode) {
+    gateError.style.display = 'none';
+    if (mode === 'signup') {
+        tabsWrap.classList.add('rf-tab-signup-mode');
+        tabLogin.classList.remove('rf-tab-active');
+        tabSignup.classList.add('rf-tab-active');
+        loginForm.classList.remove('rf-form-active');
+        signupForm.classList.add('rf-form-active');
+    } else {
+        tabsWrap.classList.remove('rf-tab-signup-mode');
+        tabSignup.classList.remove('rf-tab-active');
+        tabLogin.classList.add('rf-tab-active');
+        signupForm.classList.remove('rf-form-active');
+        loginForm.classList.add('rf-form-active');
+    }
+}
+tabLogin.addEventListener('click', () => switchTab('login'));
+tabSignup.addEventListener('click', () => switchTab('signup'));
+
+// ---------- Friendly Bengali error messages ----------
+function friendlyAuthError(e) {
+    const code = e && e.code || '';
+    const map = {
+        'auth/email-already-in-use': 'এই ইমেইলে আগে থেকেই একটা অ্যাকাউন্ট আছে — লগইন ট্যাবে যান।',
+        'auth/invalid-email': 'সঠিক ইমেইল দিন।',
+        'auth/weak-password': 'পাসওয়ার্ড কমপক্ষে ৬ ডিজিট হতে হবে।',
+        'auth/user-not-found': 'এই ইমেইলে কোনো অ্যাকাউন্ট পাওয়া যায়নি — নতুন অ্যাকাউন্ট ট্যাবে যান।',
+        'auth/wrong-password': 'পাসওয়ার্ড ভুল হয়েছে।',
+        'auth/invalid-credential': 'ইমেইল বা পাসওয়ার্ড ভুল।',
+        'auth/too-many-requests': 'অনেকবার চেষ্টা হয়েছে, একটু পর আবার চেষ্টা করুন।',
+        'auth/popup-closed-by-user': 'পপ-আপ বন্ধ হয়ে গিয়েছিল, আবার চেষ্টা করুন।'
+    };
+    return map[code] || 'কিছু একটা সমস্যা হয়েছে, আবার চেষ্টা করুন।';
+}
+function showError(msg) { gateError.textContent = msg; gateError.style.display = 'block'; }
+
+// ---------- Signup ----------
+signupForm.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const email = document.getElementById('rf-signup-email').value.trim();
+    const pass  = document.getElementById('rf-signup-pass').value;
+    const pass2 = document.getElementById('rf-signup-pass2').value;
+    gateError.style.display = 'none';
+    if (pass !== pass2) { showError('দুটো পাসওয়ার্ড মিলছে না।'); return; }
+    const btn = document.getElementById('rf-signup-submit');
+    btn.disabled = true;
+    try {
+        await setPersistence(auth, browserLocalPersistence);
+        await createUserWithEmailAndPassword(auth, email, pass);
+    } catch (e) {
+        showError(friendlyAuthError(e));
+        btn.disabled = false;
+    }
+});
+
+// ---------- Login ----------
+loginForm.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const email = document.getElementById('rf-login-email').value.trim();
+    const pass  = document.getElementById('rf-login-pass').value;
+    gateError.style.display = 'none';
+    const btn = document.getElementById('rf-login-submit');
+    btn.disabled = true;
+    try {
+        await setPersistence(auth, browserLocalPersistence);
+        await signInWithEmailAndPassword(auth, email, pass);
+    } catch (e) {
+        showError(friendlyAuthError(e));
+        btn.disabled = false;
+    }
+});
+
+// ---------- Google (quick login, next to email/password) ----------
+googleBtn.addEventListener('click', async () => {
+    googleBtn.disabled = true;
+    googleText.textContent = 'সংযোগ হচ্ছে...';
+    gateError.style.display = 'none';
+    try {
+        await setPersistence(auth, browserLocalPersistence);
+        await signInWithPopup(auth, provider);
+    } catch (e) {
+        showError(friendlyAuthError(e));
+        googleBtn.disabled = false;
+        googleText.textContent = 'Google দিয়ে চালিয়ে যান';
+    }
+});
+
+window.rfLogout = function () {
+    signOut(auth).then(() => location.reload());
+};
+
+// ---------- Sync status badge ----------
+function setSyncBadge(text) {
+    const el = document.getElementById('rf-sync-badge');
+    if (!el) return;
+    el.textContent = text;
+    el.style.opacity = '1';
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { el.style.opacity = '0'; }, 2500);
+}
+
+// ---------- Cloud save (settings = everything in localStorage) ----------
+// 🏪 সব স্টাফের আলাদা লগইন থাকলেও একটাই দোকানের শেয়ার্ড ডেটা — তাই একটা ফিক্সড company path ব্যবহার করা হচ্ছে
+const COMPANY_ID = 'rahman-furniture';
+let _restoring = false;
+let _cloudSaveTimer = null;
+
+function scheduleCloudSettingsSave() {
+    if (_restoring) return;
+    if (!auth.currentUser) return;
+    clearTimeout(_cloudSaveTimer);
+    _cloudSaveTimer = setTimeout(() => saveSettingsToCloud(), 2500);
+}
+
+async function saveSettingsToCloud() {
+    try {
+        const data = {};
+        for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            data[k] = localStorage.getItem(k);
+        }
+        await setDoc(doc(db, 'company', COMPANY_ID, 'meta', 'settings'), { data, updatedAt: Date.now() });
+        setSyncBadge('✅ সংরক্ষিত হয়েছে');
+    } catch (e) {
+        console.log('Cloud settings save failed', e);
+        setSyncBadge('⚠️ সিঙ্ক ব্যর্থ');
+    }
+}
+
+async function saveInvoiceToCloudFS(inv) {
+    try {
+        await setDoc(doc(db, 'company', COMPANY_ID, 'invoices', String(inv.invoiceNo)), inv);
+        setSyncBadge('✅ ইনভয়েস সংরক্ষিত');
+    } catch (e) {
+        console.log('Cloud invoice save failed', e);
+        setSyncBadge('⚠️ ছবি বড় হওয়ায় সিঙ্ক ব্যর্থ');
+    }
+}
+
+async function deleteInvoiceFromCloudFS(invoiceNo) {
+    try { await deleteDoc(doc(db, 'company', COMPANY_ID, 'invoices', String(invoiceNo))); } catch (e) {}
+}
+
+// ---------- Restore everything from cloud (new device / after data loss) ----------
+async function restoreFromCloud() {
+    _restoring = true;
+    try {
+        const settingsSnap = await getDoc(doc(db, 'company', COMPANY_ID, 'meta', 'settings'));
+        if (settingsSnap.exists()) {
+            const data = settingsSnap.data().data || {};
+            Object.keys(data).forEach(k => { try { localStorage.setItem(k, data[k]); } catch (e) {} });
+        }
+        const invSnap = await getDocs(collection(db, 'company', COMPANY_ID, 'invoices'));
+        for (const d of invSnap.docs) {
+            await window.idbSaveInvoice(d.data());
+        }
+    } catch (e) {
+        console.log('Cloud restore failed', e);
+    } finally {
+        _restoring = false;
+    }
+}
+
+// ---------- Hook existing save functions so every change auto-backs-up ----------
+const _origSetItem = Storage.prototype.setItem;
+Storage.prototype.setItem = function (k, v) {
+    _origSetItem.apply(this, arguments);
+    if (this === localStorage) scheduleCloudSettingsSave();
+};
+
+const _origIdbSave = window.idbSaveInvoice;
+window.idbSaveInvoice = async function (inv) {
+    const r = await _origIdbSave(inv);
+    if (!_restoring && auth.currentUser) saveInvoiceToCloudFS(inv);
+    return r;
+};
+
+const _origIdbDelete = window.idbDelete;
+window.idbDelete = async function (invoiceNo) {
+    const r = await _origIdbDelete(invoiceNo);
+    if (!_restoring && auth.currentUser) deleteInvoiceFromCloudFS(invoiceNo);
+    return r;
+};
+
+// ---------- Auth state → gate the whole app ----------
+let _appBooted = false;
+
+function initialsAvatar(label) {
+    const ch = (label || '?').trim().charAt(0).toUpperCase() || '?';
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" rx="20" fill="#008080"/><text x="50%" y="54%" font-family="DM Sans,sans-serif" font-size="17" font-weight="700" fill="#fff" text-anchor="middle" dominant-baseline="middle">${ch}</text></svg>`;
+    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+}
+
+onAuthStateChanged(auth, async (user) => {
+    if (user) {
+        const label = user.displayName || user.email || '';
+        userChip.style.display = 'flex';
+        document.getElementById('rf-user-name').textContent = label;
+        document.getElementById('rf-user-photo').src = user.photoURL || initialsAvatar(label);
+
+        const syncedKey = 'rf_cloud_synced_' + user.uid;
+        if (!sessionStorage.getItem(syncedKey)) {
+            await restoreFromCloud();
+            sessionStorage.setItem(syncedKey, '1');
+        }
+        hideGate();
+        if (!_appBooted) { _appBooted = true; await initRahmanApp(); }
+    } else {
+        userChip.style.display = 'none';
+        showGate();
+    }
+});
 </script>
 </body>
 </html>
