@@ -2252,7 +2252,7 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
                     </div>
                 </div>
                 <div class="inv-info-box">
-                    <div><b>Invoice No:</b> <span id="inv-no">2490</span></div>
+                    <div><b>Invoice No:</b> <span id="inv-no">2600</span></div>
                     <div><b>Date:</b> <span id="inv-date"></span></div>
                     <div><b>Time:</b> <span id="inv-clock" style="font-weight:bold;"></span></div>
                     <div id="inv-date-now-btn" class="no-print" onclick="invUseCurrentDateTime()" style="display:none;cursor:pointer;margin-top:4px;font-size:11px;font-weight:700;color:#fff;background:#008080;padding:3px 9px;border-radius:12px;text-align:center;width:fit-content;">🔄 বর্তমান তারিখ/সময় ব্যবহার করুন</div>
@@ -2813,14 +2813,19 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
             <div id="cloud-status-msg" style="margin-top:8px;font-size:11px;"></div>
         </div>
 
-        <!-- Old Data Recovery -->
+        <!-- Full Data Backup / Recovery -->
         <div style="background:#fdf0e8;border-radius:10px;padding:14px;margin-bottom:14px;border:1px solid #f0c9a0;">
-            <div style="font-weight:700;color:#c0392b;font-size:14px;margin-bottom:4px;">🗄️ পুরনো ইনভয়েস ডেটা রিকভার করুন</div>
-            <div style="font-size:11px;color:#666;margin-bottom:8px;">পুরনো ব্যাকআপ ফাইল (JSON) থেকে ইনভয়েস ফিরিয়ে আনুন — সব ইনভয়েস স্বয়ংক্রিয়ভাবে ক্লাউডেও সেভ হয়ে যাবে।</div>
-            <input type="file" id="import-old-invoices" accept=".json" style="display:none" onchange="importOldInvoices(this)">
-            <button onclick="document.getElementById('import-old-invoices').click()" class="btn" style="font-size:12px;padding:7px 14px;background:#c0392b;color:white;">⬆ পুরনো ইনভয়েস JSON আপলোড করুন</button>
+            <div style="font-weight:700;color:#c0392b;font-size:14px;margin-bottom:4px;">🗄️ ফুল ডেটা ব্যাকআপ / রিকভার (Invoice + Attendance + Expense + Salary + Delivery + Settings)</div>
+            <div style="font-size:11px;color:#666;margin-bottom:8px;">পুরো সাইটের সব ডেটা এক JSON ফাইলে এক্সপোর্ট করে রাখুন, বা পুরনো ব্যাকআপ থেকে সব ফিরিয়ে আনুন — সব কিছু স্বয়ংক্রিয়ভাবে ক্লাউডেও সেভ হয়ে যাবে।</div>
+            <input type="file" id="import-old-invoices" accept=".json" style="display:none" onchange="importFullBackup(this)">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button onclick="exportFullBackup()" class="btn" style="font-size:12px;padding:7px 14px;background:#27ae60;color:white;">⬇ পুরো সাইটের সব ডেটা এক্সপোর্ট করুন</button>
+                <button onclick="document.getElementById('import-old-invoices').click()" class="btn" style="font-size:12px;padding:7px 14px;background:#c0392b;color:white;">⬆ পুরনো ব্যাকআপ JSON আপলোড করুন</button>
+            </div>
             <div id="import-old-status" style="margin-top:8px;font-size:11px;"></div>
         </div>
+
+
 
         <div style="display:flex;gap:10px;">
             <button onclick="saveAllSettings()" class="btn btn-success" style="flex:1;">💾 Save All Settings</button>
@@ -3099,7 +3104,7 @@ async function saveCloudData() {
     if (!url) return;
 
     const history     = await getAllInvoices();
-    const invNum      = localStorage.getItem('invNum') || '2572';
+    const invNum      = localStorage.getItem('invNum') || '2600';
     const commissions = JSON.parse(localStorage.getItem('salesCommissions') || '[]');
 
     // Cloud sync-এ photos পাঠাবো না (too large) — শুধু metadata
@@ -3308,13 +3313,12 @@ async function loadCloudData() {
         const result   = await response.json();
         if (result.status === 'success' && result.data) {
             const d = result.data;
+            // ⚠️ পুরনো Google Sheets counter আর local counter-কে override করবে না —
+            // Firestore/local-ই এখন সঠিক source, তাই cloud counter উপেক্ষা করা হচ্ছে
             if (d.invoiceCounter) {
-                const localInv  = parseInt(localStorage.getItem('invNum') || '2572');
-                const cloudInv  = parseInt(d.invoiceCounter);
-                const latest    = Math.max(cloudInv, localInv);
-                localStorage.setItem('invNum', latest.toString());
                 const el = document.getElementById('inv-no');
-                if (el) el.innerText = latest;
+                const localInv = parseInt(localStorage.getItem('invNum') || '2600');
+                if (el) el.innerText = localInv;
             }
             if (d.allInvoices) {
                 try {
@@ -4754,7 +4758,7 @@ async function invPrepareNext() {
         await saveInvoiceToHistory(invoiceData);
         saveCommission(invoiceData);
         let currentInv = parseInt(document.getElementById('inv-no').innerText);
-        let nextInv = (isNaN(currentInv) ? 2572 : currentInv) + 1;
+        let nextInv = (isNaN(currentInv) ? 2600 : currentInv) + 1;
         try { localStorage.setItem('invNum', nextInv); } catch(e){}
         // ☁️ Cloud sync
         saveCloudData();
@@ -4794,7 +4798,7 @@ function loadInvoicePage() {
         box.classList.remove('has-img');
     });
     // Load inv number
-    let inv = localStorage.getItem('invNum') || "2490";
+    let inv = localStorage.getItem('invNum') || "2600";
     document.getElementById('inv-no').innerText = inv;
     // ✅ Fresh invoice → use live current date/time again
     invUsingLiveClock = true;
@@ -5277,13 +5281,13 @@ async function initRahmanApp() {
     if(savedAdmin) document.getElementById('inv-admin-name').value = savedAdmin;
 
     // Load invoice number — current counter থেকে
-    let inv = localStorage.getItem('invNum') || "2572";
+    let inv = localStorage.getItem('invNum') || "2600";
     document.getElementById('inv-no').innerText = inv;
 
     // ☁️ Try loading from cloud first (if URL configured)
     const cloudLoaded = await loadCloudData();
     if (!cloudLoaded) {
-        let localInv = localStorage.getItem('invNum') || "2572";
+        let localInv = localStorage.getItem('invNum') || "2600";
         document.getElementById('inv-no').innerText = localInv;
     }
 
@@ -6162,9 +6166,47 @@ document.getElementById('nmOverlay').addEventListener('click',e=>{ if(e.target==
 document.getElementById('esOverlay').addEventListener('click',e=>{ if(e.target===e.currentTarget) closeES(); });
 
 /* ════════════════════════════════════════════
-   OLD INVOICE DATA RECOVERY (from exported IndexedDB JSON)
+   EXPORT FULL SITE DATA (Invoice + Attendance + Expense +
+   Salary + Delivery + Settings — সব localStorage + IndexedDB invoices)
 ════════════════════════════════════════════ */
-async function importOldInvoices(input){
+async function exportFullBackup(){
+  const statusEl = document.getElementById('import-old-status');
+  try {
+    const invoices = await getAllInvoices();
+    const localData = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      localData[k] = localStorage.getItem(k);
+    }
+    const payload = {
+      version: 1,
+      exported: new Date().toISOString(),
+      company: 'Rahman Furniture',
+      invoices,      // IndexedDB: সব ইনভয়েস (Invoice তৈরি + All Invoices)
+      localData      // localStorage: Attendance, Expense Pro, Salary Sheet, Delivery Settlement, Settings — সব
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `RF_Full_Backup_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    statusEl.style.color = '#27ae60';
+    statusEl.textContent = `✅ ${invoices.length}টি ইনভয়েসসহ পুরো সাইটের ডেটা এক্সপোর্ট হয়েছে।`;
+    toast('✔ ফুল ব্যাকআপ এক্সপোর্ট সম্পন্ন');
+  } catch(err) {
+    statusEl.style.color = '#c0392b';
+    statusEl.textContent = '❌ এক্সপোর্ট করতে সমস্যা হয়েছে।';
+    console.error(err);
+  }
+}
+
+/* ════════════════════════════════════════════
+   IMPORT FULL SITE DATA (from exportFullBackup JSON,
+   or old plain invoice-only JSON — both supported)
+════════════════════════════════════════════ */
+async function importFullBackup(input){
   const file = input.files[0]; if(!file) return;
   const statusEl = document.getElementById('import-old-status');
   statusEl.style.color = '#333';
@@ -6174,17 +6216,23 @@ async function importOldInvoices(input){
     try {
       const parsed = JSON.parse(e.target.result);
       const invoices = Array.isArray(parsed) ? parsed : (parsed.invoices || []);
-      if (!invoices.length) { statusEl.style.color='#c0392b'; statusEl.textContent='❌ কোনো ইনভয়েস পাওয়া যায়নি এই ফাইলে।'; return; }
-      let count = 0;
+      let invCount = 0;
       for (const inv of invoices) {
         if (!inv || !inv.invoiceNo) continue;
         await window.idbSaveInvoice(inv);
-        count++;
-        statusEl.textContent = `⏳ ${count}/${invoices.length} ইনভয়েস পুনরুদ্ধার হচ্ছে...`;
+        invCount++;
+        statusEl.textContent = `⏳ ${invCount}/${invoices.length} ইনভয়েস পুনরুদ্ধার হচ্ছে...`;
+      }
+      let otherCount = 0;
+      if (parsed.localData) {
+        Object.keys(parsed.localData).forEach(k => {
+          try { localStorage.setItem(k, parsed.localData[k]); otherCount++; } catch(e) {}
+        });
       }
       statusEl.style.color = '#27ae60';
-      statusEl.textContent = `✅ ${count}টি ইনভয়েস সফলভাবে পুনরুদ্ধার হয়েছে এবং ক্লাউডে সেভ হচ্ছে।`;
+      statusEl.textContent = `✅ ${invCount}টি ইনভয়েস` + (otherCount ? ` + Attendance/Expense/Salary/Delivery/Settings-এর ${otherCount}টি এন্ট্রি` : '') + ` পুনরুদ্ধার হয়ে ক্লাউডে সেভ হচ্ছে।`;
       toast('✔ পুরনো ডেটা পুনরুদ্ধার সম্পন্ন');
+      if (parsed.localData) { setTimeout(() => location.reload(), 1500); }
       if (typeof loadDashboard === 'function') loadDashboard();
       if (typeof renderInvoiceHistory === 'function') renderInvoiceHistory();
     } catch(err) {
@@ -6196,6 +6244,7 @@ async function importOldInvoices(input){
   reader.readAsText(file);
   input.value = '';
 }
+
 
 
 function downloadBackup(){
