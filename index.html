@@ -1924,19 +1924,40 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
 .rf-or-row span { flex:1; height:1px; background:rgba(255,255,255,.16); }
 .rf-or-row em { font-style:normal; font-size:11px; color:rgba(255,255,255,.45); font-family:'DM Sans',sans-serif; }
 
-/* Logged-in user chip */
+/* Logged-in user chip — now inside sidebar, click opens animated popover */
 #rf-user-chip {
-    position:fixed; top:14px; right:18px; z-index:9998;
-    display:flex; align-items:center; gap:8px;
-    padding:6px 12px 6px 6px; border-radius:999px;
-    background: var(--glass-bg-strong); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
-    border:1px solid var(--glass-border); box-shadow: var(--glass-pill-shadow);
+    position:relative; margin:10px 14px 4px; display:none;
+    align-items:center; gap:8px; cursor:pointer;
+    padding:8px 10px; border-radius:12px;
+    background: rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.12);
     font-family:'DM Sans',sans-serif;
+    transition: background .2s ease;
 }
-#rf-user-photo { width:26px; height:26px; border-radius:50%; object-fit:cover; background:#ddd; }
-#rf-user-name { font-size:12px; font-weight:700; color:#333; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-body.dark-mode #rf-user-name, body.dark-full #rf-user-name { color:#eee; }
-#rf-logout-btn { border:none; background:transparent; cursor:pointer; font-size:14px; color:#c0392b; padding:2px 4px; line-height:1; }
+#rf-user-chip:hover { background: rgba(255,255,255,0.14); }
+#rf-user-photo { width:30px; height:30px; border-radius:50%; object-fit:cover; background:#ddd; flex-shrink:0; }
+#rf-user-name { font-size:12.5px; font-weight:700; color:#fff; max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#rf-user-chip-caret { margin-left:auto; font-size:10px; color:rgba(255,255,255,.6); transition: transform .25s ease; }
+#rf-user-chip.rf-open #rf-user-chip-caret { transform: rotate(180deg); }
+
+@keyframes rf-popIn {
+    from { opacity:0; transform: translateY(-6px) scale(.95); }
+    to   { opacity:1; transform: translateY(0) scale(1); }
+}
+#rf-user-popover {
+    display:none; position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:9998;
+    background: var(--glass-bg-strong); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+    border:1px solid var(--glass-border); border-radius:12px; box-shadow: var(--glass-shadow);
+    padding:10px; animation: rf-popIn .2s cubic-bezier(.34,1.56,.64,1);
+}
+#rf-user-chip.rf-open #rf-user-popover { display:block; }
+#rf-user-popover-name { font-size:12.5px; font-weight:800; color:#222; margin-bottom:2px; word-break:break-word; }
+#rf-user-popover-email { font-size:11px; color:#666; margin-bottom:10px; word-break:break-word; }
+#rf-logout-btn {
+    width:100%; border:none; background:#e74c3c; color:#fff; cursor:pointer;
+    font-size:12px; font-weight:700; padding:8px; border-radius:8px; transition: background .2s ease;
+}
+#rf-logout-btn:hover { background:#c0392b; }
 #rf-sync-badge {
     position:fixed; bottom:16px; right:18px; z-index:9998;
     font-family:'DM Sans',sans-serif; font-size:11.5px; font-weight:700; color:#006666;
@@ -2003,12 +2024,9 @@ body.dark-mode #rf-user-name, body.dark-full #rf-user-name { color:#eee; }
     </div>
 </div>
 
-<div id="rf-user-chip" style="display:none;">
-    <img id="rf-user-photo" src="" alt="">
-    <span id="rf-user-name"></span>
-    <button id="rf-logout-btn" title="Logout" onclick="rfLogout()">⏻</button>
-</div>
 <div id="rf-sync-badge">✅ সংরক্ষিত</div>
+
+
 
 <!-- ===================== SIDEBAR ===================== -->
 <div class="sidebar">
@@ -2016,6 +2034,18 @@ body.dark-mode #rf-user-name, body.dark-full #rf-user-name { color:#eee; }
         Rahman Furniture
         <span>Management System</span>
     </div>
+
+    <div id="rf-user-chip" style="display:none;" onclick="document.getElementById('rf-user-chip').classList.toggle('rf-open')">
+        <img id="rf-user-photo" src="" alt="">
+        <span id="rf-user-name"></span>
+        <span id="rf-user-chip-caret">▾</span>
+        <div id="rf-user-popover">
+            <div id="rf-user-popover-name"></div>
+            <div id="rf-user-popover-email"></div>
+            <button id="rf-logout-btn" title="Logout" onclick="event.stopPropagation(); rfLogout();">⏻ লগআউট করুন</button>
+        </div>
+    </div>
+
     <div class="sidebar-section">Main Menu</div>
     <ul class="sidebar-menu">
         <li><a onclick="showPage('dashboard')" id="menu-dashboard" class="active"><span class="icon">📊</span> Dashboard</a></li>
@@ -2034,6 +2064,10 @@ body.dark-mode #rf-user-name, body.dark-full #rf-user-name { color:#eee; }
         <li><a onclick="showSubPage('ep')" id="menu-ep"><span class="icon">💰</span> Expense Pro</a></li>
         <li><a onclick="showSubPage('hc')" id="menu-hc"><span class="icon">😊</span> Happy Customer</a></li>
         <li><a onclick="showSubPage('ss')" id="menu-ss"><span class="icon">💼</span> Salary Sheet</a></li>
+    </ul>
+    <div class="sidebar-section">Account</div>
+    <ul class="sidebar-menu">
+        <li><a onclick="if(confirm('আপনি কি লগআউট করতে চান?')) rfLogout();" style="color:#e74c3c!important;font-weight:700;"><span class="icon">🚪</span> Logout</a></li>
     </ul>
     <div class="sidebar-footer">Created By Masum Billah 2026</div>
 </div>
@@ -2777,6 +2811,15 @@ body.dark-mode #rf-user-name, body.dark-full #rf-user-name { color:#eee; }
               <button onclick="testSendOneRow()" class="btn" style="font-size:11px;padding:5px 12px;background:#8e44ad;color:white;">🧪 Test: একটা Sample Row পাঠাও</button>
             </div>
             <div id="cloud-status-msg" style="margin-top:8px;font-size:11px;"></div>
+        </div>
+
+        <!-- Old Data Recovery -->
+        <div style="background:#fdf0e8;border-radius:10px;padding:14px;margin-bottom:14px;border:1px solid #f0c9a0;">
+            <div style="font-weight:700;color:#c0392b;font-size:14px;margin-bottom:4px;">🗄️ পুরনো ইনভয়েস ডেটা রিকভার করুন</div>
+            <div style="font-size:11px;color:#666;margin-bottom:8px;">পুরনো ব্যাকআপ ফাইল (JSON) থেকে ইনভয়েস ফিরিয়ে আনুন — সব ইনভয়েস স্বয়ংক্রিয়ভাবে ক্লাউডেও সেভ হয়ে যাবে।</div>
+            <input type="file" id="import-old-invoices" accept=".json" style="display:none" onchange="importOldInvoices(this)">
+            <button onclick="document.getElementById('import-old-invoices').click()" class="btn" style="font-size:12px;padding:7px 14px;background:#c0392b;color:white;">⬆ পুরনো ইনভয়েস JSON আপলোড করুন</button>
+            <div id="import-old-status" style="margin-top:8px;font-size:11px;"></div>
         </div>
 
         <div style="display:flex;gap:10px;">
@@ -6119,8 +6162,42 @@ document.getElementById('nmOverlay').addEventListener('click',e=>{ if(e.target==
 document.getElementById('esOverlay').addEventListener('click',e=>{ if(e.target===e.currentTarget) closeES(); });
 
 /* ════════════════════════════════════════════
-   BACKUP / RESTORE
+   OLD INVOICE DATA RECOVERY (from exported IndexedDB JSON)
 ════════════════════════════════════════════ */
+async function importOldInvoices(input){
+  const file = input.files[0]; if(!file) return;
+  const statusEl = document.getElementById('import-old-status');
+  statusEl.style.color = '#333';
+  statusEl.textContent = 'পড়া হচ্ছে...';
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      const invoices = Array.isArray(parsed) ? parsed : (parsed.invoices || []);
+      if (!invoices.length) { statusEl.style.color='#c0392b'; statusEl.textContent='❌ কোনো ইনভয়েস পাওয়া যায়নি এই ফাইলে।'; return; }
+      let count = 0;
+      for (const inv of invoices) {
+        if (!inv || !inv.invoiceNo) continue;
+        await window.idbSaveInvoice(inv);
+        count++;
+        statusEl.textContent = `⏳ ${count}/${invoices.length} ইনভয়েস পুনরুদ্ধার হচ্ছে...`;
+      }
+      statusEl.style.color = '#27ae60';
+      statusEl.textContent = `✅ ${count}টি ইনভয়েস সফলভাবে পুনরুদ্ধার হয়েছে এবং ক্লাউডে সেভ হচ্ছে।`;
+      toast('✔ পুরনো ডেটা পুনরুদ্ধার সম্পন্ন');
+      if (typeof loadDashboard === 'function') loadDashboard();
+      if (typeof renderInvoiceHistory === 'function') renderInvoiceHistory();
+    } catch(err) {
+      statusEl.style.color = '#c0392b';
+      statusEl.textContent = '❌ ফাইল পড়তে সমস্যা হয়েছে। সঠিক JSON ফাইল কিনা দেখুন।';
+      console.error(err);
+    }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+
 function downloadBackup(){
   const all={};
   for(let i=0;i<localStorage.length;i++){
@@ -7327,6 +7404,8 @@ onAuthStateChanged(auth, async (user) => {
         userChip.style.display = 'flex';
         document.getElementById('rf-user-name').textContent = label;
         document.getElementById('rf-user-photo').src = user.photoURL || initialsAvatar(label);
+        document.getElementById('rf-user-popover-name').textContent = user.displayName || label;
+        document.getElementById('rf-user-popover-email').textContent = user.email || '';
 
         const syncedKey = 'rf_cloud_synced_' + user.uid;
         if (!sessionStorage.getItem(syncedKey)) {
@@ -7337,9 +7416,18 @@ onAuthStateChanged(auth, async (user) => {
         if (!_appBooted) { _appBooted = true; await initRahmanApp(); }
     } else {
         userChip.style.display = 'none';
+        userChip.classList.remove('rf-open');
         showGate();
     }
 });
+
+// Close popover when clicking outside
+document.addEventListener('click', (e) => {
+    if (userChip && userChip.classList.contains('rf-open') && !userChip.contains(e.target)) {
+        userChip.classList.remove('rf-open');
+    }
+});
+
 </script>
 </body>
 </html>
