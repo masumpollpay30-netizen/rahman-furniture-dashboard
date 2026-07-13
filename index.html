@@ -2383,10 +2383,12 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
         <div class="rf-na-icon">🔒</div>
         <h2>No Access Granted Yet</h2>
         <p>Your account doesn't have access to any page yet. Please contact your admin to get access to the features you need.</p>
+        <div id="rf-na-debug" style="margin-top:22px;background:#f7f7f9;border:1px solid #e2e2e8;border-radius:10px;padding:14px 16px;font-family:monospace;font-size:12px;text-align:left;max-width:420px;color:#444;line-height:1.6;"></div>
+        <button onclick="rfLogout()" style="margin-top:18px;padding:10px 22px;border-radius:10px;border:none;background:#dc3545;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">🚪 Logout</button>
     </div>
 
     <!-- ===================== DASHBOARD PAGE ===================== -->
-    <div class="page-view active" id="dashboard-view">
+    <div class="page-view" id="dashboard-view">
         <div class="stats-grid">
             <div class="stat-card green">
                 <div class="icon-wrap">📈</div>
@@ -5608,8 +5610,12 @@ async function initRahmanApp() {
     // 🔄 ব্যর্থ sync retry করো (background-এ)
     setTimeout(() => processSyncRetryQueue(), 3000);
 
-    // Render dashboard (visibility/access is enforced centrally by rfEnforceCurrentPage)
-    renderDashboard();
+    // 🛡️ SECURITY FIX: dashboard-এর real business data DOM-এ বসানোর আগেই permission check করো।
+    // আগে এটা সব সময় (permission ছাড়াও) call হতো, ফলে data হিডেন view-এর ভেতরে থাকলেও
+    // browser dev-tools দিয়ে trivially বের করা যেত। এখন শুধু allowed হলেই render হবে।
+    if (typeof rfHasPermission !== 'function' || rfHasPermission('dashboard')) {
+        renderDashboard();
+    }
 
     // Apply dark mode button state
     updateThemeBtns(localStorage.getItem('rfTheme') || 'light');
@@ -7756,11 +7762,22 @@ function rfHasPermission(key) {
     if (rfIsAdmin) return true;
     return !!rfPermissions[key];
 }
+// 🛡️ ROOT CAUSE FIX: এই ফাংশনটা <script type="module"> এর ভেতরে থাকায়
+// module scope-এ আটকে ছিল। কিন্তু showPage()/showSubPage() ফাংশনগুলো
+// অন্য একটা সাধারণ (non-module) <script> ব্লকে আছে — সেখান থেকে এই ফাংশনটা
+// দেখাই যেত না (module scope অন্য কোনো script-এর সাথে shared হয় না)।
+// ফলে `typeof rfHasPermission === 'function'` সবসময় false হয়ে যেত,
+// এবং permission check টা silently পুরোপুরি বাইপাস হয়ে যেত — এই কারণেই
+// zero-permission account দিয়েও Dashboard/Invoice/Delivery/Attendance/Stock
+// এবং Expense Pro/Happy Customer/Salary Sheet সব খোলা যাচ্ছিল।
+// window-এ explicitly attach করে দেওয়ায় এখন সব script থেকেই এটা দেখা যাবে।
+window.rfHasPermission = rfHasPermission;
 
 function rfPermLabel(key) {
     const item = RF_PERM_ITEMS.find(i => i.key === key);
     return item ? item.label : key;
 }
+window.rfPermLabel = rfPermLabel;
 
 async function rfLoadUserAccess(user) {
     rfIsAdmin = rfIsAdminEmail(user.email);
@@ -7838,6 +7855,32 @@ function rfEnforceCurrentPage() {
         noAccessView.classList.add('active');
         document.getElementById('topbar-title').innerText = 'Rahman Furniture Management';
     }
+
+    // 🛡️ যদি user-এর একদমই কোনো permission না থাকে (এবং admin না হয়),
+    // পুরো sidebar menu (Main Menu / Others / Tools) সম্পূর্ণ hide করে দাও —
+    // তাহলে locked আইকন থাকা সত্ত্বেও কোনো link click করার সুযোগই থাকবে না,
+    // এবং debug panel-এ exact যা Firestore-এ সংরক্ষিত আছে তা দেখাও, যাতে
+    // guess না করে সরাসরি screenshot দিয়ে verify করা যায়।
+    const mainMenuUl = document.querySelector('.sidebar-menu');
+    const allMenuSections = document.querySelectorAll('.sidebar-section, .sidebar-menu');
+    if (!rfIsAdmin && !firstAllowed) {
+        allMenuSections.forEach(el => {
+            if (el.id !== 'rf-admin-section' && el.id !== 'rf-admin-menu') el.style.display = 'none';
+        });
+        const dbg = document.getElementById('rf-na-debug');
+        if (dbg && auth.currentUser) {
+            const u = auth.currentUser;
+            dbg.innerHTML = `<b>Email:</b> ${u.email || '—'}<br><b>UID:</b> ${u.uid}<br><b>Admin?:</b> ${rfIsAdmin}<br><b>Permissions:</b><br>${JSON.stringify(rfPermissions, null, 2).replace(/\n/g, '<br>').replace(/ /g, '&nbsp;')}`;
+        }
+    } else {
+        allMenuSections.forEach(el => { el.style.display = ''; });
+        if (rfIsAdmin) {
+            const adminSection = document.getElementById('rf-admin-section');
+            const adminMenu = document.getElementById('rf-admin-menu');
+            if (adminSection) adminSection.style.display = '';
+            if (adminMenu) adminMenu.style.display = '';
+        }
+    }
 }
 
 window.rfShowLockedPopup = function (label) {
@@ -7907,6 +7950,7 @@ window.rfOpenAdminPanel = async function () {
 };
 
 window.rfSaveUserPermissions = async function (uid, btnEl) {
+    if (!rfIsAdmin) { rfShowLockedPopup('Admin Panel'); return; }
     const boxes = document.querySelectorAll(`input[data-uid="${uid}"]`);
     const permissions = {};
     boxes.forEach(box => { permissions[box.getAttribute('data-perm')] = box.checked; });
@@ -8023,15 +8067,38 @@ onAuthStateChanged(auth, async (user) => {
         document.getElementById('rf-user-popover-name').textContent = user.displayName || label;
         document.getElementById('rf-user-popover-email').textContent = user.email || '';
 
-        const syncedKey = 'rf_cloud_synced_' + user.uid;
-        if (!sessionStorage.getItem(syncedKey)) {
-            await restoreFromCloud();
-            sessionStorage.setItem(syncedKey, '1');
+        // 🛡️ SECURITY FIX (root cause of the "unlock after clicking" bug):
+        // আগে rfEnforceCurrentPage() শুধুমাত্র initRahmanApp() সম্পূর্ণ শেষ হওয়ার পর call হতো।
+        // initRahmanApp()-এর ভেতরে অনেকগুলো await আছে (IndexedDB migrate, cloud data load,
+        // tracking-page check ইত্যাদি) — এর যেকোনো একটাতে error হলে rfEnforceCurrentPage()
+        // কখনোই চলতো না, এবং dashboard-view (যেটা raw HTML-এ ডিফল্টভাবে class="active")
+        // পার্মানেন্টলি unlocked/visible থেকে যেত — permission শূন্য থাকা সত্ত্বেও।
+        // এখন থেকে: permission load হওয়ার সাথে সাথেই enforce করা হয় (init শুরুর আগেই),
+        // এবং init try/catch/finally-তে মোড়ানো — যাই ঘটুক, শেষে আবার enforce হবেই।
+        try {
+            await rfLoadUserAccess(user);
+        } catch (e) {
+            console.log('rfLoadUserAccess failed — defaulting to NO ACCESS for safety', e);
+            rfIsAdmin = false;
+            rfPermissions = {};
         }
-        await rfLoadUserAccess(user);
-        hideGate();
-        if (!_appBooted) { _appBooted = true; await initRahmanApp(); }
         rfEnforceCurrentPage();
+        hideGate();
+
+        try {
+            const syncedKey = 'rf_cloud_synced_' + user.uid;
+            if (!sessionStorage.getItem(syncedKey)) {
+                await restoreFromCloud();
+                sessionStorage.setItem(syncedKey, '1');
+            }
+            if (!_appBooted) { _appBooted = true; await initRahmanApp(); }
+        } catch (e) {
+            console.log('App init failed', e);
+        } finally {
+            // init-এর মধ্যে যেকোনো ধাপ fail করলেও, শেষে আবার permission enforce করে
+            // নিশ্চিত করা হচ্ছে যে unauthorized কোনো page/data visible থেকে যায়নি।
+            rfEnforceCurrentPage();
+        }
     } else {
         userChip.style.display = 'none';
         userChip.classList.remove('rf-open');
