@@ -739,7 +739,17 @@
         .bottom-row { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 40px; position: relative; z-index: 1; }
         .sig-line { border-top: 1.5px solid var(--navy); width: 200px; text-align: center; padding-top: 5px; font-weight: bold; font-size: 14px; }
         .auth-sig-box { display: flex; flex-direction: column; align-items: center; width: 200px; }
-        .auth-name-input { border: none; outline: none; text-align: center; font-size: 13px; width: 100%; font-weight: bold; margin-bottom: 2px; color: var(--navy); font-family: inherit; }
+        .auth-name-input { border: none; outline: none; text-align: center; font-size: 13px; width: 100%; font-weight: bold; margin-bottom: 2px; color: var(--navy); font-family: inherit; background: transparent !important; }
+        .auth-name-input:-webkit-autofill,
+        .auth-name-input:-webkit-autofill:hover,
+        .auth-name-input:-webkit-autofill:focus,
+        .auth-name-input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0px 1000px #fff inset !important;
+            box-shadow: 0 0 0px 1000px #fff inset !important;
+            -webkit-text-fill-color: var(--navy) !important;
+            background-color: #fff !important;
+            transition: background-color 9999s ease-in-out 0s;
+        }
         .note-print-view { display: none; }
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; }
@@ -2624,7 +2634,7 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
                     <p style="margin:2px 0; font-weight:bold;">Scan for Facebook</p>
                 </div>
                 <div class="auth-sig-box">
-                    <input type="text" class="auth-name-input" id="inv-admin-name" placeholder="Salesperson Name" oninput="saveAdminName()">
+                    <input type="text" class="auth-name-input" id="inv-admin-name" placeholder="Salesperson Name" autocomplete="off" oninput="saveAdminName()">
                     <div class="sig-line">Authorized Signature</div>
                 </div>
             </div>
