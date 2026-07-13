@@ -391,6 +391,92 @@
         .sidebar-menu li a .icon { width: 20px; text-align: center; font-size: 15px; }
         .sidebar-footer { margin-top: auto; padding: 16px; border-top: 1px solid rgba(0,0,0,0.06); font-size: 12px; color: #aaa; text-align: center; }
 
+        /* ===== Permission lock badge on sidebar items ===== */
+        .sidebar-menu li a .rf-lock-badge { margin-left: auto; font-size: 12px; opacity: .75; }
+        .sidebar-menu li a.rf-locked { color: #9aa3ad; }
+        .sidebar-menu li a.rf-locked:hover { color: #9aa3ad; background: rgba(0,0,0,0.03); box-shadow: none; transform: none; }
+        body.dark-mode .sidebar-menu li a.rf-locked,
+        body.dark-full .sidebar-menu li a.rf-locked { color: #5c6773; }
+
+        /* ===== Access Restricted popup (glass, matches logout popup) ===== */
+        #rf-access-overlay {
+            display: none;
+            position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%;
+            background: rgba(10, 20, 35, 0.35);
+            backdrop-filter: blur(10px) saturate(140%);
+            -webkit-backdrop-filter: blur(10px) saturate(140%);
+            align-items: center; justify-content: center;
+            animation: rfLogoutFadeIn .22s ease;
+        }
+        #rf-access-overlay.rf-show { display: flex; }
+        .rf-access-card {
+            width: 340px; max-width: 88vw;
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(22px) saturate(180%);
+            -webkit-backdrop-filter: blur(22px) saturate(180%);
+            border: 1px solid rgba(255,255,255,0.55);
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0,31,63,0.35), 0 0 0 1px rgba(255,255,255,0.15) inset;
+            padding: 28px 26px 22px;
+            text-align: center;
+            animation: rfLogoutPopIn .28s cubic-bezier(.2,.9,.3,1.2);
+        }
+        .rf-access-icon {
+            width: 62px; height: 62px; margin: 0 auto 14px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #ffb74d, #f39c12);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 26px; color: #fff;
+            box-shadow: 0 8px 20px rgba(243,156,18,0.45);
+        }
+        .rf-access-card h3 { margin: 0 0 6px; font-size: 17px; color: var(--navy); font-weight: 800; }
+        .rf-access-card p { margin: 0 0 22px; font-size: 14px; color: #3a4a5c; line-height: 1.5; }
+        #rf-access-ok-btn {
+            width: 100%; border: none; border-radius: 12px; padding: 11px 0;
+            font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit;
+            background: linear-gradient(135deg, #6b8cce, #4a6bb0); color: #fff;
+            box-shadow: 0 8px 18px rgba(74,107,176,0.4); transition: box-shadow .15s ease, transform .15s ease;
+        }
+        #rf-access-ok-btn:active { transform: scale(0.97); }
+        body.dark-mode .rf-access-card, body.dark-full .rf-access-card { background: rgba(20, 30, 45, 0.65); border: 1px solid rgba(255,255,255,0.12); }
+        body.dark-mode .rf-access-card h3, body.dark-full .rf-access-card h3 { color: #f0f4f8; }
+        body.dark-mode .rf-access-card p, body.dark-full .rf-access-card p { color: #c3ccd6; }
+
+        /* ===== No-access landing view ===== */
+        #rf-no-access-view {
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; padding: 80px 20px; color: #3a4a5c;
+        }
+        #rf-no-access-view.active { display: flex; }
+        #rf-no-access-view .rf-na-icon { font-size: 54px; margin-bottom: 16px; }
+        #rf-no-access-view h2 { color: var(--navy); margin-bottom: 8px; }
+        #rf-no-access-view p { max-width: 420px; font-size: 14px; color: #667; }
+
+        /* ===== Admin Panel ===== */
+        .rf-admin-user-row {
+            background: #fff; border: 1px solid #e6eaee; border-radius: 12px;
+            padding: 14px 16px; margin-bottom: 12px;
+        }
+        .rf-admin-user-info { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+        .rf-admin-user-name { font-weight: 700; color: var(--navy); font-size: 14px; }
+        .rf-admin-user-email { font-size: 12px; color: #888; }
+        .rf-admin-perm-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 8px 12px; margin-bottom: 12px;
+        }
+        .rf-admin-perm-grid label {
+            display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: #444; cursor: pointer;
+        }
+        .rf-admin-save-btn {
+            border: none; border-radius: 8px; padding: 7px 16px; font-size: 12.5px; font-weight: 700;
+            cursor: pointer; background: var(--teal); color: #fff; transition: opacity .2s;
+        }
+        .rf-admin-save-btn:hover { opacity: .88; }
+        .rf-admin-save-status { font-size: 11.5px; margin-left: 10px; color: #27ae60; font-weight: 600; }
+        body.dark-mode .rf-admin-user-row, body.dark-full .rf-admin-user-row { background: #1a1f2e; border-color: #2a2f3e; }
+        body.dark-mode .rf-admin-user-name, body.dark-full .rf-admin-user-name { color: #eaf0f4; }
+        body.dark-mode .rf-admin-perm-grid label, body.dark-full .rf-admin-perm-grid label { color: #c3ccd6; }
+
         /* ===================== MAIN CONTENT ===================== */
         .main-content { margin-left: var(--sidebar-w); min-height: 100vh; }
 
@@ -2208,6 +2294,16 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
 
 
 
+<!-- ===================== ACCESS RESTRICTED POPUP (glass) ===================== -->
+<div id="rf-access-overlay" onclick="if(event.target===this) rfCloseLockedPopup();">
+    <div class="rf-access-card">
+        <div class="rf-access-icon">🔒</div>
+        <h3>Access Restricted</h3>
+        <p id="rf-access-msg">Only Admin can access this. Please contact your admin.</p>
+        <button id="rf-access-ok-btn" onclick="rfCloseLockedPopup()">OK</button>
+    </div>
+</div>
+
 <!-- ===================== SIDEBAR ===================== -->
 <div class="sidebar">
     <div class="sidebar-brand">
@@ -2228,22 +2324,26 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
 
     <div class="sidebar-section">Main Menu</div>
     <ul class="sidebar-menu">
-        <li><a onclick="showPage('dashboard')" id="menu-dashboard" class="active"><span class="icon">📊</span> Dashboard</a></li>
-        <li><a onclick="showPage('invoice')" id="menu-invoice"><span class="icon">📄</span> Invoice তৈরি</a></li>
-        <li><a onclick="showPage('delivery')" id="menu-delivery"><span class="icon">🚚</span> Delivery Settlement</a></li>
-        <li><a onclick="showPage('attendance')" id="menu-attendance"><span class="icon">🗓️</span> Attendance</a></li>
-        <li><a onclick="showPage('stock')" id="menu-stock"><span class="icon">📦</span> Stock & Inventory</a></li>
+        <li><a onclick="showPage('dashboard')" id="menu-dashboard" class="active"><span class="icon">📊</span> Dashboard<span class="rf-lock-badge" id="lock-dashboard" style="display:none;">🔒</span></a></li>
+        <li><a onclick="showPage('invoice')" id="menu-invoice"><span class="icon">📄</span> Invoice তৈরি<span class="rf-lock-badge" id="lock-invoice" style="display:none;">🔒</span></a></li>
+        <li><a onclick="showPage('delivery')" id="menu-delivery"><span class="icon">🚚</span> Delivery Settlement<span class="rf-lock-badge" id="lock-delivery" style="display:none;">🔒</span></a></li>
+        <li><a onclick="showPage('attendance')" id="menu-attendance"><span class="icon">🗓️</span> Attendance<span class="rf-lock-badge" id="lock-attendance" style="display:none;">🔒</span></a></li>
+        <li><a onclick="showPage('stock')" id="menu-stock"><span class="icon">📦</span> Stock & Inventory<span class="rf-lock-badge" id="lock-stock" style="display:none;">🔒</span></a></li>
     </ul>
     <div class="sidebar-section">Others</div>
     <ul class="sidebar-menu">
-        <li><a onclick="showInvoiceHistory()"><span class="icon">📋</span> All Invoices</a></li>
-        <li><a onclick="showModal('companySettingsModal')"><span class="icon">⚙️</span> Settings</a></li>
+        <li><a onclick="rfNavInvoiceHistory()" id="menu-invoice_history"><span class="icon">📋</span> All Invoices<span class="rf-lock-badge" id="lock-invoice_history" style="display:none;">🔒</span></a></li>
+        <li><a onclick="rfNavSettings()" id="menu-settings"><span class="icon">⚙️</span> Settings<span class="rf-lock-badge" id="lock-settings" style="display:none;">🔒</span></a></li>
     </ul>
     <div class="sidebar-section">Tools</div>
     <ul class="sidebar-menu">
-        <li><a onclick="showSubPage('ep')" id="menu-ep"><span class="icon">💰</span> Expense Pro</a></li>
-        <li><a onclick="showSubPage('hc')" id="menu-hc"><span class="icon">😊</span> Happy Customer</a></li>
-        <li><a onclick="showSubPage('ss')" id="menu-ss"><span class="icon">💼</span> Salary Sheet</a></li>
+        <li><a onclick="showSubPage('ep')" id="menu-ep"><span class="icon">💰</span> Expense Pro<span class="rf-lock-badge" id="lock-ep" style="display:none;">🔒</span></a></li>
+        <li><a onclick="showSubPage('hc')" id="menu-hc"><span class="icon">😊</span> Happy Customer<span class="rf-lock-badge" id="lock-hc" style="display:none;">🔒</span></a></li>
+        <li><a onclick="showSubPage('ss')" id="menu-ss"><span class="icon">💼</span> Salary Sheet<span class="rf-lock-badge" id="lock-ss" style="display:none;">🔒</span></a></li>
+    </ul>
+    <div class="sidebar-section" id="rf-admin-section" style="display:none;">Admin</div>
+    <ul class="sidebar-menu" id="rf-admin-menu" style="display:none;">
+        <li><a onclick="rfOpenAdminPanel()" id="menu-admin-panel"><span class="icon">🛡️</span> Admin Panel</a></li>
     </ul>
     <div class="sidebar-section">Account</div>
     <ul class="sidebar-menu">
@@ -2273,6 +2373,13 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
                 </button>
             </div>
         </div>
+    </div>
+
+    <!-- ===================== NO ACCESS VIEW (shown when user has zero permissions) ===================== -->
+    <div id="rf-no-access-view">
+        <div class="rf-na-icon">🔒</div>
+        <h2>No Access Granted Yet</h2>
+        <p>Your account doesn't have access to any page yet. Please contact your admin to get access to the features you need.</p>
     </div>
 
     <!-- ===================== DASHBOARD PAGE ===================== -->
@@ -2960,6 +3067,17 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
 <!-- ===================== MODALS ===================== -->
 
 <!-- Company Settings Modal -->
+<div id="rfAdminPanelModal" class="modal">
+    <div class="modal-content" style="max-width:760px;max-height:85vh;overflow-y:auto;">
+        <div class="modal-header">
+            <h3>🛡️ Admin Panel — Manage User Access</h3>
+            <span class="modal-close" onclick="closeModal('rfAdminPanelModal')">&times;</span>
+        </div>
+        <p style="font-size:12.5px;color:#666;margin:-6px 0 16px;">Tick the pages each user is allowed to open, then click Save for that user. Admin accounts always have full access automatically.</p>
+        <div id="rf-admin-users-list">Loading users...</div>
+    </div>
+</div>
+
 <div id="companySettingsModal" class="modal">
     <div class="modal-content" style="max-width:520px;">
         <div class="modal-header">
@@ -3894,6 +4012,13 @@ async function maybeShowTrackingPage() {
 // PAGE NAVIGATION
 // ========================================================
 function showPage(page) {
+    if (typeof rfHasPermission === 'function' && !rfHasPermission(page)) {
+        rfShowLockedPopup(typeof rfPermLabel === 'function' ? rfPermLabel(page) : page);
+        return;
+    }
+    const noAccessView = document.getElementById('rf-no-access-view');
+    if (noAccessView) noAccessView.classList.remove('active');
+
     // Hide all
     document.getElementById('dashboard-view').classList.remove('active');
     document.getElementById('invoice-view').style.display = 'none';
@@ -5481,7 +5606,15 @@ async function initRahmanApp() {
     setTimeout(() => processSyncRetryQueue(), 3000);
 
     // Render dashboard
-    renderDashboard();
+    if (typeof rfHasPermission === 'function' && !rfHasPermission('dashboard')) {
+        document.getElementById('dashboard-view').classList.remove('active');
+        document.getElementById('menu-dashboard').classList.remove('active');
+        const noAccessView = document.getElementById('rf-no-access-view');
+        if (noAccessView) noAccessView.classList.add('active');
+        document.getElementById('topbar-title').innerText = 'Rahman Furniture Management';
+    } else {
+        renderDashboard();
+    }
 
     // Apply dark mode button state
     updateThemeBtns(localStorage.getItem('rfTheme') || 'light');
@@ -6602,6 +6735,10 @@ function printAttendance() {
   }
 
   window.showSubPage = function(name) {
+    if (typeof rfHasPermission === 'function' && !rfHasPermission(name)) {
+        rfShowLockedPopup(typeof rfPermLabel === 'function' ? rfPermLabel(name) : name);
+        return;
+    }
     document.getElementById('dashboard-view').classList.remove('active');
     var iv  = document.getElementById('invoice-view');
     var dlv = document.getElementById('delivery-view');
@@ -7598,6 +7735,167 @@ const COMPANY_ID = 'rahman-furniture';
 let _restoring = false;
 let _cloudSaveTimer = null;
 
+// ================= 🛡️ ROLE-BASED ACCESS CONTROL =================
+const RF_ADMIN_EMAILS = ['masumpollpay30@gmail.com', 'sourovimasum@gmail.com'];
+const RF_PERM_ITEMS = [
+    { key: 'dashboard',       label: 'Dashboard' },
+    { key: 'invoice',         label: 'Invoice তৈরি' },
+    { key: 'delivery',        label: 'Delivery Settlement' },
+    { key: 'attendance',      label: 'Attendance' },
+    { key: 'stock',           label: 'Stock & Inventory' },
+    { key: 'invoice_history', label: 'All Invoices' },
+    { key: 'settings',        label: 'Settings' },
+    { key: 'ep',               label: 'Expense Pro' },
+    { key: 'hc',               label: 'Happy Customer' },
+    { key: 'ss',               label: 'Salary Sheet' }
+];
+
+let rfIsAdmin = false;
+let rfPermissions = {};
+
+function rfIsAdminEmail(email) {
+    return !!email && RF_ADMIN_EMAILS.includes(String(email).toLowerCase());
+}
+
+function rfHasPermission(key) {
+    if (rfIsAdmin) return true;
+    return !!rfPermissions[key];
+}
+
+function rfPermLabel(key) {
+    const item = RF_PERM_ITEMS.find(i => i.key === key);
+    return item ? item.label : key;
+}
+
+async function rfLoadUserAccess(user) {
+    rfIsAdmin = rfIsAdminEmail(user.email);
+    const adminSection = document.getElementById('rf-admin-section');
+    const adminMenu = document.getElementById('rf-admin-menu');
+    if (rfIsAdmin) {
+        rfPermissions = {};
+        if (adminSection) adminSection.style.display = '';
+        if (adminMenu) adminMenu.style.display = '';
+    } else {
+        if (adminSection) adminSection.style.display = 'none';
+        if (adminMenu) adminMenu.style.display = 'none';
+        try {
+            const ref = doc(db, 'company', COMPANY_ID, 'users', user.uid);
+            const snap = await getDoc(ref);
+            if (snap.exists()) {
+                const data = snap.data() || {};
+                rfPermissions = data.permissions || {};
+                setDoc(ref, { name: user.displayName || '', email: user.email || '', updatedAt: Date.now() }, { merge: true }).catch(() => {});
+            } else {
+                const emptyPerm = {};
+                RF_PERM_ITEMS.forEach(i => { emptyPerm[i.key] = false; });
+                rfPermissions = emptyPerm;
+                await setDoc(ref, { name: user.displayName || '', email: user.email || '', permissions: emptyPerm, createdAt: Date.now(), updatedAt: Date.now() });
+            }
+        } catch (e) {
+            console.log('Permission load failed', e);
+            rfPermissions = {};
+        }
+    }
+    rfApplySidebarLocks();
+}
+
+function rfApplySidebarLocks() {
+    RF_PERM_ITEMS.forEach(item => {
+        const link = document.getElementById('menu-' + item.key);
+        const badge = document.getElementById('lock-' + item.key);
+        const allowed = rfHasPermission(item.key);
+        if (badge) badge.style.display = allowed ? 'none' : 'inline';
+        if (link) link.classList.toggle('rf-locked', !allowed);
+    });
+}
+
+window.rfShowLockedPopup = function (label) {
+    const msg = document.getElementById('rf-access-msg');
+    if (msg) msg.textContent = label
+        ? `You don't have access to "${label}". Please contact your admin.`
+        : 'Only Admin can access this. Please contact your admin.';
+    const overlay = document.getElementById('rf-access-overlay');
+    if (overlay) overlay.classList.add('rf-show');
+};
+
+window.rfCloseLockedPopup = function () {
+    const overlay = document.getElementById('rf-access-overlay');
+    if (overlay) overlay.classList.remove('rf-show');
+};
+
+window.rfNavInvoiceHistory = function () {
+    if (!rfHasPermission('invoice_history')) { rfShowLockedPopup(rfPermLabel('invoice_history')); return; }
+    showInvoiceHistory();
+};
+
+window.rfNavSettings = function () {
+    if (!rfHasPermission('settings')) { rfShowLockedPopup(rfPermLabel('settings')); return; }
+    showModal('companySettingsModal');
+};
+
+// ---------- Admin Panel ----------
+window.rfOpenAdminPanel = async function () {
+    if (!rfIsAdmin) { rfShowLockedPopup('Admin Panel'); return; }
+    showModal('rfAdminPanelModal');
+    const listEl = document.getElementById('rf-admin-users-list');
+    listEl.innerHTML = 'Loading users...';
+    try {
+        const snap = await getDocs(collection(db, 'company', COMPANY_ID, 'users'));
+        if (snap.empty) {
+            listEl.innerHTML = '<p style="font-size:13px;color:#888;">No staff accounts have registered yet.</p>';
+            return;
+        }
+        let html = '';
+        snap.forEach(docSnap => {
+            const uid = docSnap.id;
+            const data = docSnap.data() || {};
+            const perms = data.permissions || {};
+            const name = data.name || 'Unnamed User';
+            const email = data.email || '';
+            let checkboxes = '';
+            RF_PERM_ITEMS.forEach(item => {
+                const checked = perms[item.key] ? 'checked' : '';
+                checkboxes += `<label><input type="checkbox" data-uid="${uid}" data-perm="${item.key}" ${checked}> ${item.label}</label>`;
+            });
+            html += `
+                <div class="rf-admin-user-row">
+                    <div class="rf-admin-user-info">
+                        <span class="rf-admin-user-name">${name}</span>
+                        <span class="rf-admin-user-email">${email}</span>
+                    </div>
+                    <div class="rf-admin-perm-grid">${checkboxes}</div>
+                    <button class="rf-admin-save-btn" onclick="rfSaveUserPermissions('${uid}', this)">💾 Save</button>
+                    <span class="rf-admin-save-status" id="rf-admin-status-${uid}"></span>
+                </div>`;
+        });
+        listEl.innerHTML = html;
+    } catch (e) {
+        console.log('Admin panel load failed', e);
+        listEl.innerHTML = '<p style="font-size:13px;color:#c0392b;">Failed to load users. Please check your connection and try again.</p>';
+    }
+};
+
+window.rfSaveUserPermissions = async function (uid, btnEl) {
+    const boxes = document.querySelectorAll(`input[data-uid="${uid}"]`);
+    const permissions = {};
+    boxes.forEach(box => { permissions[box.getAttribute('data-perm')] = box.checked; });
+    const statusEl = document.getElementById('rf-admin-status-' + uid);
+    if (btnEl) btnEl.disabled = true;
+    try {
+        await setDoc(doc(db, 'company', COMPANY_ID, 'users', uid), { permissions, updatedAt: Date.now() }, { merge: true });
+        if (statusEl) {
+            statusEl.textContent = '✅ Saved';
+            setTimeout(() => { statusEl.textContent = ''; }, 2500);
+        }
+    } catch (e) {
+        console.log('Save permissions failed', e);
+        if (statusEl) statusEl.textContent = '❌ Failed';
+    } finally {
+        if (btnEl) btnEl.disabled = false;
+    }
+};
+// ================= END ROLE-BASED ACCESS CONTROL =================
+
 function scheduleCloudSettingsSave() {
     if (_restoring) return;
     if (!auth.currentUser) return;
@@ -7698,6 +7996,7 @@ onAuthStateChanged(auth, async (user) => {
             await restoreFromCloud();
             sessionStorage.setItem(syncedKey, '1');
         }
+        await rfLoadUserAccess(user);
         hideGate();
         if (!_appBooted) { _appBooted = true; await initRahmanApp(); }
     } else {
