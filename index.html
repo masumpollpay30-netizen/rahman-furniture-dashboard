@@ -2634,7 +2634,7 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
                     <p style="margin:2px 0; font-weight:bold;">Scan for Facebook</p>
                 </div>
                 <div class="auth-sig-box">
-                    <input type="text" class="auth-name-input" id="inv-admin-name" placeholder="Salesperson Name" autocomplete="off" oninput="saveAdminName()">
+                    <input type="text" class="auth-name-input" id="inv-admin-name" placeholder="Salesperson Name" autocomplete="off" readonly onfocus="this.removeAttribute('readonly');" oninput="saveAdminName()">
                     <div class="sig-line">Authorized Signature</div>
                 </div>
             </div>
