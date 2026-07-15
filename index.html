@@ -12,6 +12,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
     <style>
         /* ── Absent Cell ── */
         .tc.absent-cell { background:transparent!important; color:#c0392b!important; font-weight:900!important; font-size:9.5px!important; text-transform:uppercase!important; letter-spacing:.3px!important; }
@@ -520,6 +521,57 @@
         .stat-card.red { border-color: var(--red); }
         .stat-card.yellow { border-color: var(--yellow); }
         .stat-card.grey { border-color: #888; }
+
+        /* ===================== STOCK & INVENTORY (Products/Movements) ===================== */
+        /* Compact single-line stat cards for the stock page */
+        .rf-stock-outer .stats-grid { gap: 10px; margin-bottom: 10px !important; }
+        .rf-stock-outer .stat-card {
+            display: flex; align-items: center; gap: 8px;
+            padding: 9px 12px !important; border-radius: 10px;
+        }
+        .rf-stock-outer .stat-card .icon-wrap { font-size: 15px; margin-bottom: 0; line-height: 1; }
+        .rf-stock-outer .stat-card h3 { font-size: 15px; margin-bottom: 0; white-space: nowrap; line-height: 1; }
+        .rf-stock-outer .stat-card p { font-size: 10px; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .rf-stock-outer { max-width: 1400px; margin: 0 auto; }
+        .rf-stock-tabs { display:flex; gap:8px; margin-bottom:18px; }
+        .rf-stock-tab { background:var(--glass-bg-strong); -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur); border:1px solid var(--glass-border); color:#1a4d80; font-weight:700; font-size:13.5px; padding:10px 20px; border-radius:12px; cursor:pointer; transition:all .2s; }
+        .rf-stock-tab.active { background:linear-gradient(135deg,#1a4d80,#2c5aa0); color:#fff; box-shadow:0 4px 14px rgba(26,77,128,0.3); }
+        .rf-stock-panel { display:none; }
+        .rf-stock-panel.active { display:block; }
+        .rf-stock-toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:16px; background:var(--glass-bg-strong); -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur); border:1px solid var(--glass-border); border-radius:14px; padding:12px 16px; box-shadow:var(--glass-shadow); }
+        .rf-stock-toolbar input[type=text], .rf-stock-toolbar select { padding:8px 12px; border:1.5px solid #dde3ea; border-radius:8px; font-size:13px; outline:none; min-width:170px; }
+        .rf-stock-toolbar input[type=text]:focus, .rf-stock-toolbar select:focus { border-color:#1a4d80; }
+        .rf-stock-lowonly { display:flex; align-items:center; gap:6px; font-size:12.5px; color:#555; font-weight:600; white-space:nowrap; }
+        .rf-btn { border:none; padding:9px 16px; border-radius:8px; font-size:12.5px; font-weight:700; cursor:pointer; color:#fff; white-space:nowrap; transition:transform .15s, box-shadow .15s; }
+        .rf-btn:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.18); }
+        .rf-btn-navy   { background:linear-gradient(135deg,#1a4d80,#2c5aa0); }
+        .rf-btn-teal   { background:linear-gradient(135deg,#17a2b8,#0f7d8f); }
+        .rf-btn-purple { background:linear-gradient(135deg,#6f42c1,#9b59b6); }
+        .rf-btn-green  { background:linear-gradient(135deg,#28a745,#218838); }
+        .rf-btn-grey   { background:linear-gradient(135deg,#6c757d,#5a6268); }
+        .rf-btn-red    { background:linear-gradient(135deg,#dc3545,#c0392b); }
+        .rf-stock-table-wrap { background:var(--glass-bg-strong); -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur); border:1px solid var(--glass-border); border-radius:14px; box-shadow:var(--glass-shadow); overflow:auto; padding:6px; }
+        table.rf-stock-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+        table.rf-stock-table thead th { background:#1a4d80; color:#fff; padding:10px 8px; font-weight:700; text-align:center; position:sticky; top:0; z-index:1; }
+        table.rf-stock-table tbody td { padding:8px; text-align:center; border-bottom:1px solid #eef1f4; color:#333; }
+        table.rf-stock-table tbody tr:hover { background:#f5f8fc; }
+        table.rf-stock-table tbody tr.rf-low-stock { background:#fff4f4; }
+        table.rf-stock-table tbody tr.rf-low-stock td:nth-child(5) { color:#c0392b; font-weight:800; }
+        .rf-mini-btn { border:none; padding:5px 8px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; color:#fff; margin:1px; }
+        .rf-barcode-chip { font-family:monospace; background:#eef2f7; padding:3px 7px; border-radius:6px; font-size:11px; color:#1a4d80; font-weight:700; }
+        body.dark-mode .rf-stock-toolbar input, body.dark-mode .rf-stock-toolbar select { background:#1e2130; color:#eee; border-color:#333; }
+        body.dark-mode table.rf-stock-table tbody td { color:#ddd; border-color:#333; }
+        body.dark-mode table.rf-stock-table tbody tr:hover { background:#1e2130; }
+        body.dark-mode .rf-barcode-chip { background:#1e2130; color:#8ab4f8; }
+
+        /* Stock Modals */
+        .rf-modal-field { margin-bottom:12px; }
+        .rf-modal-field label { display:block; font-size:12.5px; font-weight:700; color:#444; margin-bottom:5px; }
+        .rf-modal-field input, .rf-modal-field select { width:100%; padding:9px 12px; border:1.5px solid #dde3ea; border-radius:8px; font-size:13.5px; outline:none; box-sizing:border-box; }
+        .rf-modal-field input:focus, .rf-modal-field select:focus { border-color:#1a4d80; }
+        .rf-modal-row2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .rf-scan-video { width:100%; max-height:260px; border-radius:10px; background:#000; object-fit:cover; }
+
 
         /* ===================== MONTHLY REPORT PANEL (collapsible) ===================== */
         .monthly-report-panel { background: var(--glass-bg-strong); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); border: 1px solid var(--glass-border); border-radius: 16px; box-shadow: var(--glass-shadow); margin-bottom: 24px; overflow: hidden; transition: box-shadow 0.25s ease; }
@@ -2582,6 +2634,7 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
                 </tr>
             </table>
 
+            <datalist id="rf-item-namelist"></datalist>
             <table class="item-table">
                 <thead>
                     <tr><th width="5%">SL</th><th class="desc-col">Item Description</th><th width="10%">Qty</th><th width="15%">Rate</th><th width="15%">Amount</th></tr>
@@ -2589,7 +2642,7 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
                 <tbody id="item-tbody">
                     <tr>
                         <td class="sl-no">1.</td>
-                        <td class="desc-col"><input type="text" placeholder="Item name..." onkeydown="handleRowKeys(event, this)"></td>
+                        <td class="desc-col"><input type="text" placeholder="Item name..." onkeydown="handleRowKeys(event, this)" oninput="handleRowNameInput(this)" list="rf-item-namelist"></td>
                         <td><input type="number" class="qty" value="0" oninput="calc()"></td>
                         <td><input type="number" class="rate" value="0" oninput="calc()"></td>
                         <td class="row-total">0</td>
@@ -3004,9 +3057,128 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
 
 <!-- ===================== STOCK & INVENTORY PAGE ===================== -->
 <div id="stock-view" style="display:none; padding:20px; background:#f0f4f8; min-height:calc(100vh - 61px);">
+  <div class="rf-stock-outer">
+
+    <!-- Sub Tabs -->
+    <div class="rf-stock-tabs no-print">
+      <button class="rf-stock-tab active" id="rf-stock-tabbtn-products" onclick="rfStockSwitchTab('products')">📦 Products</button>
+      <button class="rf-stock-tab" id="rf-stock-tabbtn-movements" onclick="rfStockSwitchTab('movements')">🔄 Movements</button>
+      <button class="rf-stock-tab" id="rf-stock-tabbtn-report" onclick="rfStockSwitchTab('report')">🖨️ Print Report</button>
+    </div>
+
+    <!-- ============ PRODUCTS TAB ============ -->
+    <div id="rf-stock-tab-products" class="rf-stock-panel" style="display:block;">
+      <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:10px;">
+        <div class="stat-card">
+          <div class="icon-wrap">📦</div>
+          <h3 id="rf-stat-total-products">0</h3>
+          <p>Total Products</p>
+        </div>
+        <div class="stat-card">
+          <div class="icon-wrap">🧮</div>
+          <h3 id="rf-stat-total-qty">0</h3>
+          <p>Total Stock Qty</p>
+        </div>
+        <div class="stat-card red" id="rf-stat-lowstock-card" onclick="rfShowLowStockOnly()" style="cursor:pointer;" title="ক্লিক করলে শুধু Low Stock প্রোডাক্ট গুলো দেখাবে">
+          <div class="icon-wrap">⚠️</div>
+          <h3 id="rf-stat-low-stock">0</h3>
+          <p>Low Stock (ক্লিক করুন)</p>
+        </div>
+        <div class="stat-card green" title="বর্তমান Stock Qty × Sale Price = এখন গুদামে যত টাকার মাল আছে">
+          <div class="icon-wrap">💰</div>
+          <h3 id="rf-stat-stock-value">৳0</h3>
+          <p>Stock Value (Sale Price)</p>
+        </div>
+      </div>
+      <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:18px;">
+        <div class="stat-card" title="সব Stock OUT (Sale) মুভমেন্টের মোট বিক্রয় মূল্য">
+          <div class="icon-wrap">🧾</div>
+          <h3 id="rf-stat-total-sell">৳0</h3>
+          <p>Total Sell</p>
+        </div>
+        <div class="stat-card" title="সব Stock IN (Purchase) মুভমেন্টের মোট ক্রয় মূল্য">
+          <div class="icon-wrap">🛒</div>
+          <h3 id="rf-stat-total-purchase">৳0</h3>
+          <p>Total Purchase</p>
+        </div>
+        <div class="stat-card green" title="Total Sell − বিক্রি হওয়া মালের ক্রয়মূল্য = আনুমানিক লাভ">
+          <div class="icon-wrap">📈</div>
+          <h3 id="rf-stat-total-profit">৳0</h3>
+          <p>Total লাভ (Profit)</p>
+        </div>
+      </div>
+
+      <div class="rf-stock-toolbar no-print">
+        <input type="text" id="rf-stock-search" placeholder="🔍 Search name / barcode / category..." oninput="rfRenderProductTable()">
+        <select id="rf-stock-filter-cat" onchange="rfRenderProductTable()"><option value="">সব ক্যাটাগরি</option></select>
+        <label class="rf-stock-lowonly"><input type="checkbox" id="rf-stock-lowonly-chk" onchange="rfRenderProductTable()"> শুধু Low Stock</label>
+        <div style="flex:1"></div>
+        <button class="rf-btn rf-btn-navy" onclick="rfOpenProductModal()">➕ Add Product</button>
+        <button class="rf-btn rf-btn-teal" onclick="rfOpenScanModal('lookup')">📷 Scan</button>
+        <button class="rf-btn rf-btn-purple" onclick="rfOpenLabelModal()">🏷️ Print Barcode Label</button>
+        <button class="rf-btn rf-btn-green" onclick="rfExportStockJSON()">⬇️ Export JSON</button>
+        <button class="rf-btn rf-btn-grey" onclick="document.getElementById('rf-stock-import-file').click()">⬆️ Import JSON</button>
+        <input type="file" id="rf-stock-import-file" accept="application/json" style="display:none" onchange="rfImportStockJSON(this)">
+      </div>
+
+      <div class="rf-stock-table-wrap">
+        <table class="rf-stock-table">
+          <thead>
+            <tr>
+              <th style="width:4%;">Sl</th>
+              <th style="width:13%;">Barcode</th>
+              <th>Name</th>
+              <th style="width:11%;">Category</th>
+              <th style="width:8%;">Qty</th>
+              <th style="width:7%;" title="মাপার একক — যেমন pcs (পিস), kg, box, set ইত্যাদি">Unit ℹ️</th>
+              <th style="width:10%;">Purchase</th>
+              <th style="width:10%;">Sale</th>
+              <th style="width:10%;" title="Qty × Sale Price = এই প্রোডাক্টের বর্তমান স্টক বিক্রি করলে মোট কত টাকা পাওয়া যাবে">Value ℹ️</th>
+              <th style="width:14%;" class="no-print">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="rf-stock-tbody"></tbody>
+        </table>
+        <div id="rf-stock-empty" style="display:none;text-align:center;padding:40px;color:#999;">কোনো প্রোডাক্ট নেই। "➕ Add Product" চেপে নতুন প্রোডাক্ট যোগ করুন।</div>
+      </div>
+    </div>
+
+    <!-- ============ MOVEMENTS TAB ============ -->
+    <div id="rf-stock-tab-movements" class="rf-stock-panel" style="display:none;">
+      <div class="rf-stock-toolbar no-print">
+        <input type="text" id="rf-mv-search" placeholder="🔍 Search barcode / name / reference..." oninput="rfRenderMovements()">
+        <select id="rf-mv-type" onchange="rfRenderMovements()">
+          <option value="">সব ধরন</option>
+          <option value="in">Stock In</option>
+          <option value="out">Stock Out</option>
+          <option value="adjust">Adjust</option>
+        </select>
+        <div style="flex:1"></div>
+        <button class="rf-btn rf-btn-teal" onclick="rfOpenScanModal('stockIn')">📥 Stock In (Scan)</button>
+        <button class="rf-btn rf-btn-navy" onclick="rfOpenScanModal('stockOut')">📤 Stock Out (Scan)</button>
+        <select id="rf-mv-print-mode" title="Print orientation" style="border:1.5px solid var(--navy,#1a4d80);border-radius:7px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;">
+          <option value="portrait">📄 Portrait</option>
+          <option value="landscape">📃 Landscape</option>
+        </select>
+        <button class="rf-btn rf-btn-purple" onclick="rfPrintMovements(document.getElementById('rf-mv-print-mode').value)">🖨️ Print</button>
+      </div>
+      <div class="rf-stock-table-wrap">
+        <table class="rf-stock-table">
+          <thead>
+            <tr><th style="width:15%;">তারিখ/সময়</th><th style="width:8%;">ধরন</th><th style="width:13%;">Barcode</th><th>Product</th><th style="width:7%;">Qty</th><th style="width:8%;">Before</th><th style="width:8%;">After</th><th style="width:13%;">Reference</th><th>Note</th></tr>
+          </thead>
+          <tbody id="rf-mv-tbody"></tbody>
+        </table>
+        <div id="rf-mv-empty" style="display:none;text-align:center;padding:40px;color:#999;">এখনো কোনো Stock In/Out রেকর্ড নেই।</div>
+      </div>
+    </div>
+
+    <!-- ============ PRINT REPORT TAB (original A4 sheet) ============ -->
+    <div id="rf-stock-tab-report" class="rf-stock-panel" style="display:none;">
   <div style="width:210mm; margin:0 auto;">
     <!-- Top bar -->
-    <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
+    <div style="display:flex; justify-content:flex-end; gap:10px; margin-bottom:8px;">
+      <button onclick="rfSyncReportFromProducts()" style="background:linear-gradient(135deg,#1a4d80,#2c5aa0);color:#fff;border:none;padding:8px 22px;font-size:13px;font-weight:bold;cursor:pointer;border-radius:5px;box-shadow:0 4px 10px rgba(26,77,128,0.2);transition:all 0.25s;">🔄 Sync From Products</button>
       <button onclick="window.printStockPage()" style="background:linear-gradient(135deg,#28a745,#218838);color:#fff;border:none;padding:8px 22px;font-size:13px;font-weight:bold;cursor:pointer;border-radius:5px;box-shadow:0 4px 10px rgba(40,167,69,0.2);transition:all 0.25s;">🖨️ Print / Save</button>
     </div>
 
@@ -3075,6 +3247,8 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
       </div>
     </div>
   </div>
+    </div><!-- /rf-stock-tab-report -->
+  </div><!-- /rf-stock-outer -->
 </div>
 
 </div><!-- end main-content -->
@@ -3090,6 +3264,115 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
         </div>
         <p style="font-size:12.5px;color:#666;margin:-6px 0 16px;">Tick the pages each user is allowed to open, then click Save for that user. Admin accounts always have full access automatically.</p>
         <div id="rf-admin-users-list">Loading users...</div>
+    </div>
+</div>
+
+<!-- Add / Edit Product Modal -->
+<div id="rfProductModal" class="modal">
+    <div class="modal-content" style="max-width:560px;">
+        <div class="modal-header">
+            <h3 id="rf-product-modal-title">➕ Add Product</h3>
+            <span class="modal-close" onclick="closeModal('rfProductModal')">&times;</span>
+        </div>
+        <input type="hidden" id="rf-p-id">
+        <div class="rf-modal-field">
+            <label>Product Name *</label>
+            <input type="text" id="rf-p-name" placeholder="যেমন: Sofa Set 3-Seater (Wooden)">
+        </div>
+        <div class="rf-modal-row2">
+            <div class="rf-modal-field">
+                <label>Category</label>
+                <input type="text" id="rf-p-category" placeholder="যেমন: Sofa, Bed, Chair" list="rf-cat-datalist">
+                <datalist id="rf-cat-datalist"></datalist>
+            </div>
+            <div class="rf-modal-field">
+                <label>Unit</label>
+                <input type="text" id="rf-p-unit" placeholder="pcs / set / dozen" value="pcs">
+            </div>
+        </div>
+        <div class="rf-modal-field">
+            <label>Barcode <span style="font-weight:400;color:#888;">(Auto generated — চাইলে নিজে বসিয়ে/এডিট করে দিতে পারবেন)</span></label>
+            <div style="display:flex;gap:8px;">
+                <input type="text" id="rf-p-barcode" placeholder="Auto">
+                <button type="button" class="rf-btn rf-btn-grey" style="flex-shrink:0;" onclick="rfRegenerateBarcode()">🔄 Regenerate</button>
+            </div>
+        </div>
+        <div class="rf-modal-row2">
+            <div class="rf-modal-field">
+                <label>Current Qty *</label>
+                <input type="number" id="rf-p-qty" value="0" min="0">
+            </div>
+            <div class="rf-modal-field">
+                <label>Low Stock Alert Level</label>
+                <input type="number" id="rf-p-reorder" value="5" min="0">
+            </div>
+        </div>
+        <div class="rf-modal-row2">
+            <div class="rf-modal-field">
+                <label>Purchase Price (৳)</label>
+                <input type="number" id="rf-p-purchase" value="0" min="0">
+            </div>
+            <div class="rf-modal-field">
+                <label>Sale Price (৳)</label>
+                <input type="number" id="rf-p-sale" value="0" min="0">
+            </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:6px;">
+            <button class="rf-btn rf-btn-navy" style="flex:1;padding:12px;font-size:14px;" onclick="rfSaveProductModal()">💾 Save Product</button>
+            <button class="rf-btn rf-btn-grey" style="padding:12px 20px;" onclick="closeModal('rfProductModal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Scan Modal (Stock In / Stock Out / Lookup) -->
+<div id="rfScanModal" class="modal">
+    <div class="modal-content" style="max-width:480px;">
+        <div class="modal-header">
+            <h3 id="rf-scan-title">📷 Scan Barcode</h3>
+            <span class="modal-close" onclick="rfCloseScanModal()">&times;</span>
+        </div>
+        <p style="font-size:12px;color:#777;margin:-4px 0 14px;">USB Barcode Scanner থাকলে নিচের বক্সে ক্লিক করে সরাসরি স্ক্যান করুন। অথবা ক্যামেরা দিয়ে স্ক্যান করতে পারবেন।</p>
+        <div class="rf-modal-field">
+            <label>Barcode</label>
+            <input type="text" id="rf-scan-input" placeholder="স্ক্যান করুন অথবা কোড টাইপ করে Enter চাপুন" autocomplete="off">
+        </div>
+        <div id="rf-scan-result" style="display:none;background:#f0f6ff;border:1px solid #d6e6ff;border-radius:10px;padding:12px;margin-bottom:12px;">
+            <div style="font-weight:800;color:#1a4d80;font-size:14px;" id="rf-scan-result-name">-</div>
+            <div style="font-size:12px;color:#666;margin-top:2px;">Current Qty: <b id="rf-scan-result-qty">0</b> | Barcode: <span class="rf-barcode-chip" id="rf-scan-result-code">-</span></div>
+            <div class="rf-modal-row2" style="margin-top:10px;">
+                <div class="rf-modal-field" style="margin-bottom:0;">
+                    <label id="rf-scan-qty-label">Quantity</label>
+                    <input type="number" id="rf-scan-qty" value="1" min="1">
+                </div>
+                <div class="rf-modal-field" style="margin-bottom:0;">
+                    <label>Reference/Note</label>
+                    <input type="text" id="rf-scan-note" placeholder="যেমন: Purchase, Return">
+                </div>
+            </div>
+            <button class="rf-btn rf-btn-navy" id="rf-scan-confirm-btn" style="width:100%;margin-top:12px;padding:10px;" onclick="rfConfirmScanAction()">Confirm</button>
+        </div>
+        <div id="rf-scan-notfound" style="display:none;color:#c0392b;font-size:12.5px;font-weight:700;margin-bottom:10px;">❌ এই বারকোডে কোনো প্রোডাক্ট পাওয়া যায়নি।</div>
+        <button class="rf-btn rf-btn-teal" style="width:100%;margin-bottom:8px;" onclick="rfToggleCameraScan()" id="rf-camera-toggle-btn">📷 ক্যামেরা দিয়ে স্ক্যান করুন</button>
+        <video id="rf-scan-video" class="rf-scan-video" style="display:none;" playsinline muted></video>
+    </div>
+</div>
+
+<!-- Barcode Label Print Modal -->
+<div id="rfLabelModal" class="modal">
+    <div class="modal-content" style="max-width:600px;max-height:88vh;overflow-y:auto;">
+        <div class="modal-header">
+            <h3>🏷️ Print Barcode Labels</h3>
+            <span class="modal-close" onclick="closeModal('rfLabelModal')">&times;</span>
+        </div>
+        <p style="font-size:12px;color:#777;margin:-4px 0 14px;">যেসব প্রোডাক্টের লেবেল প্রিন্ট করতে চান, টিক দিন এবং প্রতিটির জন্য কয়টা কপি লাগবে লিখুন। Label size: 2in × 3in.</p>
+        <div class="rf-modal-field">
+            <input type="text" id="rf-label-search" placeholder="🔍 Search product..." oninput="rfRenderLabelPickList()">
+        </div>
+        <div id="rf-label-picklist" style="max-height:320px;overflow-y:auto;border:1px solid #eef1f4;border-radius:10px;padding:6px;"></div>
+        <div style="display:flex;gap:10px;margin-top:14px;">
+            <button class="rf-btn rf-btn-purple" style="flex:1;padding:12px;font-size:14px;" onclick="rfGenerateLabelSheet()">🖨️ Generate & Print</button>
+            <button class="rf-btn rf-btn-grey" style="padding:12px 20px;" onclick="closeModal('rfLabelModal')">Cancel</button>
+        </div>
     </div>
 </div>
 
@@ -4083,6 +4366,7 @@ function showPage(page) {
                 if(sl){ var im=document.getElementById('sk-display-logo'); var sv2=document.getElementById('sk-default-logo'); im.src=sl; im.style.display='block'; if(sv2)sv2.style.display='none'; }
             }catch(e){}
         }
+        if (typeof window.rfInitStockPage === 'function') window.rfInitStockPage();
     }
 }
 
@@ -4936,8 +5220,69 @@ function removeImg(btn) {
     box.classList.remove('has-img');
 }
 
+// Try to find a stock product either by exact barcode or exact product name (case-insensitive)
+function rfFindProductForInput(text) {
+    if (!text) return null;
+    text = String(text).trim();
+    if (!text) return null;
+    if (typeof window.rfFindProductByBarcode === 'function') {
+        const byCode = window.rfFindProductByBarcode(text);
+        if (byCode) return byCode;
+    }
+    if (typeof window.rfFindProductByName === 'function') {
+        return window.rfFindProductByName(text);
+    }
+    return null;
+}
+
+// Link an invoice row to a stock product so save-time deduction (rfApplyInvoiceStock) can find it
+function rfLinkRowToProduct(row, input, product, opts) {
+    opts = opts || {};
+    input.value = product.name;
+    row.dataset.barcode = product.barcode;
+    row.dataset.productId = product.id;
+    const qtyInput = row.querySelector('.qty');
+    const rateInput = row.querySelector('.rate');
+    if (!qtyInput.value || qtyInput.value === '0') qtyInput.value = 1;
+    if (!rateInput.value || rateInput.value === '0') rateInput.value = product.salePrice || 0;
+    calc();
+    if (typeof window.rfLowStockToast === 'function') window.rfLowStockToast(product);
+    if (!opts.silent) toast('✔ স্টক থেকে লিংক হলো: ' + product.name + ' — Invoice Save করলে Stock স্বয়ংক্রিয়ভাবে minus হবে');
+    if (opts.focusQty && qtyInput) { qtyInput.focus(); qtyInput.select(); }
+}
+
+// Fires on every keystroke / datalist selection so a typed or picked product name also links to stock
+function handleRowNameInput(input) {
+    const row = input.closest('tr');
+    const text = input.value.trim();
+    if (!text) { delete row.dataset.barcode; delete row.dataset.productId; return; }
+    // If the current link no longer matches what's typed, drop it until it matches again
+    const product = rfFindProductForInput(text);
+    if (product && product.name.toLowerCase() === text.toLowerCase()) {
+        if (row.dataset.productId !== product.id) {
+            rfLinkRowToProduct(row, input, product, { silent: true });
+        }
+    } else if (row.dataset.productId) {
+        delete row.dataset.barcode;
+        delete row.dataset.productId;
+    }
+}
+
 function handleRowKeys(event, input) {
-    if (event.key === 'Enter') { event.preventDefault(); addNewRow(); }
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        const row = input.closest('tr');
+        const text = input.value.trim();
+        const product = rfFindProductForInput(text);
+        if (product) {
+            rfLinkRowToProduct(row, input, product, { focusQty: true });
+            return;
+        }
+        // ✅ Not a recognized barcode/name — clear any stale link, treat as manual text
+        delete row.dataset.barcode;
+        delete row.dataset.productId;
+        addNewRow();
+    }
 }
 
 function addNewRow() {
@@ -4946,7 +5291,7 @@ function addNewRow() {
     const newRow = tbody.insertRow();
     newRow.innerHTML = `
         <td class="sl-no">${rowCount}.</td>
-        <td class="desc-col"><input type="text" placeholder="Item name..." onkeydown="handleRowKeys(event, this)"></td>
+        <td class="desc-col"><input type="text" placeholder="Item name..." onkeydown="handleRowKeys(event, this)" oninput="handleRowNameInput(this)" list="rf-item-namelist"></td>
         <td><input type="number" class="qty" value="0" oninput="calc()"></td>
         <td><input type="number" class="rate" value="0" oninput="calc()"></td>
         <td class="row-total">0</td>`;
@@ -4989,7 +5334,8 @@ function collectInvoiceData() {
         const qty = row.querySelector('.qty').value;
         const rate = row.querySelector('.rate').value;
         const total = parseNum(row.querySelector('.row-total').innerText);
-        if(desc || qty > 0) items.push({ desc, qty, rate, total });
+        const barcode = row.dataset.barcode || '';
+        if(desc || qty > 0) items.push({ desc, qty, rate, total, barcode });
     });
     const photos = [];
     document.querySelectorAll('.photo-box.has-img img').forEach(img => photos.push(img.src));
@@ -5030,6 +5376,12 @@ async function saveInvoiceToHistory(invoiceData) {
         invoiceData.savedDate        = existing.savedDate        || invoiceData.savedDate;
         invoiceData.trackToken       = existing.trackToken       || invoiceData.trackToken;
     }
+    // 📦 Auto stock deduction — barcode দিয়ে লিংক করা item গুলোর জন্য stock minus/adjust হবে
+    try {
+        if (typeof window.rfApplyInvoiceStock === 'function') {
+            window.rfApplyInvoiceStock(invoiceData, existing);
+        }
+    } catch(e) { console.warn('Stock auto-deduct failed', e); }
     await idbSaveInvoice(invoiceData);
 }
 
@@ -5111,7 +5463,7 @@ function loadInvoicePage() {
     document.getElementById('inv-pay-method').value = 'Cash';
     // Reset items
     const tbody = document.getElementById('item-tbody');
-    tbody.innerHTML = `<tr><td class="sl-no">1.</td><td class="desc-col"><input type="text" placeholder="Item name..." onkeydown="handleRowKeys(event, this)"></td><td><input type="number" class="qty" value="0" oninput="calc()"></td><td><input type="number" class="rate" value="0" oninput="calc()"></td><td class="row-total">0</td></tr>`;
+    tbody.innerHTML = `<tr><td class="sl-no">1.</td><td class="desc-col"><input type="text" placeholder="Item name..." onkeydown="handleRowKeys(event, this)" oninput="handleRowNameInput(this)" list="rf-item-namelist"></td><td><input type="number" class="qty" value="0" oninput="calc()"></td><td><input type="number" class="rate" value="0" oninput="calc()"></td><td class="row-total">0</td></tr>`;
     // Reset photos
     document.querySelectorAll('.photo-box').forEach(box => {
         box.innerHTML = '<span>+ Add Photo</span><input type="file" hidden accept="image/*" onchange="preview(this)">';
@@ -5159,7 +5511,14 @@ async function reEditInvoice(invoiceNo) {
     (invoice.items || []).forEach((item, idx) => {
         const newRow = tbody.insertRow();
         const safeDesc = (item.desc || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        newRow.innerHTML = `<td class="sl-no">${idx+1}.</td><td class="desc-col"><input type="text" value="${safeDesc}" placeholder="Item name..." onkeydown="handleRowKeys(event, this)"></td><td><input type="number" class="qty" value="${item.qty}" oninput="calc()"></td><td><input type="number" class="rate" value="${item.rate}" oninput="calc()"></td><td class="row-total">${fmtBD(parseNum(item.total))}</td>`;
+        newRow.innerHTML = `<td class="sl-no">${idx+1}.</td><td class="desc-col"><input type="text" value="${safeDesc}" placeholder="Item name..." onkeydown="handleRowKeys(event, this)" oninput="handleRowNameInput(this)" list="rf-item-namelist"></td><td><input type="number" class="qty" value="${item.qty}" oninput="calc()"></td><td><input type="number" class="rate" value="${item.rate}" oninput="calc()"></td><td class="row-total">${fmtBD(parseNum(item.total))}</td>`;
+        // ✅ Re-link this row to its stock product (by saved barcode, else by name) so re-saving still deducts stock correctly
+        if (item.barcode) {
+            newRow.dataset.barcode = item.barcode;
+        } else if (typeof window.rfFindProductByName === 'function') {
+            const p = window.rfFindProductByName(item.desc);
+            if (p) { newRow.dataset.barcode = p.barcode; newRow.dataset.productId = p.id; }
+        }
     });
     // ✅ Photos সহ restore — IndexedDB থেকে পাওয়া data
     const photoBoxes = document.querySelectorAll('.photo-box');
@@ -7056,7 +7415,7 @@ function printAttendance() {
                 _aiExtracted.items.forEach(function(item, idx) {
                     var row = tbody.insertRow();
                     row.innerHTML = '<td class="sl-no">'+(idx+1)+'.</td>' +
-                        '<td class="desc-col"><input type="text" placeholder="Item name..." onkeydown="handleRowKeys(event,this)" value="'+item.desc.replace(/"/g,'&quot;')+'"></td>' +
+                        '<td class="desc-col"><input type="text" placeholder="Item name..." onkeydown="handleRowKeys(event,this)" oninput="handleRowNameInput(this)" list="rf-item-namelist" value="'+item.desc.replace(/"/g,'&quot;')+'"></td>' +
                         '<td><input type="number" class="qty" value="'+item.qty+'" oninput="calc()"></td>' +
                         '<td><input type="number" class="rate" value="'+item.rate+'" oninput="calc()"></td>' +
                         '<td class="row-total">0</td>';
@@ -7170,6 +7529,11 @@ function printAttendance() {
           <div style="font-size:14px;font-weight:900;color:#111;letter-spacing:.5px;white-space:nowrap;" id="lbl-due">৳ 0</div>
         </div>
 
+        <!-- ── Barcode (Invoice No) ── -->
+        <div style="text-align:center;padding:5px 6px 0;">
+          <svg id="lbl-barcode"></svg>
+        </div>
+
         <!-- ── Footer ── -->
         <div style="text-align:center;font-size:6.5px;color:#999;padding:4px 6px 5px;margin-top:4px;border-top:1px dashed #ddd;" id="lbl-footer">Printed: —</div>
       </div>
@@ -7274,6 +7638,16 @@ window.openPrintLabel = function() {
             day:'2-digit', month:'2-digit', year:'numeric',
             hour:'2-digit', minute:'2-digit'
         });
+
+    // ── Barcode (Invoice No) ──
+    try {
+        if (window.JsBarcode) {
+            JsBarcode('#lbl-barcode', String(invNo || '0'), {
+                format: 'CODE128', width: 1.4, height: 30, fontSize: 10,
+                margin: 2, displayValue: true
+            });
+        }
+    } catch(e) { console.warn('Barcode render failed', e); }
 
     document.getElementById('printLabelModal').style.display = 'block';
 };
@@ -7495,6 +7869,715 @@ window.toggleReasonCol = function() {
     if(sv && sv.style.display!=='none'){ skBuildRows(); skLoadLogo(); }
   });
 })();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════
+     📦 STOCK & INVENTORY — PRODUCT DATABASE + BARCODE SCAN
+═══════════════════════════════════════════════════════ -->
+<script>
+/* ---------- Storage helpers ---------- */
+function rfLoadProducts(){
+  try{ return JSON.parse(localStorage.getItem('rf_stock_products')||'[]'); }catch(e){ return []; }
+}
+function rfSaveProducts(arr){
+  try{ localStorage.setItem('rf_stock_products', JSON.stringify(arr)); }catch(e){ console.error(e); }
+  try{ rfPopulateItemNameDatalist(); }catch(e){}
+}
+function rfLoadMovements(){
+  try{ return JSON.parse(localStorage.getItem('rf_stock_movements')||'[]'); }catch(e){ return []; }
+}
+function rfSaveMovements(arr){
+  try{ localStorage.setItem('rf_stock_movements', JSON.stringify(arr)); }catch(e){ console.error(e); }
+}
+function rfFindProductByBarcode(code){
+  if(!code) return null;
+  code = String(code).trim();
+  return rfLoadProducts().find(p=>p.barcode===code) || null;
+}
+function rfFindProductByName(name){
+  if(!name) return null;
+  name = String(name).trim().toLowerCase();
+  if(!name) return null;
+  return rfLoadProducts().find(p=>(p.name||'').trim().toLowerCase()===name) || null;
+}
+function rfPopulateItemNameDatalist(){
+  const dl = document.getElementById('rf-item-namelist');
+  if(!dl) return;
+  const products = rfLoadProducts();
+  dl.innerHTML = products.map(p=>`<option value="${rfEsc(p.name)}">`).join('');
+}
+window.rfFindProductByName = rfFindProductByName;
+window.rfPopulateItemNameDatalist = rfPopulateItemNameDatalist;
+function rfFindProductById(id){
+  return rfLoadProducts().find(p=>p.id===id) || null;
+}
+function rfEsc(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function rfGenerateBarcode(){
+  let seq = parseInt(localStorage.getItem('rf_stock_barcode_seq')||'0',10) + 1;
+  try{ localStorage.setItem('rf_stock_barcode_seq', seq); }catch(e){}
+  return 'RF' + String(seq).padStart(6,'0');
+}
+
+/* ---------- Movement log + core stock adjust ---------- */
+function rfRecordMovement(entry){
+  const movs = rfLoadMovements();
+  entry.id = 'm_'+Date.now()+Math.random().toString(36).slice(2,6);
+  movs.unshift(entry);
+  if(movs.length>1000) movs.length = 1000;
+  rfSaveMovements(movs);
+}
+function rfStockAdjust(productId, delta, type, ref, note){
+  const products = rfLoadProducts();
+  const idx = products.findIndex(p=>p.id===productId);
+  if(idx<0) return null;
+  const before = parseFloat(products[idx].qty)||0;
+  let after = before + delta;
+  if(after<0) after = 0;
+  products[idx].qty = after;
+  products[idx].updatedAt = new Date().toISOString();
+  rfSaveProducts(products);
+  rfRecordMovement({
+    productId, barcode: products[idx].barcode, name: products[idx].name,
+    type, qty: Math.abs(delta), before, after, ref: ref||'', note: note||'',
+    date: new Date().toISOString()
+  });
+  return products[idx];
+}
+
+/* ---------- Invoice ↔ Stock integration ---------- */
+function rfApplyInvoiceStock(invoiceData, existing){
+  // Revert previous deductions if this invoice is being re-edited/resaved
+  if(existing && Array.isArray(existing.stockDeductions)){
+    existing.stockDeductions.forEach(d=>{
+      const p = rfFindProductByBarcode(d.barcode);
+      if(p) rfStockAdjust(p.id, +d.qty, 'adjust', invoiceData.invoiceNo, 'Invoice re-edit — revert আগের deduction');
+    });
+  }
+  const newDeductions = [];
+  (invoiceData.items||[]).forEach(item=>{
+    if(!item.barcode) return;
+    const p = rfFindProductByBarcode(item.barcode);
+    const qty = parseFloat(item.qty)||0;
+    if(p && qty>0){
+      rfStockAdjust(p.id, -qty, 'out', invoiceData.invoiceNo, 'Invoice Sale');
+      newDeductions.push({barcode:item.barcode, qty});
+    }
+  });
+  invoiceData.stockDeductions = newDeductions;
+  if(typeof window.rfRenderProductTable === 'function'){
+    try{ rfRenderProductTable(); rfRenderMovements(); }catch(e){}
+  }
+}
+function rfLowStockToast(product){
+  if(product && product.qty <= product.reorderLevel){
+    toast('⚠️ Low Stock: '+product.name+' (বাকি আছে মাত্র '+product.qty+' '+(product.unit||'pcs')+')', 'err');
+  }
+}
+window.rfFindProductByBarcode = rfFindProductByBarcode;
+window.rfApplyInvoiceStock   = rfApplyInvoiceStock;
+window.rfLowStockToast       = rfLowStockToast;
+
+/* ---------- Tabs ---------- */
+function rfStockSwitchTab(tab){
+  ['products','movements','report'].forEach(t=>{
+    const panel = document.getElementById('rf-stock-tab-'+t);
+    const btn   = document.getElementById('rf-stock-tabbtn-'+t);
+    if(panel) panel.style.display = (t===tab) ? 'block' : 'none';
+    if(btn) btn.classList.toggle('active', t===tab);
+  });
+  if(tab==='products') rfRenderProductTable();
+  if(tab==='movements') rfRenderMovements();
+}
+window.rfStockSwitchTab = rfStockSwitchTab;
+
+/* ---------- Product CRUD Modal ---------- */
+function rfPopulateCategoryDatalist(){
+  const products = rfLoadProducts();
+  const cats = [...new Set(products.map(p=>p.category).filter(Boolean))].sort();
+  const dl = document.getElementById('rf-cat-datalist');
+  if(dl) dl.innerHTML = cats.map(c=>`<option value="${rfEsc(c)}">`).join('');
+}
+function rfOpenProductModal(id){
+  const isEdit = !!id;
+  document.getElementById('rf-product-modal-title').textContent = isEdit ? '✏️ Edit Product' : '➕ Add Product';
+  document.getElementById('rf-p-id').value = id || '';
+  if(isEdit){
+    const p = rfFindProductById(id);
+    if(!p){ toast('❌ প্রোডাক্ট পাওয়া যায়নি','err'); return; }
+    document.getElementById('rf-p-name').value = p.name;
+    document.getElementById('rf-p-category').value = p.category||'';
+    document.getElementById('rf-p-unit').value = p.unit||'pcs';
+    document.getElementById('rf-p-barcode').value = p.barcode;
+    document.getElementById('rf-p-qty').value = p.qty;
+    document.getElementById('rf-p-reorder').value = p.reorderLevel;
+    document.getElementById('rf-p-purchase').value = p.purchasePrice;
+    document.getElementById('rf-p-sale').value = p.salePrice;
+  } else {
+    document.getElementById('rf-p-name').value='';
+    document.getElementById('rf-p-category').value='';
+    document.getElementById('rf-p-unit').value='pcs';
+    document.getElementById('rf-p-barcode').value = rfGenerateBarcode();
+    document.getElementById('rf-p-qty').value=0;
+    document.getElementById('rf-p-reorder').value=5;
+    document.getElementById('rf-p-purchase').value=0;
+    document.getElementById('rf-p-sale').value=0;
+  }
+  rfPopulateCategoryDatalist();
+  showModal('rfProductModal');
+}
+function rfRegenerateBarcode(){
+  document.getElementById('rf-p-barcode').value = rfGenerateBarcode();
+}
+function rfSaveProductModal(){
+  const id = document.getElementById('rf-p-id').value;
+  const name = document.getElementById('rf-p-name').value.trim();
+  if(!name){ toast('❌ Product Name দিন','err'); return; }
+  let barcode = document.getElementById('rf-p-barcode').value.trim();
+  if(!barcode) barcode = rfGenerateBarcode();
+  const products = rfLoadProducts();
+  const dup = products.find(p=>p.barcode===barcode && p.id!==id);
+  if(dup){ toast('❌ এই বারকোড ইতিমধ্যে "'+dup.name+'"-এ ব্যবহৃত হয়েছে','err'); return; }
+  const data = {
+    name, category: document.getElementById('rf-p-category').value.trim(),
+    unit: document.getElementById('rf-p-unit').value.trim() || 'pcs',
+    barcode,
+    qty: parseFloat(document.getElementById('rf-p-qty').value)||0,
+    reorderLevel: parseFloat(document.getElementById('rf-p-reorder').value)||0,
+    purchasePrice: parseFloat(document.getElementById('rf-p-purchase').value)||0,
+    salePrice: parseFloat(document.getElementById('rf-p-sale').value)||0,
+    updatedAt: new Date().toISOString()
+  };
+  if(id){
+    const idx = products.findIndex(p=>p.id===id);
+    if(idx>=0){
+      const before = parseFloat(products[idx].qty)||0;
+      products[idx] = Object.assign({}, products[idx], data);
+      rfSaveProducts(products);
+      if(before !== data.qty){
+        rfRecordMovement({productId:id, barcode, name, type:'adjust', qty:Math.abs(data.qty-before), before, after:data.qty, ref:'Manual Edit', note:'Product form থেকে Qty এডিট হয়েছে', date:new Date().toISOString()});
+      }
+    }
+  } else {
+    data.id = 'p_'+Date.now()+Math.random().toString(36).slice(2,6);
+    data.createdAt = new Date().toISOString();
+    products.push(data);
+    rfSaveProducts(products);
+    if(data.qty>0){
+      rfRecordMovement({productId:data.id, barcode, name, type:'in', qty:data.qty, before:0, after:data.qty, ref:'Initial Stock', note:'নতুন প্রোডাক্ট যোগ হয়েছে', date:new Date().toISOString()});
+    }
+  }
+  closeModal('rfProductModal');
+  rfRenderProductTable();
+  toast('✔ Product সেভ হয়েছে');
+}
+function rfDeleteProduct(id){
+  const p = rfFindProductById(id);
+  if(!p) return;
+  if(!confirm('"'+p.name+'" ডিলিট করবেন? এটি ফিরিয়ে আনা যাবে না।')) return;
+  let products = rfLoadProducts().filter(x=>x.id!==id);
+  rfSaveProducts(products);
+  rfRenderProductTable();
+  toast('✔ Product ডিলিট হয়েছে');
+}
+function rfQuickStock(id, dir){
+  const p = rfFindProductById(id);
+  if(!p) return;
+  const qtyStr = prompt((dir==='in' ? 'কত পরিমাণ Stock IN করবেন?' : 'কত পরিমাণ Stock OUT করবেন?')+'\n'+p.name, '1');
+  if(qtyStr===null) return;
+  const qty = parseFloat(qtyStr);
+  if(!qty || qty<=0){ toast('❌ সঠিক Quantity দিন','err'); return; }
+  const before = parseFloat(p.qty)||0;
+  const updated = rfStockAdjust(id, dir==='in'?qty:-qty, dir, 'Manual', dir==='in'?'Manual Stock In':'Manual Stock Out');
+  rfRenderProductTable();
+  rfRenderMovements();
+  const after = updated ? updated.qty : before;
+  toast('✔ '+p.name+' — '+(dir==='in'?'+':'-')+qty+' (আগে '+before+' → এখন '+after+')');
+}
+
+/* ---------- Render: Product Table + Stats ---------- */
+function rfRenderStats(products){
+  products = products || rfLoadProducts();
+  const totalQty = products.reduce((s,p)=>s+(parseFloat(p.qty)||0),0);
+  const lowCount = products.filter(p=>(parseFloat(p.qty)||0) <= (parseFloat(p.reorderLevel)||0)).length;
+  const value = products.reduce((s,p)=>s+(parseFloat(p.qty)||0)*(parseFloat(p.salePrice)||0),0);
+  const el1=document.getElementById('rf-stat-total-products'), el2=document.getElementById('rf-stat-total-qty'),
+        el3=document.getElementById('rf-stat-low-stock'), el4=document.getElementById('rf-stat-stock-value');
+  if(el1) el1.textContent = products.length;
+  if(el2) el2.textContent = totalQty;
+  if(el3) el3.textContent = lowCount;
+  if(el4) el4.textContent = '৳'+fmtBD(value);
+
+  // 🧮 Total Sell / Total Purchase / Total Profit — from Stock IN/OUT movement history,
+  // valued at each product's current purchase/sale price
+  const byId = {};
+  products.forEach(p=>{ byId[p.id]=p; });
+  const movs = rfLoadMovements();
+  let totalSell=0, totalPurchase=0, totalProfit=0;
+  movs.forEach(m=>{
+    const p = byId[m.productId];
+    if(!p) return;
+    const sale = parseFloat(p.salePrice)||0, cost = parseFloat(p.purchasePrice)||0, qty = parseFloat(m.qty)||0;
+    if(m.type==='out'){
+      totalSell += qty*sale;
+      totalProfit += qty*(sale-cost);
+    } else if(m.type==='in'){
+      totalPurchase += qty*cost;
+    }
+  });
+  const el5=document.getElementById('rf-stat-total-sell'), el6=document.getElementById('rf-stat-total-purchase'),
+        el7=document.getElementById('rf-stat-total-profit');
+  if(el5) el5.textContent = '৳'+fmtBD(totalSell);
+  if(el6) el6.textContent = '৳'+fmtBD(totalPurchase);
+  if(el7) el7.textContent = '৳'+fmtBD(totalProfit);
+}
+function rfShowLowStockOnly(){
+  rfStockSwitchTab('products');
+  const chk = document.getElementById('rf-stock-lowonly-chk');
+  if(chk){ chk.checked = true; }
+  rfRenderProductTable();
+  const wrap = document.querySelector('#rf-stock-tab-products .rf-stock-table-wrap');
+  if(wrap) wrap.scrollIntoView({behavior:'smooth', block:'start'});
+}
+window.rfShowLowStockOnly = rfShowLowStockOnly;
+function rfPopulateCategoryFilter(products){
+  const sel = document.getElementById('rf-stock-filter-cat');
+  if(!sel) return;
+  const current = sel.value;
+  const cats = [...new Set(products.map(p=>p.category).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">সব ক্যাটাগরি</option>' + cats.map(c=>`<option value="${rfEsc(c)}">${rfEsc(c)}</option>`).join('');
+  sel.value = cats.includes(current) ? current : '';
+}
+function rfRenderProductTable(){
+  const products = rfLoadProducts();
+  const searchEl = document.getElementById('rf-stock-search');
+  const catEl = document.getElementById('rf-stock-filter-cat');
+  const lowEl = document.getElementById('rf-stock-lowonly-chk');
+  const search = searchEl ? searchEl.value.toLowerCase() : '';
+  const catFilter = catEl ? catEl.value : '';
+  const lowOnly = lowEl ? lowEl.checked : false;
+  let filtered = products.filter(p=>{
+    if(catFilter && p.category!==catFilter) return false;
+    if(lowOnly && !((parseFloat(p.qty)||0) <= (parseFloat(p.reorderLevel)||0))) return false;
+    if(search){
+      const hay = (p.name+' '+p.barcode+' '+(p.category||'')).toLowerCase();
+      if(!hay.includes(search)) return false;
+    }
+    return true;
+  });
+  filtered.sort((a,b)=> a.name.localeCompare(b.name));
+  const tbody = document.getElementById('rf-stock-tbody');
+  if(!tbody) return;
+  tbody.innerHTML='';
+  const emptyEl = document.getElementById('rf-stock-empty');
+  if(emptyEl) emptyEl.style.display = filtered.length ? 'none' : 'block';
+  filtered.forEach((p,i)=>{
+    const isLow = (parseFloat(p.qty)||0) <= (parseFloat(p.reorderLevel)||0);
+    const tr = document.createElement('tr');
+    if(isLow) tr.className='rf-low-stock';
+    tr.innerHTML = `<td>${i+1}</td>
+      <td><span class="rf-barcode-chip">${rfEsc(p.barcode)}</span></td>
+      <td style="text-align:left;font-weight:600;">${rfEsc(p.name)}</td>
+      <td>${rfEsc(p.category||'-')}</td>
+      <td>${p.qty}${isLow?' ⚠️':''}</td>
+      <td>${rfEsc(p.unit||'pcs')}</td>
+      <td>৳${fmtBD(p.purchasePrice)}</td>
+      <td>৳${fmtBD(p.salePrice)}</td>
+      <td>৳${fmtBD((parseFloat(p.qty)||0)*(parseFloat(p.salePrice)||0))}</td>
+      <td class="no-print">
+        <button class="rf-mini-btn" style="background:#1a4d80" onclick="rfOpenProductModal('${p.id}')" title="Edit">✏️</button>
+        <button class="rf-mini-btn" style="background:#17a2b8" onclick="rfQuickStock('${p.id}','in')" title="Stock In">📥</button>
+        <button class="rf-mini-btn" style="background:#fd7e14" onclick="rfQuickStock('${p.id}','out')" title="Stock Out">📤</button>
+        <button class="rf-mini-btn" style="background:#6f42c1" onclick="rfQuickPrintLabel('${p.id}')" title="Print Label">🏷️</button>
+        <button class="rf-mini-btn" style="background:#c0392b" onclick="rfDeleteProduct('${p.id}')" title="Delete">🗑️</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+  rfRenderStats(products);
+  rfPopulateCategoryFilter(products);
+}
+window.rfRenderProductTable = rfRenderProductTable;
+
+/* ---------- Render: Movements ---------- */
+function rfRenderMovements(){
+  const movs = rfLoadMovements();
+  const searchEl = document.getElementById('rf-mv-search');
+  const typeEl = document.getElementById('rf-mv-type');
+  const search = searchEl ? searchEl.value.toLowerCase() : '';
+  const typeFilter = typeEl ? typeEl.value : '';
+  let filtered = movs.filter(m=>{
+    if(typeFilter && m.type!==typeFilter) return false;
+    if(search){
+      const hay = ((m.barcode||'')+' '+(m.name||'')+' '+(m.ref||'')).toLowerCase();
+      if(!hay.includes(search)) return false;
+    }
+    return true;
+  });
+  const tbody = document.getElementById('rf-mv-tbody');
+  if(!tbody) return;
+  tbody.innerHTML='';
+  const emptyEl = document.getElementById('rf-mv-empty');
+  if(emptyEl) emptyEl.style.display = filtered.length ? 'none' : 'block';
+  filtered.slice(0,300).forEach(m=>{
+    const tr = document.createElement('tr');
+    const typeLabel = m.type==='in' ? '<b style="color:#218838;">IN</b>' : (m.type==='out' ? '<b style="color:#c0392b;">OUT</b>' : '<b style="color:#1a4d80;">ADJ</b>');
+    let dateStr = '-';
+    try{ dateStr = new Date(m.date).toLocaleString('en-BD',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }catch(e){}
+    tr.innerHTML = `<td>${dateStr}</td>
+      <td>${typeLabel}</td>
+      <td><span class="rf-barcode-chip">${rfEsc(m.barcode||'-')}</span></td>
+      <td style="text-align:left;">${rfEsc(m.name||'-')}</td>
+      <td>${m.qty}</td><td>${m.before}</td><td>${m.after}</td>
+      <td>${rfEsc(m.ref||'-')}</td><td style="text-align:left;">${rfEsc(m.note||'-')}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+window.rfRenderMovements = rfRenderMovements;
+
+/* ---------- Print: Movements (with company header) ---------- */
+function rfPrintMovements(mode){
+  mode = (mode === 'landscape') ? 'landscape' : 'portrait';
+  const tbl = document.querySelector('#rf-stock-tab-movements .rf-stock-table');
+  if(!tbl) return;
+  const clone = tbl.cloneNode(true);
+  clone.querySelectorAll('.no-print').forEach(el=>el.remove());
+  const companyName = (document.getElementById('sk-company-title') && document.getElementById('sk-company-title').innerText.trim()) || 'RAHMAN FURNITURE';
+  const companyAddr = (document.getElementById('sk-company-addr') && document.getElementById('sk-company-addr').innerHTML) || '';
+  const logoImg = document.getElementById('sk-display-logo');
+  const logoSrc = (logoImg && logoImg.src && logoImg.style.display!=='none') ? logoImg.src : '';
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-GB') + ' ' + now.toLocaleTimeString('en-BD',{hour:'2-digit',minute:'2-digit'});
+  const w = window.open('','_blank','width=1000,height=700');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Stock Movements</title>
+  <style>
+  @page{size:A4 ${mode};margin:8mm 12mm}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#111}
+  .np{display:flex;gap:10px;padding:10px;background:#f5f5f5;border-bottom:1px solid #ddd;}
+  .np button{padding:9px 20px;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:700}
+  .bp{background:#28a745;color:#fff}.bc{background:#eee;color:#555}
+  @media print{.np{display:none!important}body{margin:0}}
+  .rf-mv-head{display:flex;align-items:center;gap:12px;border-bottom:2px solid #1a4d80;padding-bottom:8px;margin-bottom:6px;}
+  .rf-mv-head img{width:56px;height:56px;object-fit:contain;flex-shrink:0;}
+  .rf-mv-head h1{font-size:22px;color:#003366;margin:0 0 2px 0;}
+  .rf-mv-head p{font-size:11px;font-weight:bold;color:#333;margin:0;line-height:1.3;}
+  .rf-mv-sub{text-align:center;margin:8px 0 12px;}
+  .rf-mv-sub h2{font-size:18px;font-weight:800;color:#1a4d80;text-decoration:underline;margin:0;}
+  .rf-mv-sub span{font-size:11px;color:#555;}
+  table{width:100%;border-collapse:collapse;}
+  th,td{border:1px solid #000;padding:3px 6px;font-size:11px;}
+  th{background:#eaedf0!important;font-weight:bold;color:#003366;text-align:center;}
+  td{text-align:center;}
+  </style></head><body>
+  <div class="np">
+  <button class="bp" onclick="window.print()">🖨️ Print</button>
+  <button class="bc" onclick="window.close()">✕ Close</button>
+  </div>
+  <div class="rf-mv-head">
+  ${logoSrc?`<img src="${logoSrc}">`:''}
+  <div><h1>${rfEsc(companyName)}</h1><p>${companyAddr}</p></div>
+  </div>
+  <div class="rf-mv-sub"><h2>Stock Movements Report</h2><br><span>Printed: ${dateStr}</span></div>
+  ${clone.outerHTML}
+  </body></html>`);
+  w.document.close();
+  setTimeout(()=>w.print(),600);
+}
+window.rfPrintMovements = rfPrintMovements;
+
+/* ---------- JSON Export / Import (Stock only) ---------- */
+function rfExportStockJSON(){
+  const payload = {
+    version:1, exported:new Date().toISOString(), company:'Rahman Furniture',
+    products: rfLoadProducts(), movements: rfLoadMovements()
+  };
+  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download = `RF_Stock_Backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click(); URL.revokeObjectURL(url);
+  toast('✔ Stock JSON Export সম্পন্ন');
+}
+function rfImportStockJSON(input){
+  const file = input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const parsed = JSON.parse(e.target.result);
+      const products = Array.isArray(parsed.products) ? parsed.products : [];
+      const movements = Array.isArray(parsed.movements) ? parsed.movements : [];
+      if(!products.length && !movements.length){ toast('❌ ফাইলে কোনো Stock ডেটা পাওয়া যায়নি','err'); return; }
+      if(confirm(`${products.length}টি প্রোডাক্ট`+(movements.length? ` + ${movements.length}টি Movement`:'')+` ইম্পোর্ট হবে। বর্তমান Stock ডেটা রিপ্লেস হবে — চালিয়ে যাবেন?`)){
+        rfSaveProducts(products);
+        rfSaveMovements(movements);
+        rfRenderProductTable();
+        rfRenderMovements();
+        toast('✔ Stock Import সম্পন্ন হয়েছে');
+      }
+    }catch(err){ toast('❌ ফাইল পড়তে সমস্যা হয়েছে','err'); console.error(err); }
+  };
+  reader.readAsText(file);
+  input.value='';
+}
+window.rfExportStockJSON = rfExportStockJSON;
+window.rfImportStockJSON = rfImportStockJSON;
+
+/* ---------- Print Report Sync (uses old A4 sheet) ---------- */
+function rfSyncReportFromProducts(){
+  const products = rfLoadProducts().slice().sort((a,b)=>a.name.localeCompare(b.name));
+  const tbody = document.getElementById('sk-table-body');
+  if(!tbody) return;
+  tbody.innerHTML='';
+  products.forEach((p, i)=>{
+    const tr = document.createElement('tr');
+    const low = (parseFloat(p.qty)||0) <= (parseFloat(p.reorderLevel)||0);
+    tr.innerHTML = `<td class="sk-sl" style="border:1px solid #000;padding:2px 5px;font-size:12px;text-align:center;font-weight:bold;height:17px;">${i+1}</td>
+      <td contenteditable="true" style="border:1px solid #000;padding:2px 5px;font-size:12px;height:17px;outline:none;">${rfEsc(p.name)}</td>
+      <td contenteditable="true" style="border:1px solid #000;padding:2px 5px;font-size:12px;height:17px;text-align:center;font-weight:bold;outline:none;${low?'color:#c0392b;':''}">${p.qty}</td>
+      <td contenteditable="true" style="border:1px solid #000;padding:2px 5px;font-size:12px;height:17px;outline:none;">${low?'Reorder Needed':''}</td>
+      <td contenteditable="true" style="border:1px solid #000;padding:2px 5px;font-size:12px;height:17px;outline:none;">${rfEsc(p.category||'')}</td>`;
+    tbody.appendChild(tr);
+  });
+  for(let i=0;i<5;i++){ if(window.skAddRow) window.skAddRow(); }
+  const countEl = document.getElementById('sk-product-count');
+  if(countEl) countEl.textContent = products.reduce((s,p)=>s+(parseFloat(p.qty)||0),0);
+  toast('✔ Products থেকে Report সিঙ্ক হয়েছে');
+}
+window.rfSyncReportFromProducts = rfSyncReportFromProducts;
+
+/* ---------- Scan Modal (Stock In / Stock Out / Lookup) ---------- */
+var rfScanMode = 'lookup';
+var rfScanStream = null;
+var rfScanActive = false;
+var rfPendingScanProduct = null;
+
+function rfOpenScanModal(mode){
+  rfScanMode = mode;
+  const titles = {lookup:'📷 Scan / Product খুঁজুন', stockIn:'📥 Stock In — বারকোড স্ক্যান করুন', stockOut:'📤 Stock Out — বারকোড স্ক্যান করুন'};
+  document.getElementById('rf-scan-title').textContent = titles[mode] || '📷 Scan Barcode';
+  document.getElementById('rf-scan-qty-label').textContent = mode==='lookup' ? 'Adjust Qty' : 'Quantity';
+  document.getElementById('rf-scan-input').value='';
+  document.getElementById('rf-scan-result').style.display='none';
+  document.getElementById('rf-scan-notfound').style.display='none';
+  document.getElementById('rf-scan-qty').value=1;
+  document.getElementById('rf-scan-note').value='';
+  rfPendingScanProduct = null;
+  showModal('rfScanModal');
+  setTimeout(function(){ var el=document.getElementById('rf-scan-input'); if(el) el.focus(); }, 150);
+}
+function rfCloseScanModal(){
+  rfStopCameraScan();
+  closeModal('rfScanModal');
+}
+function rfProcessScannedCode(code){
+  if(!code) return;
+  const p = rfFindProductByBarcode(code);
+  const resultBox = document.getElementById('rf-scan-result');
+  const notFoundBox = document.getElementById('rf-scan-notfound');
+  if(!p){
+    resultBox.style.display='none';
+    notFoundBox.style.display='block';
+    rfPendingScanProduct = null;
+    return;
+  }
+  notFoundBox.style.display='none';
+  rfPendingScanProduct = p;
+  document.getElementById('rf-scan-result-name').textContent = p.name;
+  document.getElementById('rf-scan-result-qty').textContent = p.qty;
+  document.getElementById('rf-scan-result-code').textContent = p.barcode;
+  document.getElementById('rf-scan-confirm-btn').textContent =
+    rfScanMode==='stockIn' ? '📥 Confirm Stock IN' : (rfScanMode==='stockOut' ? '📤 Confirm Stock OUT' : '👁️ শুধু দেখুন (কোনো পরিবর্তন হবে না)');
+  resultBox.style.display='block';
+}
+function rfConfirmScanAction(){
+  if(!rfPendingScanProduct) return;
+  const qty = parseFloat(document.getElementById('rf-scan-qty').value) || 0;
+  const note = document.getElementById('rf-scan-note').value.trim();
+  if(rfScanMode==='lookup'){
+    toast('👁️ Product Info দেখানো হলো, কোনো Stock পরিবর্তন হয়নি');
+  } else if(rfScanMode==='stockIn'){
+    if(qty<=0){ toast('❌ সঠিক Quantity দিন','err'); return; }
+    const before = parseFloat(rfPendingScanProduct.qty)||0;
+    const updated = rfStockAdjust(rfPendingScanProduct.id, qty, 'in', note||'Scan Stock In', note||'');
+    toast('✔ '+rfPendingScanProduct.name+' — Stock IN +'+qty+' (আগে ছিল '+before+', এখন আছে '+(updated?updated.qty:before+qty)+')');
+  } else if(rfScanMode==='stockOut'){
+    if(qty<=0){ toast('❌ সঠিক Quantity দিন','err'); return; }
+    const before = parseFloat(rfPendingScanProduct.qty)||0;
+    const updated = rfStockAdjust(rfPendingScanProduct.id, -qty, 'out', note||'Scan Stock Out', note||'');
+    toast('✔ '+rfPendingScanProduct.name+' — Stock OUT -'+qty+' (আগে ছিল '+before+', এখন আছে '+(updated?updated.qty:Math.max(0,before-qty))+')');
+  }
+  rfRenderProductTable();
+  rfRenderMovements();
+  document.getElementById('rf-scan-input').value='';
+  document.getElementById('rf-scan-input').focus();
+  document.getElementById('rf-scan-result').style.display='none';
+  rfPendingScanProduct = null;
+}
+async function rfToggleCameraScan(){
+  const video = document.getElementById('rf-scan-video');
+  const btn = document.getElementById('rf-camera-toggle-btn');
+  if(rfScanStream){ rfStopCameraScan(); return; }
+  if(!('BarcodeDetector' in window)){
+    toast('❌ এই ব্রাউজারে ক্যামেরা স্ক্যান সাপোর্ট নেই। USB স্ক্যানার ব্যবহার করুন।','err');
+    return;
+  }
+  try{
+    rfScanStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    video.srcObject = rfScanStream;
+    video.style.display='block';
+    await video.play();
+    btn.textContent = '⏹️ ক্যামেরা বন্ধ করুন';
+    const detector = new BarcodeDetector({formats:['code_128','ean_13','ean_8','upc_a','upc_e','code_39']});
+    rfScanActive = true;
+    (async function loop(){
+      if(!rfScanActive) return;
+      try{
+        const codes = await detector.detect(video);
+        if(codes && codes.length){
+          document.getElementById('rf-scan-input').value = codes[0].rawValue;
+          rfProcessScannedCode(codes[0].rawValue);
+          rfStopCameraScan();
+          return;
+        }
+      }catch(e){}
+      requestAnimationFrame(loop);
+    })();
+  }catch(err){
+    toast('❌ ক্যামেরা চালু করা যায়নি','err');
+  }
+}
+function rfStopCameraScan(){
+  rfScanActive = false;
+  if(rfScanStream){
+    rfScanStream.getTracks().forEach(function(t){ t.stop(); });
+    rfScanStream = null;
+  }
+  const video = document.getElementById('rf-scan-video');
+  if(video){ video.style.display='none'; video.srcObject=null; }
+  const btn = document.getElementById('rf-camera-toggle-btn');
+  if(btn) btn.textContent = '📷 ক্যামেরা দিয়ে স্ক্যান করুন';
+}
+
+/* ---------- Barcode Label Print ---------- */
+function rfOpenLabelModal(){
+  const s = document.getElementById('rf-label-search');
+  if(s) s.value='';
+  rfRenderLabelPickList();
+  showModal('rfLabelModal');
+}
+function rfRenderLabelPickList(){
+  const products = rfLoadProducts();
+  const s = document.getElementById('rf-label-search');
+  const search = s ? s.value.toLowerCase() : '';
+  const filtered = products.filter(p=> !search || (p.name+' '+p.barcode).toLowerCase().includes(search));
+  const wrap = document.getElementById('rf-label-picklist');
+  if(!wrap) return;
+  if(!filtered.length){ wrap.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">কোনো প্রোডাক্ট নেই</div>'; return; }
+  wrap.innerHTML = filtered.map(function(p){
+    return '<div style="display:flex;align-items:center;gap:10px;padding:7px 8px;border-bottom:1px solid #f0f0f0;">'+
+      '<input type="checkbox" class="rf-label-chk" value="'+p.id+'" id="rf-lbl-chk-'+p.id+'">'+
+      '<label for="rf-lbl-chk-'+p.id+'" style="flex:1;font-size:13px;cursor:pointer;"><b>'+rfEsc(p.name)+'</b> <span class="rf-barcode-chip">'+rfEsc(p.barcode)+'</span></label>'+
+      '<input type="number" min="1" value="1" style="width:60px;padding:5px;border:1px solid #ddd;border-radius:6px;" id="rf-lbl-copies-'+p.id+'" title="কপি সংখ্যা">'+
+      '</div>';
+  }).join('');
+}
+function rfQuickPrintLabel(id){
+  const s = document.getElementById('rf-label-search');
+  if(s) s.value='';
+  rfRenderLabelPickList();
+  showModal('rfLabelModal');
+  setTimeout(function(){
+    const chk = document.getElementById('rf-lbl-chk-'+id);
+    if(chk) chk.checked = true;
+  }, 60);
+}
+function rfGenerateLabelSheet(){
+  const products = rfLoadProducts();
+  const checks = document.querySelectorAll('.rf-label-chk:checked');
+  if(!checks.length){ toast('❌ অন্তত একটি প্রোডাক্ট সিলেক্ট করুন','err'); return; }
+  const shopName = localStorage.getItem('companyName') || 'RAHMAN FURNITURE';
+  let labelsHtml = '';
+  checks.forEach(function(chk){
+    const p = products.find(function(x){ return x.id===chk.value; });
+    if(!p) return;
+    const copiesEl = document.getElementById('rf-lbl-copies-'+p.id);
+    const copies = copiesEl ? (parseInt(copiesEl.value)||1) : 1;
+    for(let i=0;i<copies;i++){
+      labelsHtml += '<div class="rf-print-label">'+
+        '<div class="rf-pl-shop">'+rfEsc(shopName)+'</div>'+
+        '<div class="rf-pl-name">'+rfEsc(p.name)+'</div>'+
+        '<svg class="rf-pl-barcode" data-code="'+rfEsc(p.barcode)+'"></svg>'+
+        '<div class="rf-pl-price">৳ '+fmtBD(p.salePrice)+'</div>'+
+        '</div>';
+    }
+  });
+  const w = window.open('','_blank','width=500,height=700');
+  w.document.write(
+    '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Barcode Labels</title>'+
+    '<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"><\/script>'+
+    '<style>'+
+    '@page{size:2in 3in;margin:2mm}'+
+    '*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+    'body{font-family:Arial,Helvetica,sans-serif;background:#fff}'+
+    '.np{display:flex;gap:10px;padding:10px;background:#f5f5f5;border-bottom:1px solid #ddd;}'+
+    '.np button{padding:9px 20px;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:700}'+
+    '.bp{background:#6f42c1;color:#fff}.bc{background:#eee;color:#555}'+
+    '@media print{.np{display:none!important}body{margin:0} .rf-print-label{page-break-after:always;}}'+
+    '.rf-print-label{width:2in;height:3in;padding:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;border:1px dashed #ccc;margin-bottom:6px;}'+
+    '.rf-pl-shop{font-size:11px;font-weight:800;color:#1a4d80;margin-bottom:4px;text-transform:uppercase;}'+
+    '.rf-pl-name{font-size:13px;font-weight:700;margin-bottom:8px;line-height:1.25;}'+
+    '.rf-pl-barcode{width:90%;}'+
+    '.rf-pl-price{font-size:14px;font-weight:900;margin-top:6px;color:#111;}'+
+    '</style></head><body>'+
+    '<div class="np"><button class="bp" onclick="window.print()">🖨️ Print</button><button class="bc" onclick="window.close()">✕ Close</button></div>'+
+    '<div id="labels-root">'+labelsHtml+'</div>'+
+    '<script>'+
+    'document.querySelectorAll(".rf-pl-barcode").forEach(function(svg){'+
+    'JsBarcode(svg, svg.dataset.code, {format:"CODE128", width:1.6, height:40, fontSize:11, margin:2, displayValue:true});'+
+    '});'+
+    '<\/script>'+
+    '</body></html>'
+  );
+  w.document.close();
+  closeModal('rfLabelModal');
+}
+window.rfOpenScanModal = rfOpenScanModal;
+window.rfOpenLabelModal = rfOpenLabelModal;
+window.rfRenderLabelPickList = rfRenderLabelPickList;
+window.rfGenerateLabelSheet = rfGenerateLabelSheet;
+window.rfQuickPrintLabel = rfQuickPrintLabel;
+window.rfQuickStock = rfQuickStock;
+window.rfDeleteProduct = rfDeleteProduct;
+window.rfSaveProductModal = rfSaveProductModal;
+window.rfRegenerateBarcode = rfRegenerateBarcode;
+window.rfOpenProductModal = rfOpenProductModal;
+window.rfConfirmScanAction = rfConfirmScanAction;
+window.rfToggleCameraScan = rfToggleCameraScan;
+window.rfCloseScanModal = rfCloseScanModal;
+window.rfExportStockJSON = rfExportStockJSON;
+
+/* ---------- Page init (called from showPage) ---------- */
+function rfInitStockPage(){
+  rfRenderProductTable();
+  rfRenderMovements();
+  rfPopulateItemNameDatalist();
+}
+window.rfInitStockPage = rfInitStockPage;
+
+document.addEventListener('DOMContentLoaded', function(){
+  rfPopulateItemNameDatalist();
+  const scanInput = document.getElementById('rf-scan-input');
+  if(scanInput){
+    scanInput.addEventListener('keydown', function(e){
+      if(e.key==='Enter'){ e.preventDefault(); rfProcessScannedCode(scanInput.value.trim()); }
+    });
+  }
+  const scanModal = document.getElementById('rfScanModal');
+  if(scanModal){
+    scanModal.addEventListener('click', function(e){ if(e.target===this) rfCloseScanModal(); });
+  }
+});
 </script>
 
 <!-- ═══════════════════════════════════════════════════════
