@@ -777,6 +777,8 @@
         .item-table td { border: 1px solid var(--navy); padding: 6px; text-align: center; font-size: 14px; }
         .item-table input { border: none; width: 100%; text-align: center; font-size: 14px; outline: none; background: transparent; font-family: inherit; }
         .desc-col { text-align: left !important; width: 45%; }
+        .row-del-btn { width:24px;height:24px;border-radius:50%;border:1.5px solid #dc3545;background:#fff;color:#dc3545;font-size:12px;font-weight:700;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all 0.15s; }
+        .row-del-btn:hover { background:#dc3545;color:#fff;transform:scale(1.08); }
         .desc-col input { text-align: left; }
         .footer-grid { display: grid; grid-template-columns: 1.3fr 0.7fr; gap: 15px; margin-top: 15px; position: relative; z-index: 1; }
         .photo-wrapper { display: flex; flex-direction: column; gap: 8px; }
@@ -2606,7 +2608,7 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
                     </div>
                 </div>
                 <div class="inv-info-box">
-                    <div><b>Invoice No:</b> <span id="inv-no">2600</span></div>
+                    <div><b>Invoice No:</b> <span id="inv-no">2630</span></div>
                     <div><b>Date:</b> <span id="inv-date"></span></div>
                     <div><b>Time:</b> <span id="inv-clock" style="font-weight:bold;"></span></div>
                     <div id="inv-date-now-btn" class="no-print" onclick="invUseCurrentDateTime()" style="display:none;cursor:pointer;margin-top:4px;font-size:11px;font-weight:700;color:#fff;background:#008080;padding:3px 9px;border-radius:12px;text-align:center;width:fit-content;">🔄 বর্তমান তারিখ/সময় ব্যবহার করুন</div>
@@ -2637,7 +2639,7 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
             <datalist id="rf-item-namelist"></datalist>
             <table class="item-table">
                 <thead>
-                    <tr><th width="5%">SL</th><th class="desc-col">Item Description</th><th width="10%">Qty</th><th width="15%">Rate</th><th width="15%">Amount</th></tr>
+                    <tr><th width="5%">SL</th><th class="desc-col">Item Description</th><th width="10%">Qty</th><th width="15%">Rate</th><th width="15%">Amount</th><th width="5%" class="no-print"></th></tr>
                 </thead>
                 <tbody id="item-tbody">
                     <tr>
@@ -2646,6 +2648,7 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
                         <td><input type="number" class="qty" value="0" oninput="calc()"></td>
                         <td><input type="number" class="rate" value="0" oninput="calc()"></td>
                         <td class="row-total">0</td>
+                        <td class="no-print"><button type="button" class="row-del-btn" onclick="removeItemRow(this)" title="এই লাইনটি মুছে ফেলুন">✕</button></td>
                     </tr>
                 </tbody>
             </table>
@@ -3700,7 +3703,7 @@ async function saveCloudData() {
     if (!url) return;
 
     const history     = await getAllInvoices();
-    const invNum      = localStorage.getItem('invNum') || '2600';
+    const invNum      = localStorage.getItem('invNum') || '2630';
     const commissions = JSON.parse(localStorage.getItem('salesCommissions') || '[]');
 
     // Cloud sync-এ photos পাঠাবো না (too large) — শুধু metadata
@@ -3913,7 +3916,7 @@ async function loadCloudData() {
             // Firestore/local-ই এখন সঠিক source, তাই cloud counter উপেক্ষা করা হচ্ছে
             if (d.invoiceCounter) {
                 const el = document.getElementById('inv-no');
-                const localInv = parseInt(localStorage.getItem('invNum') || '2600');
+                const localInv = parseInt(localStorage.getItem('invNum') || '2630');
                 if (el) el.innerText = localInv;
             }
             if (d.allInvoices) {
@@ -5294,8 +5297,35 @@ function addNewRow() {
         <td class="desc-col"><input type="text" placeholder="Item name..." onkeydown="handleRowKeys(event, this)" oninput="handleRowNameInput(this)" list="rf-item-namelist"></td>
         <td><input type="number" class="qty" value="0" oninput="calc()"></td>
         <td><input type="number" class="rate" value="0" oninput="calc()"></td>
-        <td class="row-total">0</td>`;
+        <td class="row-total">0</td>
+        <td class="no-print"><button type="button" class="row-del-btn" onclick="removeItemRow(this)" title="এই লাইনটি মুছে ফেলুন">✕</button></td>`;
     newRow.querySelector('input').focus();
+}
+
+// 🗑️ ভুলে খুলে যাওয়া একটা লাইন মুছে ফেলার জন্য — শেষ লাইনটা থাকতেই হবে,
+// পুরোপুরি খালি করে দেওয়া যাবে না। বাটনটা no-print, তাই প্রিন্ট/PDF-এ
+// খালি চোখে একদমই দেখা যাবে না।
+function removeItemRow(btn) {
+    const tbody = document.getElementById('item-tbody');
+    const row = btn.closest('tr');
+    if (!row || !tbody) return;
+    if (tbody.rows.length <= 1) {
+        // শেষ লাইনটা মোছার বদলে খালি করে দাও
+        row.querySelectorAll('input[type="text"], input[type="number"]').forEach(inp => {
+            inp.value = inp.type === 'number' ? 0 : '';
+        });
+        delete row.dataset.barcode;
+        delete row.dataset.productId;
+        calc();
+        return;
+    }
+    row.remove();
+    // SL নম্বরগুলো নতুন করে সাজিয়ে দাও
+    tbody.querySelectorAll('tr').forEach((r, idx) => {
+        const sl = r.querySelector('.sl-no');
+        if (sl) sl.innerText = (idx + 1) + '.';
+    });
+    calc();
 }
 
 function fmtBD(n) {
@@ -5430,7 +5460,7 @@ async function invPrepareNext() {
         await saveInvoiceToHistory(invoiceData);
         saveCommission(invoiceData);
         let currentInv = parseInt(document.getElementById('inv-no').innerText);
-        let nextInv = (isNaN(currentInv) ? 2600 : currentInv) + 1;
+        let nextInv = (isNaN(currentInv) ? 2630 : currentInv) + 1;
         try { localStorage.setItem('invNum', nextInv); } catch(e){}
         // ☁️ Cloud sync
         saveCloudData();
@@ -5463,14 +5493,14 @@ function loadInvoicePage() {
     document.getElementById('inv-pay-method').value = 'Cash';
     // Reset items
     const tbody = document.getElementById('item-tbody');
-    tbody.innerHTML = `<tr><td class="sl-no">1.</td><td class="desc-col"><input type="text" placeholder="Item name..." onkeydown="handleRowKeys(event, this)" oninput="handleRowNameInput(this)" list="rf-item-namelist"></td><td><input type="number" class="qty" value="0" oninput="calc()"></td><td><input type="number" class="rate" value="0" oninput="calc()"></td><td class="row-total">0</td></tr>`;
+    tbody.innerHTML = `<tr><td class="sl-no">1.</td><td class="desc-col"><input type="text" placeholder="Item name..." onkeydown="handleRowKeys(event, this)" oninput="handleRowNameInput(this)" list="rf-item-namelist"></td><td><input type="number" class="qty" value="0" oninput="calc()"></td><td><input type="number" class="rate" value="0" oninput="calc()"></td><td class="row-total">0</td><td class="no-print"><button type="button" class="row-del-btn" onclick="removeItemRow(this)" title="এই লাইনটি মুছে ফেলুন">✕</button></td></tr>`;
     // Reset photos
     document.querySelectorAll('.photo-box').forEach(box => {
         box.innerHTML = '<span>+ Add Photo</span><input type="file" hidden accept="image/*" onchange="preview(this)">';
         box.classList.remove('has-img');
     });
     // Load inv number
-    let inv = localStorage.getItem('invNum') || "2600";
+    let inv = localStorage.getItem('invNum') || "2630";
     document.getElementById('inv-no').innerText = inv;
     // ✅ Fresh invoice → use live current date/time again
     invUsingLiveClock = true;
@@ -5511,7 +5541,7 @@ async function reEditInvoice(invoiceNo) {
     (invoice.items || []).forEach((item, idx) => {
         const newRow = tbody.insertRow();
         const safeDesc = (item.desc || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        newRow.innerHTML = `<td class="sl-no">${idx+1}.</td><td class="desc-col"><input type="text" value="${safeDesc}" placeholder="Item name..." onkeydown="handleRowKeys(event, this)" oninput="handleRowNameInput(this)" list="rf-item-namelist"></td><td><input type="number" class="qty" value="${item.qty}" oninput="calc()"></td><td><input type="number" class="rate" value="${item.rate}" oninput="calc()"></td><td class="row-total">${fmtBD(parseNum(item.total))}</td>`;
+        newRow.innerHTML = `<td class="sl-no">${idx+1}.</td><td class="desc-col"><input type="text" value="${safeDesc}" placeholder="Item name..." onkeydown="handleRowKeys(event, this)" oninput="handleRowNameInput(this)" list="rf-item-namelist"></td><td><input type="number" class="qty" value="${item.qty}" oninput="calc()"></td><td><input type="number" class="rate" value="${item.rate}" oninput="calc()"></td><td class="row-total">${fmtBD(parseNum(item.total))}</td><td class="no-print"><button type="button" class="row-del-btn" onclick="removeItemRow(this)" title="এই লাইনটি মুছে ফেলুন">✕</button></td>`;
         // ✅ Re-link this row to its stock product (by saved barcode, else by name) so re-saving still deducts stock correctly
         if (item.barcode) {
             newRow.dataset.barcode = item.barcode;
@@ -5960,13 +5990,13 @@ async function initRahmanApp() {
     if(savedAdmin) document.getElementById('inv-admin-name').value = savedAdmin;
 
     // Load invoice number — current counter থেকে
-    let inv = localStorage.getItem('invNum') || "2600";
+    let inv = localStorage.getItem('invNum') || "2630";
     document.getElementById('inv-no').innerText = inv;
 
     // ☁️ Try loading from cloud first (if URL configured)
     const cloudLoaded = await loadCloudData();
     if (!cloudLoaded) {
-        let localInv = localStorage.getItem('invNum') || "2600";
+        let localInv = localStorage.getItem('invNum') || "2630";
         document.getElementById('inv-no').innerText = localInv;
     }
 
@@ -7418,7 +7448,8 @@ function printAttendance() {
                         '<td class="desc-col"><input type="text" placeholder="Item name..." onkeydown="handleRowKeys(event,this)" oninput="handleRowNameInput(this)" list="rf-item-namelist" value="'+item.desc.replace(/"/g,'&quot;')+'"></td>' +
                         '<td><input type="number" class="qty" value="'+item.qty+'" oninput="calc()"></td>' +
                         '<td><input type="number" class="rate" value="'+item.rate+'" oninput="calc()"></td>' +
-                        '<td class="row-total">0</td>';
+                        '<td class="row-total">0</td>' +
+                        '<td class="no-print"><button type="button" class="row-del-btn" onclick="removeItemRow(this)" title="এই লাইনটি মুছে ফেলুন">✕</button></td>';
                 });
                 if (typeof calc === 'function') calc();
             }
@@ -9182,6 +9213,12 @@ onAuthStateChanged(auth, async (user) => {
             const syncedKey = 'rf_cloud_synced_' + user.uid;
             if (!sessionStorage.getItem(syncedKey)) {
                 await restoreFromCloud();
+                // 🔧 One-time fix: cloud-এ পুরনো invNum (2600) সেভ থাকতে পারে,
+                // restore হওয়ার পর সেটাকে আবার 2630-এ ঠিক করে দেওয়া হচ্ছে
+                if (!localStorage.getItem('invNumResetTo2630')) {
+                    localStorage.setItem('invNum', '2630');
+                    localStorage.setItem('invNumResetTo2630', '1');
+                }
                 sessionStorage.setItem(syncedKey, '1');
             }
             if (!_appBooted) { _appBooted = true; await initRahmanApp(); }
