@@ -5297,7 +5297,10 @@ function handleRowKeys(event, input) {
         const text = input.value.trim();
         const product = rfFindProductForInput(text);
         if (product) {
-            rfLinkRowToProduct(row, input, product, { focusQty: true });
+            // স্ক্যান করলেই item fill হবে আর সাথে সাথে নতুন row-ও চলে আসবে,
+            // যাতে পরের item সরাসরি স্ক্যান করা যায় (qty ম্যানুয়ালি বসাতে হবে না)
+            rfLinkRowToProduct(row, input, product, { focusQty: false });
+            addNewRow();
             return;
         }
         // ✅ Not a recognized barcode/name — clear any stale link, treat as manual text
