@@ -2644,7 +2644,7 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
                 <tbody id="item-tbody">
                     <tr>
                         <td class="sl-no">1.</td>
-                        <td class="desc-col"><input type="text" placeholder="Item name..." onkeydown="handleRowKeys(event, this)" oninput="handleRowNameInput(this)" list="rf-item-namelist"></td>
+                        <td class="desc-col"><input type="text" placeholder="Item name..." onkeydown="handleRowKeys(event, this)" oninput="handleRowNameInput(this)"></td>
                         <td><input type="number" class="qty" value="0" oninput="calc()"></td>
                         <td><input type="number" class="rate" value="0" oninput="calc()"></td>
                         <td class="row-total">0</td>
@@ -5294,7 +5294,7 @@ function addNewRow() {
     const newRow = tbody.insertRow();
     newRow.innerHTML = `
         <td class="sl-no">${rowCount}.</td>
-        <td class="desc-col"><input type="text" placeholder="Item name..." onkeydown="handleRowKeys(event, this)" oninput="handleRowNameInput(this)" list="rf-item-namelist"></td>
+        <td class="desc-col"><input type="text" placeholder="Item name..." onkeydown="handleRowKeys(event, this)" oninput="handleRowNameInput(this)"></td>
         <td><input type="number" class="qty" value="0" oninput="calc()"></td>
         <td><input type="number" class="rate" value="0" oninput="calc()"></td>
         <td class="row-total">0</td>
@@ -5493,7 +5493,7 @@ function loadInvoicePage() {
     document.getElementById('inv-pay-method').value = 'Cash';
     // Reset items
     const tbody = document.getElementById('item-tbody');
-    tbody.innerHTML = `<tr><td class="sl-no">1.</td><td class="desc-col"><input type="text" placeholder="Item name..." onkeydown="handleRowKeys(event, this)" oninput="handleRowNameInput(this)" list="rf-item-namelist"></td><td><input type="number" class="qty" value="0" oninput="calc()"></td><td><input type="number" class="rate" value="0" oninput="calc()"></td><td class="row-total">0</td><td class="no-print"><button type="button" class="row-del-btn" onclick="removeItemRow(this)" title="এই লাইনটি মুছে ফেলুন">✕</button></td></tr>`;
+    tbody.innerHTML = `<tr><td class="sl-no">1.</td><td class="desc-col"><input type="text" placeholder="Item name..." onkeydown="handleRowKeys(event, this)" oninput="handleRowNameInput(this)"></td><td><input type="number" class="qty" value="0" oninput="calc()"></td><td><input type="number" class="rate" value="0" oninput="calc()"></td><td class="row-total">0</td><td class="no-print"><button type="button" class="row-del-btn" onclick="removeItemRow(this)" title="এই লাইনটি মুছে ফেলুন">✕</button></td></tr>`;
     // Reset photos
     document.querySelectorAll('.photo-box').forEach(box => {
         box.innerHTML = '<span>+ Add Photo</span><input type="file" hidden accept="image/*" onchange="preview(this)">';
@@ -5541,7 +5541,7 @@ async function reEditInvoice(invoiceNo) {
     (invoice.items || []).forEach((item, idx) => {
         const newRow = tbody.insertRow();
         const safeDesc = (item.desc || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        newRow.innerHTML = `<td class="sl-no">${idx+1}.</td><td class="desc-col"><input type="text" value="${safeDesc}" placeholder="Item name..." onkeydown="handleRowKeys(event, this)" oninput="handleRowNameInput(this)" list="rf-item-namelist"></td><td><input type="number" class="qty" value="${item.qty}" oninput="calc()"></td><td><input type="number" class="rate" value="${item.rate}" oninput="calc()"></td><td class="row-total">${fmtBD(parseNum(item.total))}</td><td class="no-print"><button type="button" class="row-del-btn" onclick="removeItemRow(this)" title="এই লাইনটি মুছে ফেলুন">✕</button></td>`;
+        newRow.innerHTML = `<td class="sl-no">${idx+1}.</td><td class="desc-col"><input type="text" value="${safeDesc}" placeholder="Item name..." onkeydown="handleRowKeys(event, this)" oninput="handleRowNameInput(this)"></td><td><input type="number" class="qty" value="${item.qty}" oninput="calc()"></td><td><input type="number" class="rate" value="${item.rate}" oninput="calc()"></td><td class="row-total">${fmtBD(parseNum(item.total))}</td><td class="no-print"><button type="button" class="row-del-btn" onclick="removeItemRow(this)" title="এই লাইনটি মুছে ফেলুন">✕</button></td>`;
         // ✅ Re-link this row to its stock product (by saved barcode, else by name) so re-saving still deducts stock correctly
         if (item.barcode) {
             newRow.dataset.barcode = item.barcode;
@@ -7445,7 +7445,7 @@ function printAttendance() {
                 _aiExtracted.items.forEach(function(item, idx) {
                     var row = tbody.insertRow();
                     row.innerHTML = '<td class="sl-no">'+(idx+1)+'.</td>' +
-                        '<td class="desc-col"><input type="text" placeholder="Item name..." onkeydown="handleRowKeys(event,this)" oninput="handleRowNameInput(this)" list="rf-item-namelist" value="'+item.desc.replace(/"/g,'&quot;')+'"></td>' +
+                        '<td class="desc-col"><input type="text" placeholder="Item name..." onkeydown="handleRowKeys(event,this)" oninput="handleRowNameInput(this)" value="'+item.desc.replace(/"/g,'&quot;')+'"></td>' +
                         '<td><input type="number" class="qty" value="'+item.qty+'" oninput="calc()"></td>' +
                         '<td><input type="number" class="rate" value="'+item.rate+'" oninput="calc()"></td>' +
                         '<td class="row-total">0</td>' +
