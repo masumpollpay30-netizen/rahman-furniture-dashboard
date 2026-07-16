@@ -2618,21 +2618,21 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
             <table class="bill-to-table">
                 <tr><th colspan="4">BILL TO</th></tr>
                 <tr>
-                    <td width="15%"><b>Name:</b></td><td><input type="text" id="c-name" placeholder="Ex: Mr. Masum Billah"></td>
-                    <td width="15%"><b>Phone:</b></td><td><input type="text" id="c-phone" placeholder="01876366738"></td>
+                    <td width="15%"><b>Name:</b></td><td><input type="text" id="c-name" placeholder="Ex: Mr. Masum Billah" autocomplete="off"></td>
+                    <td width="15%"><b>Phone:</b></td><td><input type="text" id="c-phone" placeholder="01876366738" autocomplete="off"></td>
                 </tr>
-                <tr><td><b>Address:</b></td><td colspan="3"><input type="text" id="c-address" placeholder="Full Address Here"></td></tr>
+                <tr><td><b>Address:</b></td><td colspan="3"><input type="text" id="c-address" placeholder="Full Address Here" autocomplete="off"></td></tr>
                 <tr>
-                    <td><b>PS:</b></td><td><input type="text" id="c-ps" placeholder="Demra"></td>
-                    <td><b>PO:</b></td><td><input type="text" id="c-po" placeholder="Saruliya"></td>
+                    <td><b>PS:</b></td><td><input type="text" id="c-ps" placeholder="Demra" autocomplete="off"></td>
+                    <td><b>PO:</b></td><td><input type="text" id="c-po" placeholder="Saruliya" autocomplete="off"></td>
                 </tr>
                 <tr>
-                    <td><b>District:</b></td><td><input type="text" id="c-dist" placeholder="Dhaka"></td>
-                    <td><b>NID/Passport:</b></td><td><input type="text" id="c-nid" placeholder="123456789"></td>
+                    <td><b>District:</b></td><td><input type="text" id="c-dist" placeholder="Dhaka" autocomplete="off"></td>
+                    <td><b>NID/Passport:</b></td><td><input type="text" id="c-nid" placeholder="123456789" autocomplete="off"></td>
                 </tr>
                 <tr>
                     <td><b>Delivery Time:</b></td>
-                    <td colspan="3"><input type="text" id="delivery-time" placeholder="e.g., 2-3 days" oninput="this.style.color=this.value?'#dc3545':'';this.style.fontWeight=this.value?'bold':''" style="transition:color 0.2s,font-weight 0.2s"></td>
+                    <td colspan="3"><input type="text" id="delivery-time" placeholder="e.g., 2-3 days" autocomplete="off" oninput="this.style.color=this.value?'#dc3545':'';this.style.fontWeight=this.value?'bold':''" style="transition:color 0.2s,font-weight 0.2s"></td>
                 </tr>
             </table>
 
@@ -3367,7 +3367,24 @@ body.dark-mode .ai-result-value, body.dark-full .ai-result-value { background:#2
             <h3>🏷️ Print Barcode Labels</h3>
             <span class="modal-close" onclick="closeModal('rfLabelModal')">&times;</span>
         </div>
-        <p style="font-size:12px;color:#777;margin:-4px 0 14px;">যেসব প্রোডাক্টের লেবেল প্রিন্ট করতে চান, টিক দিন এবং প্রতিটির জন্য কয়টা কপি লাগবে লিখুন। Label size: 2in × 3in.</p>
+        <p style="font-size:12px;color:#777;margin:-4px 0 14px;">যেসব প্রোডাক্টের লেবেল প্রিন্ট করতে চান, টিক দিন এবং প্রতিটির জন্য কয়টা কপি লাগবে লিখুন।</p>
+        <div class="rf-modal-field">
+            <label>Label/Paper Size:</label>
+            <select id="rf-label-size">
+                <optgroup label="Invoice">
+                    <option value="78x51">Invoice 78 × 51 mm</option>
+                    <option value="78x78">Invoice 78 × 78 mm</option>
+                </optgroup>
+                <optgroup label="Thermal Label Sticker">
+                    <option value="38x25">38 × 25 mm</option>
+                    <option value="45x35">45 × 35 mm</option>
+                    <option value="50x25">50 × 25 mm</option>
+                    <option value="50x75" selected>50 × 75 mm</option>
+                    <option value="75x75">75 × 75 mm</option>
+                    <option value="75x100">75 × 100 mm</option>
+                </optgroup>
+            </select>
+        </div>
         <div class="rf-modal-field">
             <input type="text" id="rf-label-search" placeholder="🔍 Search product..." oninput="rfRenderLabelPickList()">
         </div>
@@ -8550,6 +8567,18 @@ function rfGenerateLabelSheet(){
   const checks = document.querySelectorAll('.rf-label-chk:checked');
   if(!checks.length){ toast('❌ অন্তত একটি প্রোডাক্ট সিলেক্ট করুন','err'); return; }
   const shopName = localStorage.getItem('companyName') || 'RAHMAN FURNITURE';
+
+  const sizeMap = {
+    '78x51':{w:78,h:51}, '78x78':{w:78,h:78},
+    '38x25':{w:38,h:25}, '45x35':{w:45,h:35}, '50x25':{w:50,h:25},
+    '50x75':{w:50,h:75}, '75x75':{w:75,h:75}, '75x100':{w:75,h:100}
+  };
+  const sizeSel = document.getElementById('rf-label-size');
+  const sz = sizeMap[sizeSel ? sizeSel.value : '50x75'] || sizeMap['50x75'];
+  const scale = Math.max(0.55, Math.min(1.3, Math.min(sz.w, sz.h) / 50));
+  const fShop = (11*scale).toFixed(1), fName = (13*scale).toFixed(1), fPrice = (14*scale).toFixed(1);
+  const bcHeight = Math.round(40*scale), bcWidth = Math.max(1, +(1.6*scale).toFixed(2)), bcFont = Math.max(8, Math.round(11*scale));
+
   let labelsHtml = '';
   checks.forEach(function(chk){
     const p = products.find(function(x){ return x.id===chk.value; });
@@ -8570,24 +8599,24 @@ function rfGenerateLabelSheet(){
     '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Barcode Labels</title>'+
     '<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"><\/script>'+
     '<style>'+
-    '@page{size:2in 3in;margin:2mm}'+
+    '@page{size:'+sz.w+'mm '+sz.h+'mm;margin:2mm}'+
     '*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
     'body{font-family:Arial,Helvetica,sans-serif;background:#fff}'+
     '.np{display:flex;gap:10px;padding:10px;background:#f5f5f5;border-bottom:1px solid #ddd;}'+
     '.np button{padding:9px 20px;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:700}'+
     '.bp{background:#6f42c1;color:#fff}.bc{background:#eee;color:#555}'+
     '@media print{.np{display:none!important}body{margin:0} .rf-print-label{page-break-after:always;}}'+
-    '.rf-print-label{width:2in;height:3in;padding:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;border:1px dashed #ccc;margin-bottom:6px;}'+
-    '.rf-pl-shop{font-size:11px;font-weight:800;color:#1a4d80;margin-bottom:4px;text-transform:uppercase;}'+
-    '.rf-pl-name{font-size:13px;font-weight:700;margin-bottom:8px;line-height:1.25;}'+
+    '.rf-print-label{width:'+sz.w+'mm;height:'+sz.h+'mm;padding:'+(4*scale).toFixed(1)+'mm;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;border:1px dashed #ccc;margin-bottom:6px;overflow:hidden;}'+
+    '.rf-pl-shop{font-size:'+fShop+'px;font-weight:800;color:#1a4d80;margin-bottom:3px;text-transform:uppercase;}'+
+    '.rf-pl-name{font-size:'+fName+'px;font-weight:700;margin-bottom:'+(6*scale).toFixed(1)+'px;line-height:1.2;}'+
     '.rf-pl-barcode{width:90%;}'+
-    '.rf-pl-price{font-size:14px;font-weight:900;margin-top:6px;color:#111;}'+
+    '.rf-pl-price{font-size:'+fPrice+'px;font-weight:900;margin-top:'+(4*scale).toFixed(1)+'px;color:#111;}'+
     '</style></head><body>'+
     '<div class="np"><button class="bp" onclick="window.print()">🖨️ Print</button><button class="bc" onclick="window.close()">✕ Close</button></div>'+
     '<div id="labels-root">'+labelsHtml+'</div>'+
     '<script>'+
     'document.querySelectorAll(".rf-pl-barcode").forEach(function(svg){'+
-    'JsBarcode(svg, svg.dataset.code, {format:"CODE128", width:1.6, height:40, fontSize:11, margin:2, displayValue:true});'+
+    'JsBarcode(svg, svg.dataset.code, {format:"CODE128", width:'+bcWidth+', height:'+bcHeight+', fontSize:'+bcFont+', margin:2, displayValue:true});'+
     '});'+
     '<\/script>'+
     '</body></html>'
