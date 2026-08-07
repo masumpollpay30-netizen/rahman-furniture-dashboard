@@ -4834,6 +4834,9 @@ function showPage(page) {
         rfShowLockedPopup(typeof rfPermLabel === 'function' ? rfPermLabel(page) : page);
         return;
     }
+    // 🛡️ বর্তমানে কোন পেজে আছি সেটা মনে রাখা হচ্ছে — rfEnforceCurrentPage() পরে এটা ব্যবহার করে
+    // বুঝবে ইউজার এখন যেই পেজে আছে সেটা এখনো অনুমোদিত কিনা, তাহলে আর জোর করে Dashboard-এ ফেরত পাঠাবে না।
+    window._rfCurrentPage = page;
     const noAccessView = document.getElementById('rf-no-access-view');
     if (noAccessView) noAccessView.classList.remove('active');
 
@@ -7897,6 +7900,7 @@ function printAttendance() {
         rfShowLockedPopup(typeof rfPermLabel === 'function' ? rfPermLabel(name) : name);
         return;
     }
+    window._rfCurrentPage = name;
     document.getElementById('dashboard-view').classList.remove('active');
     var iv  = document.getElementById('invoice-view');
     var dlv = document.getElementById('delivery-view');
@@ -9727,6 +9731,22 @@ function rfApplySidebarLocks() {
 // 🛡️ Login/user-switch হওয়ার সাথে সাথেই currently visible page টা force-check করে,
 // permission না থাকলে জোর করে hide করে দেয় — শুধু sidebar-এ lock badge দেখিয়ে ক্ষান্ত থাকে না।
 function rfEnforceCurrentPage() {
+    // 🛡️ ROOT CAUSE FIX ("Invoice-এ ক্লিক করলে লোড হয়েই আবার Dashboard-এ ফেরত আসে"):
+    // rfEnforceCurrentPage() দুইবার কল হয় — একবার লগইনের সাথে সাথেই, আরেকবার
+    // restoreFromCloud()/initRahmanApp() (যেগুলো async, শেষ হতে কয়েক সেকেন্ড লাগতে পারে)
+    // শেষ হওয়ার পর finally ব্লকে। আগে এই ফাংশনটা প্রতিবার কল হলেই — পারমিশন ঠিক থাকা
+    // সত্ত্বেও — জোর করে "order" লিস্টের প্রথম allowed পেজ (সাধারণত Dashboard)-এ পাঠিয়ে
+    // দিত। ফলে: ইউজার Dashboard থেকে Invoice-এ ক্লিক করার সাথে সাথেই ব্যাকগ্রাউন্ডে চলতে
+    // থাকা cloud restore শেষ হয়ে এই ফাংশন আবার চলত, আর অজান্তেই আবার Dashboard-এ টেনে
+    // নিয়ে আসত — ইউজারের চোখে মনে হতো "ক্লিক করলেই লোড হয়ে Dashboard-এ ফেরত চলে আসে"।
+    // এখন: ইউজার বর্তমানে যেই পেজে আছে সেটার অনুমতি এখনো ঠিক থাকলে কিছুই বদলানো হয় না —
+    // শুধু অনুমতি না থাকলে (permission revoke হলে) বা এখনো কোনো পেজে navigate করা না হলেই
+    // (একদম প্রথমবার লগইনের সময়) firstAllowed পেজে সরানো হয়।
+    const cur = window._rfCurrentPage;
+    if (cur && typeof rfHasPermission === 'function' && rfHasPermission(cur)) {
+        return;
+    }
+
     const dash = document.getElementById('dashboard-view');
     const inv = document.getElementById('invoice-view');
     const del = document.getElementById('delivery-view');
