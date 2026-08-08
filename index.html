@@ -9898,6 +9898,11 @@ async function saveSettingsToCloud() {
         const data = {};
         for (let i = 0; i < localStorage.length; i++) {
             const k = localStorage.key(i);
+            // rfSmsLog is synced to its own Firestore collection below (see SMS log cloud sync).
+            // Bundling a 3000-entry SMS log into this single settings document used to push it
+            // past Firestore's 1MB per-document limit — the write would then fail silently
+            // (caught below) and the cloud copy would be stale/incomplete.
+            if (k === 'rfSmsLog' || k === 'rfSmsQueue') continue;
             data[k] = localStorage.getItem(k);
         }
         await setDoc(doc(db, 'company', COMPANY_ID, 'meta', 'settings'), { data, updatedAt: Date.now() });
@@ -9907,6 +9912,41 @@ async function saveSettingsToCloud() {
         setSyncBadge('⚠️ সিঙ্ক ব্যর্থ');
     }
 }
+
+// ---------- SMS Log cloud sync (own collection — one doc per SMS, never overwritten in bulk) ----------
+function smsLogDocId(entry) {
+    const raw = [entry.iso || '', entry.number || '', entry.type || '', entry.invoiceNo || ''].join('_');
+    const id = encodeURIComponent(raw).slice(0, 400);
+    return id || ('log_' + Date.now() + '_' + Math.random().toString(36).slice(2));
+}
+
+window.rfSaveSmsLogEntryToCloud = async function (entry) {
+    if (_restoring || !auth.currentUser) return;
+    try {
+        await setDoc(doc(db, 'company', COMPANY_ID, 'smslogs', smsLogDocId(entry)), entry);
+    } catch (e) {
+        console.log('Cloud SMS log save failed', e);
+    }
+};
+
+window.rfFetchSmsLogFromCloud = async function () {
+    try {
+        const snap = await getDocs(collection(db, 'company', COMPANY_ID, 'smslogs'));
+        return snap.docs.map(d => d.data());
+    } catch (e) {
+        console.log('Cloud SMS log fetch failed', e);
+        return [];
+    }
+};
+
+window.rfClearSmsLogFromCloud = async function () {
+    try {
+        const snap = await getDocs(collection(db, 'company', COMPANY_ID, 'smslogs'));
+        for (const d of snap.docs) { await deleteDoc(d.ref); }
+    } catch (e) {
+        console.log('Cloud SMS log clear failed', e);
+    }
+};
 
 async function saveInvoiceToCloudFS(inv) {
     try {
@@ -9935,6 +9975,10 @@ async function restoreFromCloud() {
         for (const d of invSnap.docs) {
             await window.idbSaveInvoice(d.data());
         }
+        // SMS log: MERGE cloud entries into the local log — never overwrite. The old code restored
+        // rfSmsLog as part of the single settings blob above, which replaced today's local entries
+        // with whatever (possibly older/incomplete) copy was last saved to the cloud.
+        if (window.rfMergeSmsLogFromCloud) await window.rfMergeSmsLogFromCloud();
     } catch (e) {
         console.log('Cloud restore failed', e);
     } finally {
@@ -10088,7 +10132,35 @@ document.addEventListener('click', (e) => {
         log.unshift(entry);
         if (log.length > LOG_MAX) log = log.slice(0, LOG_MAX);
         try { localStorage.setItem(LOG_KEY, JSON.stringify(log)); } catch(e) {}
+        // Back up this one SMS entry to its own Firestore doc right away (small write, always
+        // succeeds) instead of relying on the whole-localStorage bundle save, which used to
+        // silently fail once the log got big and could also overwrite today's entries on restore.
+        try { if (window.rfSaveSmsLogEntryToCloud) window.rfSaveSmsLogEntryToCloud(entry); } catch(e) {}
     }
+
+    // ---- Merge cloud SMS log into local log (called on login/restore). Merge, not replace, so a
+    // stale or partial cloud copy can never wipe out entries that are already on this device. ----
+    window.rfMergeSmsLogFromCloud = async function() {
+        if (!window.rfFetchSmsLogFromCloud) return;
+        try {
+            var cloudLog = await window.rfFetchSmsLogFromCloud();
+            if (!cloudLog || !cloudLog.length) return;
+            var current = getLog();
+            var seen = {};
+            current.forEach(function(l){ seen[l.iso + '|' + l.number + '|' + l.type] = 1; });
+            var added = 0;
+            cloudLog.forEach(function(l){
+                var key = l.iso + '|' + l.number + '|' + l.type;
+                if (!seen[key]) { seen[key] = 1; current.push(l); added++; }
+            });
+            if (added > 0) {
+                current.sort(function(a,b){ return (b.iso||'').localeCompare(a.iso||''); });
+                if (current.length > LOG_MAX) current = current.slice(0, LOG_MAX);
+                try { localStorage.setItem(LOG_KEY, JSON.stringify(current)); } catch(e) {}
+                if (typeof renderLog === 'function') renderLog();
+            }
+        } catch(e) { console.log('SMS log cloud merge failed', e); }
+    };
 
     // ---- English time format: "31 Jul 2026, 02:45 PM" (Point: SMS Log সময় বাংলার বদলে ইংরেজি, with Date) ----
     function fmtEnTime(d) {
@@ -10862,6 +10934,7 @@ document.addEventListener('click', (e) => {
             setTimeout(function(){ URL.revokeObjectURL(url); }, 3000);
         } catch(e) {}
         try { localStorage.removeItem(LOG_KEY); } catch(e) {}
+        try { if (window.rfClearSmsLogFromCloud) window.rfClearSmsLogFromCloud(); } catch(e) {}
         renderLog();
         toast('🗑️ Log cleared — backup file downloaded', true);
     };
